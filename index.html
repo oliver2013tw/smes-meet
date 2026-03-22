@@ -554,6 +554,14 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
+// ── IMPORTANT: Set this to your actual GitHub Pages URL ──────
+// e.g. 'https://yourname.github.io/repo-name/'
+const GITHUB_PAGES_URL = 'https://oliver2013tw.github.io/smes-meet/';
+
+// Safari redirect goes through Firebase Hosting (same domain as authDomain)
+// so Safari ITP does not block the auth state read-back.
+const SAFARI_REDIRECT_URL = 'https://smes-meet.firebaseapp.com/redirect.html';
+
 // Google login button
 $('btn-google-login').onclick = async () => {
   const provider = new GoogleAuthProvider();
@@ -565,10 +573,14 @@ $('btn-google-login').onclick = async () => {
   const btn = $('btn-google-login');
 
   if (isSafari()) {
-    // Safari: use redirect (popup gets blocked on iOS Safari)
+    // Safari / iOS: redirect through Firebase Hosting middle page.
+    // Firebase Hosting is on firebaseapp.com — same domain as authDomain,
+    // so Safari ITP won't block the cookie/storage read-back.
     btn.querySelector('span').textContent = '跳轉至 Google...';
     btn.disabled = true;
     try {
+      // Store where to return after login
+      sessionStorage.setItem('smes_return', GITHUB_PAGES_URL);
       await signInWithRedirect(auth, provider);
     } catch (e) {
       btn.querySelector('span').textContent = '使用 Google 帳號登入';
@@ -576,7 +588,7 @@ $('btn-google-login').onclick = async () => {
       toast('login-toast', '登入失敗：' + e.message);
     }
   } else {
-    // Chrome / Edge / Firefox: use popup (instant, no page reload)
+    // Chrome / Edge / Firefox: popup — instant, no page reload needed
     btn.querySelector('span').textContent = '登入中...';
     btn.disabled = true;
     try {
@@ -587,16 +599,18 @@ $('btn-google-login').onclick = async () => {
         btn.querySelector('span').textContent = '使用 Google 帳號登入';
         btn.disabled = false;
       }
-      // onAuthStateChanged handles navigation
+      // onAuthStateChanged handles navigation to lobby
     } catch (e) {
       btn.querySelector('span').textContent = '使用 Google 帳號登入';
       btn.disabled = false;
       if (e.code === 'auth/popup-blocked') {
-        // Popup was blocked — fallback to redirect
+        // Popup was blocked — fallback to redirect via Firebase Hosting
         toast('login-toast', '彈窗被封鎖，改用跳轉登入...', 'info');
         setTimeout(async () => {
-          try { await signInWithRedirect(auth, provider); }
-          catch (e2) { toast('login-toast', '登入失敗：' + e2.message); }
+          try {
+            sessionStorage.setItem('smes_return', GITHUB_PAGES_URL);
+            await signInWithRedirect(auth, provider);
+          } catch (e2) { toast('login-toast', '登入失敗：' + e2.message); }
         }, 1500);
       } else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
         toast('login-toast', '登入失敗：' + e.message);
