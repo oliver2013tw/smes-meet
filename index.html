@@ -203,18 +203,25 @@
     }
     .tile-camoff.hidden { display: none; }
 
+    /* Pending requests bar — sits ABOVE the control bar, only visible when needed */
+    .pending-bar {
+      flex-shrink: 0; display: none;
+      flex-wrap: wrap; gap: 6px; align-items: center;
+      padding: 6px 12px; border-top: 1px solid #0066ff22;
+      background: #00040f;
+    }
+    .pending-bar.has-requests { display: flex; }
+
     /* Control bar */
     .m-controls {
       flex-shrink: 0;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 12px; border-top: 1px solid #141414;
       background: #050505; height: 52px; gap: 8px;
-      /* On mobile: wrap into 2 rows */
     }
-    .ctrl-l, .ctrl-c, .ctrl-r {
+    .ctrl-l, .ctrl-r {
       display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
     }
-    .ctrl-c { flex: 1; justify-content: center; overflow: hidden; }
 
     /* Control button */
     .cb {
@@ -262,12 +269,11 @@
     /* ─── RWD ──────────────────────────────────────────────────── */
     /* Tablet and below: hide text labels on control buttons */
     @media (max-width: 640px) {
-      .m-controls { height: auto; padding: 8px 10px; flex-wrap: wrap; gap: 6px; }
-      .ctrl-l, .ctrl-c, .ctrl-r { gap: 5px; }
-      .ctrl-c { flex: 100%; order: 3; justify-content: flex-start; flex-wrap: wrap; }
+      .m-controls { height: auto; padding: 8px 10px; gap: 6px; }
+      .ctrl-l, .ctrl-r { gap: 5px; }
       .ctrl-r { margin-left: auto; }
       .cb { padding: 8px 10px; }
-      /* Show icon, hide text on very small screens */
+      .pending-bar { padding: 6px 10px; }
     }
     @media (max-width: 400px) {
       .cb .cb-text { display: none; }
@@ -393,17 +399,21 @@
     </div>
   </div>
 
+  <!-- Pending requests bar (HOST only) — shown above controls when someone requests to join -->
+  <div class="pending-bar" id="pending-bar">
+    <!-- req-cards injected here by JS -->
+  </div>
+
   <!-- Controls -->
   <div class="m-controls">
     <div class="ctrl-l">
-      <button class="cb" id="cb-mic">🎤 <span class="cb-text">麥克風</span></button>
-      <button class="cb" id="cb-cam">📷 <span class="cb-text">相機</span></button>
-      <button class="cb" id="cb-share">🖥 <span class="cb-text">分享螢幕</span></button>
+      <button class="cb" id="cb-mic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><span class="cb-text">麥克風</span></button>
+      <button class="cb" id="cb-cam"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg><span class="cb-text">相機</span></button>
+      <button class="cb" id="cb-share"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span class="cb-text">分享螢幕</span></button>
     </div>
-    <div class="ctrl-c" id="pending-strip"></div>
     <div class="ctrl-r">
-      <button class="cb danger" id="cb-leave" style="display:none">✕ <span class="cb-text">離開</span></button>
-      <button class="cb danger" id="cb-end"   style="display:none">⏹ <span class="cb-text">結束會議</span></button>
+      <button class="cb danger" id="cb-leave" style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="cb-text">離開</span></button>
+      <button class="cb danger" id="cb-end"   style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg><span class="cb-text">結束會議</span></button>
     </div>
   </div>
 </div>
@@ -856,14 +866,23 @@ async function toggleShare() {
   }
 }
 
+// SVG icon set (Feather Icons style)
+const IC = {
+  micOn:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+  micOff:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+  camOn:    `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`,
+  camOff:   `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>`,
+  shareOn:  `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`,
+  shareOff: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+};
 function updateCtrlBtns() {
   const mic = $('cb-mic'), cam = $('cb-cam'), sh = $('cb-share');
   mic.className = 'cb' + (S.micOn ? '' : ' off');
-  mic.innerHTML = S.micOn ? '🎤 <span class="cb-text">麥克風</span>' : '🔇 <span class="cb-text">靜音中</span>';
+  mic.innerHTML = (S.micOn ? IC.micOn : IC.micOff) + `<span class="cb-text">${S.micOn ? '麥克風' : '靜音中'}</span>`;
   cam.className = 'cb' + (S.camOn ? '' : ' off');
-  cam.innerHTML = S.camOn ? '📷 <span class="cb-text">相機</span>'   : '📷 <span class="cb-text">相機關閉</span>';
+  cam.innerHTML = (S.camOn ? IC.camOn : IC.camOff) + `<span class="cb-text">${S.camOn ? '相機' : '相機關閉'}</span>`;
   sh.className  = 'cb' + (S.sharing ? ' active' : '');
-  sh.innerHTML  = S.sharing ? '⏹ <span class="cb-text">停止分享</span>' : '🖥 <span class="cb-text">分享螢幕</span>';
+  sh.innerHTML  = (S.sharing ? IC.shareOn : IC.shareOff) + `<span class="cb-text">${S.sharing ? '停止分享' : '分享螢幕'}</span>`;
 }
 function updateCamOff() {
   $('local-camoff').classList.toggle('hidden', S.camOn);
@@ -882,7 +901,7 @@ async function leaveMeeting(endAll) {
   [...grid.children].forEach(c => { if (c.id !== 'tile-local') c.remove(); });
   $('local-vid').srcObject = null;
   $('local-camoff').classList.add('hidden');
-  $('pending-strip').innerHTML = '';
+  $('pending-bar').innerHTML = ''; $('pending-bar').classList.remove('has-requests');
   updateGrid();
   renderLobby(); showScreen('lobby');
 }
@@ -921,7 +940,7 @@ function listenRequests() {
     where('status', '==', 'pending')
   );
   S.unsubReqs = onSnapshot(q, snap => {
-    const strip = $('pending-strip');
+    const strip = $('pending-bar');
     strip.innerHTML = '';
     snap.docs.forEach(d => {
       const r = d.data();
@@ -934,6 +953,7 @@ function listenRequests() {
          <button class="btn-reject"  data-id="${d.id}">拒絕</button>`;
       strip.appendChild(card);
     });
+    if (snap.docs.length > 0) strip.classList.add('has-requests');
     strip.querySelectorAll('.btn-approve').forEach(b => b.onclick = () =>
       approveReq(b.dataset.id, b.dataset.uid, b.dataset.name, b.dataset.role));
     strip.querySelectorAll('.btn-reject').forEach(b => b.onclick = () =>
