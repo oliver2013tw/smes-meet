@@ -2,710 +2,1062 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>SMES MEET</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
+    /* ─── Reset ────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; width: 100%; overflow: hidden; overscroll-behavior: none; background: #000; color: #e0e0e0; font-family: 'JetBrains Mono', monospace; }
-    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; }
-    input, button { font-family: 'JetBrains Mono', monospace; border-radius: 0 !important; outline: none; }
+    html, body {
+      height: 100%; width: 100%;
+      overflow: hidden; overscroll-behavior: none;
+      background: #000; color: #e0e0e0;
+      font-family: 'JetBrains Mono', monospace;
+      -webkit-font-smoothing: antialiased;
+    }
+    input, button, select { font-family: 'JetBrains Mono', monospace; border-radius: 0 !important; outline: none; }
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #2a2a2a; }
 
-    /* Scanlines */
-    #scanline { pointer-events: none; position: fixed; inset: 0; z-index: 9999;
-      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px); }
+    /* ─── Scanlines ────────────────────────────────────────────── */
+    #scanline {
+      pointer-events: none; position: fixed; inset: 0; z-index: 9999;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.035) 2px, rgba(0,0,0,0.035) 4px);
+    }
 
-    /* Screens */
+    /* ─── Screen switching ─────────────────────────────────────── */
     .screen { display: none; position: fixed; inset: 0; }
     .screen.active { display: flex; }
 
-    /* ── Loading ── */
-    #screen-loading { align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
-    .blink { animation: blink 1s step-end infinite; }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-
-    /* ── Login ── */
-    #screen-login { align-items: center; justify-content: center; }
-    .login-box { width: 100%; max-width: 360px; padding: 0 24px; }
-    .divider { height: 1px; background: #1a1a1a; margin: 20px 0; }
-    .domain-box { border: 1px solid #1a1a1a; padding: 10px 12px; margin-bottom: 20px; }
-    .btn-google { width: 100%; border: 1px solid #1a1a1a; background: #0a0a0a; color: #fff;
-      padding: 14px; font-size: 13px; letter-spacing: 2px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 10px; transition: background .15s; }
-    .btn-google:hover { background: #111; }
-    .btn-google:disabled { opacity: .5; cursor: not-allowed; }
-    .dev-panel { display: none; margin-top: 12px; border: 1px solid #332200; background: #0a0800; padding: 12px; }
-    .dev-panel.show { display: block; }
-    .dev-input { width: 100%; background: #000; border: 1px solid #332200; color: #ccc;
-      padding: 8px 10px; font-size: 11px; margin-bottom: 8px; }
-    .btn-dev { width: 100%; border: 1px solid #886600; background: transparent; color: #aa8800;
-      padding: 8px; font-size: 11px; cursor: pointer; letter-spacing: 1px; transition: background .15s; }
-    .btn-dev:hover { background: #1a1000; }
-    .version-text { margin-top: 20px; text-align: center; font-size: 10px; color: #2a2a2a; cursor: default; user-select: none; }
+    /* ─── Shared primitives ────────────────────────────────────── */
+    .tag { display: inline-block; font-size: 10px; padding: 2px 8px; letter-spacing: 1px; }
+    .tag-blue  { color: #4499ff; border: 1px solid #0066ff44; }
+    .tag-grey  { color: #888;    border: 1px solid #333; }
+    .tag-gold  { color: #aa8800; border: 1px solid #664400; }
 
     /* Toast */
-    .toast { padding: 10px 12px; font-size: 11px; margin-bottom: 12px; display: none; }
+    .toast { font-size: 11px; padding: 9px 12px; display: none; }
     .toast.show { display: block; }
-    .toast.error { border: 1px solid #4a0000; background: #1a0000; color: #ff6666; }
-    .toast.info  { border: 1px solid #003366; background: #000d1a; color: #4499ff; }
+    .toast-error { border: 1px solid #5a0000; background: #1a0000; color: #ff7777; }
+    .toast-info  { border: 1px solid #003366; background: #000d1a; color: #55aaff; }
 
-    /* ── Lobby ── */
+    /* Blink cursor */
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .blink { animation: blink 1s step-end infinite; }
+
+    /* Bounce dots */
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+
+    /* ─── LOADING ──────────────────────────────────────────────── */
+    #screen-loading {
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 14px;
+    }
+
+    /* ─── LOGIN ────────────────────────────────────────────────── */
+    #screen-login { align-items: center; justify-content: center; }
+    .login-card {
+      width: 100%; max-width: 340px; padding: 0 20px;
+    }
+    .login-logo { font-size: 26px; font-weight: 700; letter-spacing: 6px; color: #fff; }
+    .login-sub  { font-size: 10px; color: #444; margin-top: 4px; letter-spacing: 2px; }
+    .login-hr   { height: 1px; background: #1a1a1a; margin: 22px 0; }
+    .domain-notice {
+      border: 1px solid #1a1a1a; padding: 9px 12px; margin-bottom: 18px;
+    }
+    .domain-notice .lbl { font-size: 10px; color: #333; margin-bottom: 3px; }
+    .domain-notice .val { font-size: 11px; color: #bbb; }
+
+    .btn-google {
+      width: 100%; border: 1px solid #222; background: #0a0a0a; color: #ddd;
+      padding: 13px 16px; font-size: 12px; letter-spacing: 2px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: background .15s, border-color .15s;
+    }
+    .btn-google:hover:not(:disabled) { background: #0f0f0f; border-color: #333; }
+    .btn-google:disabled { opacity: .45; cursor: not-allowed; }
+
+    /* Dev panel */
+    .dev-panel { display: none; margin-top: 10px; border: 1px solid #2a1800; background: #080500; padding: 12px; }
+    .dev-panel.open { display: block; }
+    .dev-lbl { font-size: 10px; color: #664400; margin-bottom: 9px; letter-spacing: 1px; }
+    .dev-inp {
+      width: 100%; background: #000; border: 1px solid #2a1800; color: #bbb;
+      padding: 8px 10px; font-size: 11px; margin-bottom: 7px;
+      transition: border-color .15s;
+    }
+    .dev-inp:focus { border-color: #886600; }
+    .btn-dev {
+      width: 100%; border: 1px solid #664400; background: transparent; color: #997700;
+      padding: 8px; font-size: 11px; cursor: pointer; letter-spacing: 1px;
+      transition: background .15s;
+    }
+    .btn-dev:hover { background: #100800; }
+    .ver-text {
+      margin-top: 18px; text-align: center; font-size: 10px; color: #1e1e1e;
+      cursor: default; user-select: none; letter-spacing: 1px;
+    }
+
+    /* HTTPS warning */
+    .https-warn {
+      border: 1px solid #4a2200; background: #1a0800; color: #ff8844;
+      font-size: 10px; padding: 8px 12px; margin-top: 10px; display: none;
+    }
+    .https-warn.show { display: block; }
+
+    /* ─── LOBBY ────────────────────────────────────────────────── */
     #screen-lobby { align-items: center; justify-content: center; }
-    .lobby-box { width: 100%; max-width: 400px; padding: 0 24px; }
-    .profile-bar { border: 1px solid #1a1a1a; padding: 12px 14px; margin-bottom: 20px;
-      display: flex; align-items: center; justify-content: space-between; }
-    .role-teacher { color: #4499ff; text-shadow: 0 0 8px #0066ff44; }
-    .role-student { color: #888; }
-    .btn-logout { border: 1px solid #1a1a1a; background: transparent; color: #444;
-      padding: 6px 12px; font-size: 10px; cursor: pointer; letter-spacing: 1px; transition: color .15s; }
-    .btn-logout:hover { color: #ff4444; border-color: #4a0000; }
-    .room-panel { border: 1px solid #1a1a1a; padding: 16px; margin-bottom: 12px; }
-    .room-row { display: flex; gap: 8px; }
-    .room-input { flex: 1; min-width: 0; background: #000; border: 1px solid #1a1a1a; color: #fff;
-      padding: 12px; font-size: 16px; letter-spacing: 4px; text-transform: uppercase; transition: border-color .15s; }
-    .room-input:focus { border-color: #0066ff88; }
-    .room-input::placeholder { color: #222; letter-spacing: 2px; }
-    .btn-enter { background: #fff; color: #000; border: none; padding: 12px 20px;
-      font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 2px; white-space: nowrap; transition: background .15s; }
-    .btn-enter:hover { background: #ddd; }
+    .lobby-card { width: 100%; max-width: 380px; padding: 0 20px; }
 
-    /* ── Waiting ── */
-    #screen-waiting { align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
-    .dots { display: flex; gap: 6px; }
-    .dot { width: 6px; height: 6px; background: #0066ff; animation: bounce .9s infinite; }
-    .dot:nth-child(2){ animation-delay: .15s; } .dot:nth-child(3){ animation-delay: .3s; }
-    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-    .btn-cancel { border: 1px solid #1a1a1a; background: transparent; color: #444;
-      padding: 8px 20px; font-size: 11px; cursor: pointer; transition: color .15s; }
+    .profile-row {
+      border: 1px solid #1a1a1a; padding: 12px 14px; margin-bottom: 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .profile-name { font-size: 13px; color: #fff; word-break: break-all; }
+    .profile-role { font-size: 10px; margin-top: 4px; }
+
+    .btn-logout {
+      border: 1px solid #1a1a1a; background: transparent; color: #444;
+      padding: 6px 12px; font-size: 10px; cursor: pointer; letter-spacing: 1px;
+      flex-shrink: 0; transition: color .15s, border-color .15s;
+    }
+    .btn-logout:hover { color: #ff4444; border-color: #4a0000; }
+
+    .room-panel { border: 1px solid #1a1a1a; padding: 16px; margin-bottom: 10px; }
+    .room-lbl   { font-size: 10px; color: #333; margin-bottom: 11px; letter-spacing: 1px; }
+    .room-row   { display: flex; gap: 8px; }
+    .room-inp {
+      flex: 1; min-width: 0; background: #000; border: 1px solid #1a1a1a; color: #fff;
+      padding: 11px 12px; font-size: 15px; letter-spacing: 5px; text-transform: uppercase;
+      transition: border-color .15s;
+    }
+    .room-inp:focus   { border-color: #0055cc88; }
+    .room-inp::placeholder { color: #1e1e1e; letter-spacing: 3px; }
+    .btn-enter {
+      background: #fff; color: #000; border: none; padding: 11px 18px;
+      font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 2px;
+      flex-shrink: 0; transition: background .15s;
+    }
+    .btn-enter:hover { background: #e0e0e0; }
+
+    /* ─── WAITING ──────────────────────────────────────────────── */
+    #screen-waiting {
+      flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    }
+    .wait-code { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 7px; }
+    .wait-sub  { font-size: 11px; color: #444; text-align: center; padding: 0 20px; }
+    .dots { display: flex; gap: 7px; align-items: center; }
+    .dot {
+      width: 6px; height: 6px; background: #0066ff;
+      animation: bounce .9s ease-in-out infinite;
+    }
+    .dot:nth-child(2) { animation-delay: .15s; }
+    .dot:nth-child(3) { animation-delay: .3s;  }
+    .btn-cancel {
+      border: 1px solid #1a1a1a; background: transparent; color: #444;
+      padding: 8px 22px; font-size: 11px; cursor: pointer; letter-spacing: 1px;
+      margin-top: 4px; transition: color .15s, border-color .15s;
+    }
     .btn-cancel:hover { color: #ff4444; border-color: #4a0000; }
 
-    /* ── Meeting ── */
-    #screen-meeting { flex-direction: column; background: #000; }
+    /* ─── MEETING ──────────────────────────────────────────────── */
+    #screen-meeting { flex-direction: column; }
 
-    .meeting-topbar { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
-      padding: 8px 14px; border-bottom: 1px solid #1a1a1a; height: 44px; gap: 8px; }
-    .topbar-left  { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .topbar-title { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 3px; white-space: nowrap; }
-    .topbar-code  { font-size: 10px; color: #444; border: 1px solid #1a1a1a; padding: 3px 8px; white-space: nowrap; }
-    .topbar-count { font-size: 10px; color: #444; white-space: nowrap; }
-    .tag-host { font-size: 10px; color: #4499ff; border: 1px solid #0066ff44; padding: 2px 8px; white-space: nowrap; }
-    .tag-role { font-size: 10px; white-space: nowrap; }
+    /* Top bar */
+    .m-topbar {
+      flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 12px; border-bottom: 1px solid #141414;
+      height: 42px; background: #050505; gap: 8px;
+    }
+    .m-topbar-l { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; }
+    .m-topbar-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .m-title    { font-size: 12px; font-weight: 700; color: #fff; letter-spacing: 3px; white-space: nowrap; }
+    .m-code     { font-size: 10px; color: #3a3a3a; border: 1px solid #1a1a1a; padding: 2px 8px; white-space: nowrap; }
+    .m-count    { font-size: 10px; color: #3a3a3a; white-space: nowrap; }
 
     /* Video grid */
-    .video-area { flex: 1; min-height: 0; display: grid; gap: 2px; padding: 2px; background: #111; }
-    .video-tile { position: relative; background: #0a0a0a; overflow: hidden; min-height: 0; }
-    .video-tile video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0a0a0a; }
-    .tile-label { position: absolute; bottom: 6px; left: 6px;
-      background: rgba(0,0,0,.75); padding: 2px 8px; font-size: 10px; color: #fff; }
-    .tile-camoff { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-      background: #0a0a0a; font-size: 11px; color: #333; }
+    .video-area {
+      flex: 1; min-height: 0;
+      display: grid; gap: 2px; padding: 2px;
+      background: #0d0d0d;
+      /* columns set by JS */
+    }
+    .video-tile {
+      position: relative; background: #080808; overflow: hidden;
+      min-width: 0; min-height: 0;
+    }
+    .video-tile video {
+      width: 100%; height: 100%; object-fit: cover;
+      display: block; background: #080808;
+    }
+    .tile-lbl {
+      position: absolute; bottom: 6px; left: 6px;
+      background: rgba(0,0,0,.8); padding: 2px 8px;
+      font-size: 10px; color: #ddd; white-space: nowrap;
+    }
+    .tile-camoff {
+      position: absolute; inset: 0; display: flex;
+      align-items: center; justify-content: center;
+      background: #080808; font-size: 11px; color: #2a2a2a; letter-spacing: 2px;
+    }
     .tile-camoff.hidden { display: none; }
 
     /* Control bar */
-    .control-bar { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 14px; border-top: 1px solid #1a1a1a; background: #0a0a0a;
-      gap: 8px; flex-wrap: wrap; min-height: 56px; }
-    .ctrl-left   { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    .ctrl-center { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1; justify-content: center; }
-    .ctrl-right  { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-    .ctrl-btn { border: 1px solid #1a1a1a; background: transparent; color: #ccc;
-      padding: 8px 12px; font-size: 11px; cursor: pointer; letter-spacing: 1px;
-      transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
-    .ctrl-btn:hover { background: #111; border-color: #333; }
-    .ctrl-btn.off    { border-color: #4a000088; color: #ff6666; background: #1a0000; }
-    .ctrl-btn.active { border-color: #00664488; color: #44cc88; background: #001a0d; }
-    .ctrl-btn.danger { border-color: #4a000088; color: #ff4444; }
-    .ctrl-btn.danger:hover { background: #1a0000; }
+    .m-controls {
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 12px; border-top: 1px solid #141414;
+      background: #050505; height: 52px; gap: 8px;
+      /* On mobile: wrap into 2 rows */
+    }
+    .ctrl-l, .ctrl-c, .ctrl-r {
+      display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+    }
+    .ctrl-c { flex: 1; justify-content: center; overflow: hidden; }
 
-    /* Pending cards */
-    .pending-card { border: 1px solid #0066ff44; padding: 5px 10px; font-size: 10px; color: #4499ff;
-      display: flex; align-items: center; gap: 6px; animation: pulse-b 1.5s ease-in-out infinite; }
-    @keyframes pulse-b { 0%,100%{border-color:#0066ff22} 50%{border-color:#0066ffbb} }
-    .btn-approve { background: #003399; border: none; color: #fff; padding: 3px 8px; font-size: 10px; cursor: pointer; font-family: 'JetBrains Mono',monospace; }
+    /* Control button */
+    .cb {
+      border: 1px solid #1e1e1e; background: transparent; color: #aaa;
+      padding: 7px 11px; font-size: 10px; cursor: pointer; letter-spacing: 1px;
+      display: flex; align-items: center; gap: 5px; white-space: nowrap;
+      transition: all .12s; flex-shrink: 0;
+    }
+    .cb:hover  { background: #0e0e0e; border-color: #2e2e2e; color: #ddd; }
+    .cb.off    { border-color: #4a000066; color: #ff6666; background: #150000; }
+    .cb.active { border-color: #00664466; color: #44cc88; background: #001508; }
+    .cb.danger { border-color: #4a000099; color: #ff4444; }
+    .cb.danger:hover { background: #150000; }
+
+    /* Icon-only on small screens */
+    .cb .cb-text { display: inline; }
+
+    /* Pending request cards */
+    .req-card {
+      border: 1px solid #0066ff33; padding: 4px 9px; font-size: 10px; color: #3388ff;
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+      animation: req-pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes req-pulse { 0%,100%{border-color:#0066ff22} 50%{border-color:#0066ffaa} }
+    .btn-approve {
+      background: #003399; border: none; color: #fff; padding: 3px 8px;
+      font-size: 10px; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+    }
     .btn-approve:hover { background: #0044cc; }
-    .btn-reject  { background: transparent; border: 1px solid #4a0000; color: #ff4444; padding: 3px 7px; font-size: 10px; cursor: pointer; font-family: 'JetBrains Mono',monospace; }
-    .btn-reject:hover { background: #1a0000; }
+    .btn-reject {
+      background: transparent; border: 1px solid #4a000066; color: #ff4444;
+      padding: 3px 7px; font-size: 10px; cursor: pointer; font-family: 'JetBrains Mono', monospace;
+    }
+    .btn-reject:hover { background: #150000; }
 
     /* Notification */
-    .notif { position: fixed; top: 52px; right: 12px; z-index: 1000; max-width: 280px;
-      border: 1px solid #0066ff44; background: #000d1a; padding: 10px 14px;
-      font-size: 11px; color: #4499ff; display: none; }
+    .notif {
+      position: fixed; top: 50px; right: 10px; z-index: 1000;
+      border: 1px solid #0066ff44; background: #00081a;
+      padding: 9px 13px; font-size: 11px; color: #4499ff;
+      max-width: 260px; display: none; pointer-events: none;
+    }
     .notif.show { display: block; }
 
-    /* Responsive: on small screens stack controls */
-    @media (max-width: 520px) {
-      .topbar-title { letter-spacing: 2px; font-size: 12px; }
-      .ctrl-btn { padding: 7px 9px; font-size: 10px; }
-      .control-bar { padding: 8px 10px; }
+    /* ─── RWD ──────────────────────────────────────────────────── */
+    /* Tablet and below: hide text labels on control buttons */
+    @media (max-width: 640px) {
+      .m-controls { height: auto; padding: 8px 10px; flex-wrap: wrap; gap: 6px; }
+      .ctrl-l, .ctrl-c, .ctrl-r { gap: 5px; }
+      .ctrl-c { flex: 100%; order: 3; justify-content: flex-start; flex-wrap: wrap; }
+      .ctrl-r { margin-left: auto; }
+      .cb { padding: 8px 10px; }
+      /* Show icon, hide text on very small screens */
+    }
+    @media (max-width: 400px) {
+      .cb .cb-text { display: none; }
+      .cb { padding: 9px 11px; font-size: 13px; }
+      .m-title { letter-spacing: 2px; font-size: 11px; }
     }
   </style>
 </head>
 <body>
 <div id="scanline"></div>
 
-<!-- LOADING -->
+<!-- ══ LOADING ════════════════════════════════════════════════ -->
 <div id="screen-loading" class="screen active">
-  <div style="font-size:22px;font-weight:700;letter-spacing:6px;color:#fff">SMES_MEET</div>
-  <div style="font-size:11px;color:#333">系統初始化中<span class="blink">█</span></div>
+  <div style="font-size:20px;font-weight:700;letter-spacing:6px;color:#fff">SMES_MEET</div>
+  <div style="font-size:11px;color:#2a2a2a">初始化中<span class="blink">█</span></div>
 </div>
 
-<!-- LOGIN -->
+<!-- ══ LOGIN ══════════════════════════════════════════════════ -->
 <div id="screen-login" class="screen">
-  <div class="login-box">
-    <div style="text-align:center;margin-bottom:32px">
-      <div style="font-size:10px;color:#333;letter-spacing:3px;margin-bottom:8px">[ SYSTEM INIT ]</div>
-      <div style="font-size:28px;font-weight:700;letter-spacing:6px;color:#fff">SMES_MEET</div>
-      <div style="font-size:11px;color:#555;margin-top:4px;letter-spacing:2px">校園 P2P 視訊會議系統</div>
-      <div class="divider"></div>
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:10px;color:#2a2a2a;letter-spacing:3px;margin-bottom:10px">[ SYSTEM INIT ]</div>
+      <div class="login-logo">SMES_MEET</div>
+      <div class="login-sub">校園 P2P 視訊會議系統</div>
+      <div class="login-hr"></div>
     </div>
-    <div class="domain-box">
-      <div style="font-size:10px;color:#444;margin-bottom:4px">// 存取限制</div>
-      <div style="font-size:11px;color:#ccc">僅接受 @mail2.smes.tyc.edu.tw</div>
+
+    <div class="domain-notice">
+      <div class="lbl">// 存取限制</div>
+      <div class="val">@mail2.smes.tyc.edu.tw</div>
     </div>
-    <div id="login-toast" class="toast error"></div>
+
+    <!-- HTTPS warning — shown when not on secure context -->
+    <div class="https-warn" id="https-warn">
+      ⚠ 請使用 HTTPS 存取此頁面。<br/>
+      HTTP 環境下相機與螢幕分享功能無法使用。
+    </div>
+
+    <div id="login-toast" class="toast toast-error" style="margin-bottom:10px"></div>
+
     <button class="btn-google" id="btn-google-login">
-      <svg width="16" height="16" viewBox="0 0 24 24">
+      <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
       </svg>
-      使用 Google 帳號登入
+      <span>使用 Google 帳號登入</span>
     </button>
+
+    <!-- Dev panel: click version text 5× -->
     <div class="dev-panel" id="dev-panel">
-      <div style="font-size:10px;color:#886600;margin-bottom:10px">// DEV — 測試帳號登入</div>
-      <input class="dev-input" id="dev-email" type="email" placeholder="test@mail2.smes.tyc.edu.tw" autocomplete="username"/>
-      <input class="dev-input" id="dev-password" type="password" placeholder="密碼" autocomplete="current-password"/>
+      <div class="dev-lbl">// DEV — 測試帳號登入</div>
+      <input class="dev-inp" id="dev-email" type="email"    placeholder="test@mail2.smes.tyc.edu.tw" autocomplete="username"/>
+      <input class="dev-inp" id="dev-pw"    type="password" placeholder="密碼" autocomplete="current-password"/>
       <button class="btn-dev" id="btn-dev-login">測試登入</button>
     </div>
-    <div class="version-text" id="version-text">v2.0 // Pure P2P // No Recording</div>
+
+    <div class="ver-text" id="ver-text">v3.0 // Pure P2P // No Recording</div>
   </div>
 </div>
 
-<!-- LOBBY -->
+<!-- ══ LOBBY ═══════════════════════════════════════════════════ -->
 <div id="screen-lobby" class="screen">
-  <div class="lobby-box">
-    <div class="profile-bar" id="profile-bar">
-      <div>
-        <div style="font-size:13px;color:#fff" id="profile-name">—</div>
-        <div style="font-size:10px;margin-top:4px" id="profile-role">—</div>
+  <div class="lobby-card">
+    <div class="profile-row" id="profile-row">
+      <div style="min-width:0">
+        <div class="profile-name" id="p-name">—</div>
+        <div class="profile-role" id="p-role">—</div>
       </div>
       <button class="btn-logout" id="btn-logout">登出</button>
     </div>
+
     <div class="room-panel">
-      <div style="font-size:10px;color:#444;margin-bottom:12px">// 輸入會議代碼</div>
+      <div class="room-lbl">// 輸入會議代碼</div>
       <div class="room-row">
-        <input class="room-input" id="room-input" type="text" maxlength="10" placeholder="XXXXXXXX" autocomplete="off" spellcheck="false"/>
+        <input class="room-inp" id="room-inp" type="text" maxlength="12"
+               placeholder="XXXXXXXX" autocomplete="off" spellcheck="false" inputmode="text"/>
         <button class="btn-enter" id="btn-enter">進入</button>
       </div>
     </div>
-    <div id="lobby-toast" class="toast error"></div>
-    <div style="text-align:center;font-size:10px;color:#2a2a2a;margin-top:12px">純 P2P 加密傳輸 // 無伺服器錄影 // 無時間限制</div>
+
+    <div id="lobby-toast" class="toast toast-error"></div>
+    <div style="text-align:center;font-size:10px;color:#1c1c1c;margin-top:14px;letter-spacing:1px">
+      純 P2P 加密傳輸 // 無伺服器錄影 // 無時間限制
+    </div>
   </div>
 </div>
 
-<!-- WAITING -->
-<div id="screen-waiting" class="screen" style="flex-direction:column;align-items:center;justify-content:center;gap:16px">
-  <div style="font-size:10px;color:#333;letter-spacing:2px">[ PENDING APPROVAL ]</div>
-  <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:6px" id="waiting-code">——</div>
-  <div style="font-size:11px;color:#444">正在等待主持人核准加入請求...</div>
-  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-  <button class="btn-cancel" id="btn-cancel-req">取消請求</button>
+<!-- ══ WAITING ═════════════════════════════════════════════════ -->
+<div id="screen-waiting" class="screen">
+  <div style="font-size:10px;color:#2a2a2a;letter-spacing:2px">[ PENDING APPROVAL ]</div>
+  <div class="wait-code" id="wait-code">——</div>
+  <div class="wait-sub">正在等待主持人核准加入請求...</div>
+  <div class="dots">
+    <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+  </div>
+  <button class="btn-cancel" id="btn-cancel">取消請求</button>
 </div>
 
-<!-- MEETING -->
+<!-- ══ MEETING ══════════════════════════════════════════════════ -->
 <div id="screen-meeting" class="screen">
+
   <!-- Top bar -->
-  <div class="meeting-topbar">
-    <div class="topbar-left">
-      <span class="topbar-title">SMES_MEET</span>
-      <span class="topbar-code" id="meeting-code-tag">—</span>
-      <span class="topbar-count" id="meeting-count">1 人</span>
+  <div class="m-topbar">
+    <div class="m-topbar-l">
+      <span class="m-title">SMES_MEET</span>
+      <span class="m-code"  id="m-code">—</span>
+      <span class="m-count" id="m-count">1 人</span>
     </div>
-    <div class="topbar-right">
-      <span class="tag-host" id="tag-host" style="display:none">[HOST]</span>
-      <span class="tag-role" id="tag-role"></span>
+    <div class="m-topbar-r">
+      <span class="tag tag-blue" id="tag-host" style="display:none">HOST</span>
+      <span class="tag" id="tag-role"></span>
     </div>
   </div>
 
-  <!-- Video grid -->
-  <div class="video-area" id="video-grid">
+  <!-- Video area -->
+  <div class="video-area" id="vgrid">
     <div class="video-tile" id="tile-local">
-      <video id="local-video" autoplay muted playsinline></video>
+      <video id="local-vid" autoplay muted playsinline></video>
       <div class="tile-camoff hidden" id="local-camoff">CAM_OFF</div>
-      <div class="tile-label" id="local-label">나</div>
+      <div class="tile-lbl" id="local-lbl">나</div>
     </div>
   </div>
 
-  <!-- Control bar -->
-  <div class="control-bar">
-    <div class="ctrl-left">
-      <button class="ctrl-btn" id="btn-mic">🎤 麥克風</button>
-      <button class="ctrl-btn" id="btn-cam">📷 相機</button>
-      <button class="ctrl-btn" id="btn-share">🖥 分享螢幕</button>
+  <!-- Controls -->
+  <div class="m-controls">
+    <div class="ctrl-l">
+      <button class="cb" id="cb-mic">🎤 <span class="cb-text">麥克風</span></button>
+      <button class="cb" id="cb-cam">📷 <span class="cb-text">相機</span></button>
+      <button class="cb" id="cb-share">🖥 <span class="cb-text">分享螢幕</span></button>
     </div>
-    <div class="ctrl-center" id="pending-strip"></div>
-    <div class="ctrl-right">
-      <button class="ctrl-btn danger" id="btn-leave" style="display:none">✕ 離開</button>
-      <button class="ctrl-btn danger" id="btn-end"   style="display:none">⏹ 結束會議</button>
+    <div class="ctrl-c" id="pending-strip"></div>
+    <div class="ctrl-r">
+      <button class="cb danger" id="cb-leave" style="display:none">✕ <span class="cb-text">離開</span></button>
+      <button class="cb danger" id="cb-end"   style="display:none">⏹ <span class="cb-text">結束會議</span></button>
     </div>
   </div>
 </div>
 
-<!-- Notification popup -->
+<!-- Notification -->
 <div class="notif" id="notif"></div>
 
-<!-- ════════════ LOGIC ════════════ -->
+<!-- ════════════════ APP LOGIC ════════════════════════════════ -->
 <script type="module">
-import { initializeApp }  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult,
-         signInWithEmailAndPassword, signOut, onAuthStateChanged }
-                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc,
-         onSnapshot, deleteDoc, query, where, serverTimestamp, getDocs }
-                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-import { getDatabase, ref, set, onValue, remove, push, onChildAdded }
-                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getAuth, GoogleAuthProvider,
+  signInWithRedirect, getRedirectResult,
+  signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  getFirestore, doc, getDoc, setDoc,
+  collection, addDoc, updateDoc, deleteDoc,
+  onSnapshot, query, where, serverTimestamp, getDocs
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import {
+  getDatabase, ref as rtRef,
+  set as rtSet, remove as rtRemove,
+  push as rtPush, onValue, onChildAdded
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-// ── Constants ─────────────────────────────────────────────────
+// ── Config ────────────────────────────────────────────────────
 const CFG = {
-  apiKey:            "AIzaSyC_j0PxmMBNAtGtFotdFe8WjHQj0K8pwO8",
-  authDomain:        "smes-meet.firebaseapp.com",
-  projectId:         "smes-meet",
-  storageBucket:     "smes-meet.firebasestorage.app",
-  messagingSenderId: "897771756747",
-  appId:             "1:897771756747:web:4a227140a386cef3860f4e",
-  databaseURL:       "https://smes-meet-default-rtdb.asia-southeast1.firebasedatabase.app"
+  apiKey:            'AIzaSyC_j0PxmMBNAtGtFotdFe8WjHQj0K8pwO8',
+  authDomain:        'smes-meet.firebaseapp.com',
+  projectId:         'smes-meet',
+  storageBucket:     'smes-meet.firebasestorage.app',
+  messagingSenderId: '897771756747',
+  appId:             '1:897771756747:web:4a227140a386cef3860f4e',
+  databaseURL:       'https://smes-meet-default-rtdb.asia-southeast1.firebasedatabase.app'
 };
-const DOMAIN  = 'mail2.smes.tyc.edu.tw';
-const STU_RE  = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
-const ICE     = [
-  { urls:'stun:stun.l.google.com:19302' },
-  { urls:'stun:stun1.l.google.com:19302' },
-  { urls:'stun:stun.services.mozilla.com' }
-];
+const DOMAIN = 'mail2.smes.tyc.edu.tw';
+const STU_RE = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
+const ICE_CFG = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302'  },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun.services.mozilla.com'}
+  ]
+};
 
-// ── Firebase ──────────────────────────────────────────────────
-const app  = initializeApp(CFG);
-const auth = getAuth(app);
-const db   = getFirestore(app);
-const rtdb = getDatabase(app);
+// ── Firebase init ─────────────────────────────────────────────
+const fbApp = initializeApp(CFG);
+const auth  = getAuth(fbApp);
+const db    = getFirestore(fbApp);
+const rtdb  = getDatabase(fbApp);
 
-// ── State ─────────────────────────────────────────────────────
+// ── App state ─────────────────────────────────────────────────
 const S = {
-  user:null, profile:null,
-  roomCode:'', isHost:false,
-  localStream:null, screenStream:null,
-  micOn:true, camOn:true, sharing:false,
-  peers:{},          // uid → { pc, name, role }
-  myReqId:null,      // pending request doc id
-  unsubReqs:null,    // firestore listener
-  waitUnsub:null,    // firestore listener while waiting
+  user: null, profile: null,
+  roomCode: '', isHost: false,
+  localStream: null, screenStream: null,
+  micOn: true, camOn: true, sharing: false,
+  peers: {},       // uid → { pc, name, role }
+  myReqId: null,
+  unsubReqs: null,
+  waitUnsub: null,
+  authReady: false,
 };
 
-// ── Utils ─────────────────────────────────────────────────────
-const $  = id => document.getElementById(id);
-const esc= s  => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-function role(email){ const m=email.match(STU_RE); return m&&parseInt(m[2])<=180?'student':'teacher'; }
-
-function showScreen(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  $('screen-'+id).classList.add('active');
-}
-function toast(elId,msg,type='error'){
-  const el=$(elId); if(!el)return;
-  el.textContent=msg; el.className=`toast ${type} show`;
-  if(type!=='info') setTimeout(()=>el.classList.remove('show'),5000);
-}
-function hideToast(elId){ const el=$(elId); if(el) el.classList.remove('show'); }
-function notif(msg,ms=4000){
-  const el=$('notif'); el.textContent=msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),ms);
+// ── DOM helpers ───────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function detectRole(email) {
+  const m = email.match(STU_RE);
+  return (m && parseInt(m[2], 10) <= 180) ? 'student' : 'teacher';
 }
 
-// ── Auth: Google ──────────────────────────────────────────────
-$('btn-google-login').onclick = async()=>{
-  const p = new GoogleAuthProvider();
-  p.setCustomParameters({ hd:DOMAIN, login_hint:`@${DOMAIN}`, prompt:'select_account' });
-  const btn=$('btn-google-login');
-  btn.textContent='跳轉中...'; btn.disabled=true;
-  try{ await signInWithRedirect(auth,p); }
-  catch(e){ btn.innerHTML='使用 Google 帳號登入'; btn.disabled=false; toast('login-toast',e.message); }
-};
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-' + id).classList.add('active');
+}
+function toast(elId, msg, type = 'error') {
+  const el = $(elId); if (!el) return;
+  el.textContent = msg;
+  el.className = `toast toast-${type} show`;
+  if (type !== 'info') setTimeout(() => el.classList.remove('show'), 6000);
+}
+function clearToast(elId) { const el=$(elId); if(el) el.classList.remove('show'); }
+function showNotif(msg, ms = 4000) {
+  const el = $('notif');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), ms);
+}
 
-// ── Auth: Dev (email/pw) ──────────────────────────────────────
-let _vc=0;
-$('version-text').onclick=()=>{ if(++_vc>=5){ _vc=0; $('dev-panel').classList.toggle('show'); } };
-$('btn-dev-login').onclick = devLogin;
-$('dev-password').onkeydown = e=>{ if(e.key==='Enter') devLogin(); };
-async function devLogin(){
-  const email=$('dev-email').value.trim(), pw=$('dev-password').value;
-  if(!email||!pw){ toast('login-toast','請輸入 Email 和密碼'); return; }
-  if(!email.endsWith('@'+DOMAIN)){ toast('login-toast','測試帳號也必須使用 @'+DOMAIN); return; }
-  try{ await signInWithEmailAndPassword(auth,email,pw); }
-  catch(e){
-    toast('login-toast', e.code==='auth/invalid-credential'?'帳號或密碼錯誤'
-        : e.code==='auth/user-not-found'?'帳號不存在，請先在 Firebase Console 建立'
-        : e.message);
+// ── HTTPS check ───────────────────────────────────────────────
+// mediaDevices APIs (camera, mic, screen share) require a secure context.
+function isSecureContext() {
+  return window.isSecureContext || location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+}
+if (!isSecureContext()) {
+  $('https-warn').classList.add('show');
+}
+
+// ── Auth ──────────────────────────────────────────────────────
+
+// Step 1: Check redirect result FIRST, before onAuthStateChanged fires.
+// This prevents the brief "logged-out → login screen" flash.
+let redirectChecked = false;
+
+async function checkRedirect() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result?.user) {
+      const email = result.user.email;
+      if (!email.endsWith('@' + DOMAIN)) {
+        await signOut(auth);
+        toast('login-toast', '存取被拒：僅允許 @' + DOMAIN);
+        showScreen('login');
+      }
+      // If valid, onAuthStateChanged below will catch the logged-in user
+    }
+  } catch (e) {
+    // auth/account-exists-with-different-credential, etc.
+    const msg = e.code === 'auth/account-exists-with-different-credential'
+      ? '此 Email 已用其他方式登入，請直接使用測試帳號登入。'
+      : e.message;
+    toast('login-toast', msg);
+    showScreen('login');
+  } finally {
+    redirectChecked = true;
   }
 }
 
-// Handle redirect return
-getRedirectResult(auth).then(async r=>{
-  if(!r?.user) return;
-  if(!r.user.email.endsWith('@'+DOMAIN)){ await signOut(auth); toast('login-toast','存取被拒：僅允許 @'+DOMAIN); }
-}).catch(e=>toast('login-toast',e.message));
-
-// Auth state observer
-onAuthStateChanged(auth, async user=>{
-  if(user){
-    if(!user.email.endsWith('@'+DOMAIN)){ await signOut(auth); toast('login-toast','僅允許 @'+DOMAIN); return; }
-    S.user=user; S.profile=await ensureProfile(user);
-    renderLobby(); showScreen('lobby');
+// Step 2: Auth state observer — waits until redirect check is done
+onAuthStateChanged(auth, async user => {
+  // If redirect hasn't resolved yet, wait a tick
+  if (!redirectChecked) {
+    await new Promise(r => setTimeout(r, 50));
+  }
+  if (user) {
+    if (!user.email.endsWith('@' + DOMAIN)) {
+      await signOut(auth);
+      toast('login-toast', '僅允許 @' + DOMAIN + ' 帳號');
+      showScreen('login');
+      return;
+    }
+    S.user = user;
+    S.profile = await ensureProfile(user);
+    renderLobby();
+    showScreen('lobby');
   } else {
-    S.user=null; S.profile=null; showScreen('login');
+    S.user = null; S.profile = null;
+    showScreen('login');
   }
 });
 
-async function ensureProfile(user){
-  const r=doc(db,'profiles',user.uid), snap=await getDoc(r);
-  if(snap.exists()) return snap.data();
-  const p={ uid:user.uid, email:user.email, full_name:user.displayName||user.email.split('@')[0], role:role(user.email) };
-  await setDoc(r,p); return p;
+// Kick off redirect check immediately
+checkRedirect();
+
+// Google login button
+$('btn-google-login').onclick = async () => {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({
+    hd: DOMAIN,
+    login_hint: '@' + DOMAIN,
+    prompt: 'select_account'
+  });
+  const btn = $('btn-google-login');
+  btn.querySelector('span').textContent = '跳轉至 Google...';
+  btn.disabled = true;
+  try {
+    await signInWithRedirect(auth, provider);
+  } catch (e) {
+    btn.querySelector('span').textContent = '使用 Google 帳號登入';
+    btn.disabled = false;
+    toast('login-toast', '登入失敗：' + e.message);
+  }
+};
+
+// Dev panel toggle (click version text 5×)
+let _vc = 0;
+$('ver-text').onclick = () => {
+  if (++_vc >= 5) { _vc = 0; $('dev-panel').classList.toggle('open'); }
+};
+$('btn-dev-login').onclick = devLogin;
+$('dev-pw').onkeydown = e => { if (e.key === 'Enter') devLogin(); };
+
+async function devLogin() {
+  const email = $('dev-email').value.trim();
+  const pw    = $('dev-pw').value;
+  if (!email || !pw) { toast('login-toast', '請輸入 Email 和密碼'); return; }
+  if (!email.endsWith('@' + DOMAIN)) { toast('login-toast', '測試帳號也必須使用 @' + DOMAIN); return; }
+  try {
+    await signInWithEmailAndPassword(auth, email, pw);
+  } catch (e) {
+    const msg = e.code === 'auth/invalid-credential' ? '帳號或密碼錯誤'
+      : e.code === 'auth/user-not-found'             ? '帳號不存在，請先在 Firebase Console 建立'
+      : e.message;
+    toast('login-toast', msg);
+  }
+}
+
+$('btn-logout').onclick = async () => {
+  await cleanup();
+  await signOut(auth);
+};
+
+async function ensureProfile(user) {
+  const ref2 = doc(db, 'profiles', user.uid);
+  const snap = await getDoc(ref2);
+  if (snap.exists()) return snap.data();
+  const p = {
+    uid: user.uid, email: user.email,
+    full_name: user.displayName || user.email.split('@')[0],
+    role: detectRole(user.email)
+  };
+  await setDoc(ref2, p);
+  return p;
 }
 
 // ── Lobby ─────────────────────────────────────────────────────
-$('btn-logout').onclick = async()=>{ await cleanup(); await signOut(auth); };
-
-function renderLobby(){
-  const p=S.profile;
-  $('profile-name').textContent=p.full_name||p.email;
-  const re=$('profile-role');
-  re.textContent=p.role==='teacher'?'[TEACHER]':'[STUDENT]';
-  re.className=p.role==='teacher'?'role-teacher':'role-student';
-  const bar=$('profile-bar');
-  bar.style.borderColor=p.role==='teacher'?'#0066ff44':'#1a1a1a';
-  bar.style.boxShadow =p.role==='teacher'?'0 0 0 1px #0066ff22':'none';
+function renderLobby() {
+  const p = S.profile;
+  $('p-name').textContent = p.full_name || p.email;
+  const rEl = $('p-role');
+  if (p.role === 'teacher') {
+    rEl.textContent = '[TEACHER]';
+    rEl.className = 'profile-role tag-blue';
+    $('profile-row').style.borderColor = '#0066ff33';
+    $('profile-row').style.boxShadow   = '0 0 0 1px #0066ff11';
+  } else {
+    rEl.textContent = '[STUDENT]';
+    rEl.className = 'profile-role tag-grey';
+    $('profile-row').style.borderColor = '#1a1a1a';
+    $('profile-row').style.boxShadow   = 'none';
+  }
 }
 
-$('room-input').oninput=function(){ this.value=this.value.toUpperCase(); };
-$('room-input').onkeydown=e=>{ if(e.key==='Enter') enterRoom(); };
-$('btn-enter').onclick=enterRoom;
+$('room-inp').oninput   = function () { this.value = this.value.toUpperCase(); };
+$('room-inp').onkeydown = e => { if (e.key === 'Enter') enterRoom(); };
+$('btn-enter').onclick  = enterRoom;
 
-async function enterRoom(){
-  hideToast('lobby-toast');
-  const code=$('room-input').value.trim().toUpperCase();
-  if(!code){ toast('lobby-toast','請輸入會議代碼'); return; }
+async function enterRoom() {
+  clearToast('lobby-toast');
+  const code = $('room-inp').value.trim().toUpperCase();
+  if (!code) { toast('lobby-toast', '請輸入會議代碼'); return; }
 
   let snap;
-  try{ snap=await getDoc(doc(db,'rooms',code)); }
-  catch(e){ toast('lobby-toast','網路錯誤：'+e.message); return; }
+  try { snap = await getDoc(doc(db, 'rooms', code)); }
+  catch (e) { toast('lobby-toast', '查詢失敗：' + e.message); return; }
 
-  if(!snap.exists()){
+  if (!snap.exists()) {
     // Room doesn't exist
-    if(S.profile.role!=='teacher'){ toast('lobby-toast','會議室不存在。僅有教師具備建立新會議的權限。'); return; }
-    if(!confirm(`會議室「${code}」尚未建立，是否建立新會議？`)) return;
-    try{ await setDoc(doc(db,'rooms',code),{ code, host_id:S.user.uid, created_at:serverTimestamp() }); }
-    catch(e){ toast('lobby-toast','建立失敗：'+e.message); return; }
-    S.roomCode=code; S.isHost=true;
+    if (S.profile.role !== 'teacher') {
+      toast('lobby-toast', '會議室不存在。僅有教師具備建立新會議的權限。');
+      return;
+    }
+    if (!confirm(`會議室「${code}」尚未建立，是否建立新會議？`)) return;
+    try {
+      await setDoc(doc(db, 'rooms', code), {
+        code, host_id: S.user.uid, created_at: serverTimestamp()
+      });
+    } catch (e) { toast('lobby-toast', '建立失敗：' + e.message); return; }
+    S.roomCode = code; S.isHost = true;
     await goMeeting();
     return;
   }
 
-  // Room exists
-  const rd=snap.data();
+  // Room exists — is this user the host?
+  const rd = snap.data();
+  if (rd.host_id === S.user.uid) {
+    S.roomCode = code; S.isHost = true;
+    await goMeeting();
+    return;
+  }
 
-  // If this user is the host, enter directly
-  if(rd.host_id===S.user.uid){ S.roomCode=code; S.isHost=true; await goMeeting(); return; }
-
-  // Everyone else (including teachers) must request to join
-  if(!confirm(`會議室「${code}」已開啟，是否送出加入要求？`)) return;
-
+  // Everyone else must request to join
+  if (!confirm(`會議室「${code}」已開啟，是否送出加入要求？`)) return;
   let reqRef;
-  try{
-    reqRef=await addDoc(collection(db,'room_requests'),{
-      room_code:code, user_id:S.user.uid,
-      user_name:S.profile.full_name, user_role:S.profile.role,
-      user_email:S.profile.email, status:'pending', created_at:serverTimestamp()
+  try {
+    reqRef = await addDoc(collection(db, 'room_requests'), {
+      room_code: code, user_id: S.user.uid,
+      user_name: S.profile.full_name, user_role: S.profile.role,
+      user_email: S.profile.email,
+      status: 'pending', created_at: serverTimestamp()
     });
-  } catch(e){ toast('lobby-toast','送出請求失敗：'+e.message); return; }
+  } catch (e) { toast('lobby-toast', '送出請求失敗：' + e.message); return; }
 
-  S.myReqId=reqRef.id; S.roomCode=code;
-  $('waiting-code').textContent=code;
+  S.myReqId = reqRef.id; S.roomCode = code;
+  $('wait-code').textContent = code;
   showScreen('waiting');
 
-  // Listen for approval / rejection
-  S.waitUnsub=onSnapshot(doc(db,'room_requests',reqRef.id), snap2=>{
-    if(!snap2.exists()) return;
-    const d=snap2.data();
-    if(d.status==='approved'){
-      S.waitUnsub?.(); S.waitUnsub=null; S.myReqId=null; S.isHost=false;
+  S.waitUnsub = onSnapshot(doc(db, 'room_requests', reqRef.id), snap2 => {
+    if (!snap2.exists()) return;
+    const d = snap2.data();
+    if (d.status === 'approved') {
+      S.waitUnsub?.(); S.waitUnsub = null; S.myReqId = null; S.isHost = false;
       goMeeting();
-    } else if(d.status==='rejected'){
-      S.waitUnsub?.(); S.waitUnsub=null; S.myReqId=null; S.roomCode='';
-      toast('lobby-toast','主持人已拒絕您的加入請求。');
+    } else if (d.status === 'rejected') {
+      S.waitUnsub?.(); S.waitUnsub = null; S.myReqId = null; S.roomCode = '';
+      toast('lobby-toast', '主持人已拒絕您的加入請求。');
       showScreen('lobby');
     }
   });
 }
 
-// Cancel waiting
-$('btn-cancel-req').onclick=async()=>{
-  S.waitUnsub?.(); S.waitUnsub=null;
-  if(S.myReqId){ await deleteDoc(doc(db,'room_requests',S.myReqId)).catch(()=>{}); S.myReqId=null; }
-  S.roomCode='';
+$('btn-cancel').onclick = async () => {
+  S.waitUnsub?.(); S.waitUnsub = null;
+  if (S.myReqId) {
+    await deleteDoc(doc(db, 'room_requests', S.myReqId)).catch(() => {});
+    S.myReqId = null;
+  }
+  S.roomCode = '';
   showScreen('lobby');
 };
 
-// ── Enter Meeting ─────────────────────────────────────────────
-async function goMeeting(){
-  // Acquire media
-  try{ S.localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); S.camOn=true; S.micOn=true; }
-  catch(e){
-    try{ S.localStream=await navigator.mediaDevices.getUserMedia({audio:true}); S.camOn=false; S.micOn=true; }
-    catch(e2){ S.localStream=new MediaStream(); S.camOn=false; S.micOn=false; }
+// ── Enter meeting ─────────────────────────────────────────────
+async function goMeeting() {
+  if (!isSecureContext()) {
+    toast('lobby-toast', '請使用 HTTPS 才能存取相機/麥克風。', 'error');
+    // Still allow entering but without media
+    S.localStream = new MediaStream(); S.camOn = false; S.micOn = false;
+  } else {
+    try {
+      S.localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      S.camOn = true; S.micOn = true;
+    } catch (e) {
+      try {
+        S.localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        S.camOn = false; S.micOn = true;
+      } catch (e2) {
+        S.localStream = new MediaStream(); S.camOn = false; S.micOn = false;
+      }
+    }
   }
 
   // Setup UI
-  $('meeting-code-tag').textContent=S.roomCode;
-  $('tag-host').style.display=S.isHost?'inline':'none';
-  $('btn-end').style.display  =S.isHost?'inline-flex':'none';
-  $('btn-leave').style.display=S.isHost?'none':'inline-flex';
-  const re=$('tag-role');
-  re.textContent=S.profile.role==='teacher'?'[TEACHER]':'[STUDENT]';
-  re.className='tag-role '+(S.profile.role==='teacher'?'role-teacher':'role-student');
+  $('m-code').textContent = S.roomCode;
+  $('tag-host').style.display = S.isHost ? 'inline' : 'none';
+  $('cb-end').style.display   = S.isHost ? 'inline-flex' : 'none';
+  $('cb-leave').style.display = S.isHost ? 'none'        : 'inline-flex';
 
-  // Local video
-  $('local-video').srcObject=S.localStream;
-  $('local-label').textContent=(S.profile.full_name||'나')+(S.isHost?' [HOST]':'');
-  updateCamOff();
-  updateCtrl();
-  updateGrid();
+  const rEl = $('tag-role');
+  if (S.profile.role === 'teacher') {
+    rEl.textContent = '[T]'; rEl.className = 'tag tag-blue';
+  } else {
+    rEl.textContent = '[S]'; rEl.className = 'tag tag-grey';
+  }
+
+  $('local-vid').srcObject = S.localStream;
+  $('local-lbl').textContent = (S.profile.full_name || '나') + (S.isHost ? ' [HOST]' : '');
+  updateCamOff(); updateCtrlBtns(); updateGrid();
+
   showScreen('meeting');
 
-  if(S.isHost) listenRequests();
-  else         listenOffer();
+  if (S.isHost) listenRequests();
+  else          listenOffer();
 }
 
 // ── Media controls ────────────────────────────────────────────
-$('btn-mic').onclick=()=>{
-  S.micOn=!S.micOn;
-  S.localStream?.getAudioTracks().forEach(t=>t.enabled=S.micOn);
-  updateCtrl();
+$('cb-mic').onclick = () => {
+  S.micOn = !S.micOn;
+  S.localStream?.getAudioTracks().forEach(t => t.enabled = S.micOn);
+  updateCtrlBtns();
 };
-$('btn-cam').onclick=()=>{
-  S.camOn=!S.camOn;
-  S.localStream?.getVideoTracks().forEach(t=>t.enabled=S.camOn);
-  updateCamOff(); updateCtrl();
+$('cb-cam').onclick = () => {
+  S.camOn = !S.camOn;
+  S.localStream?.getVideoTracks().forEach(t => t.enabled = S.camOn);
+  updateCamOff(); updateCtrlBtns();
 };
-$('btn-share').onclick=toggleShare;
+$('cb-share').onclick = toggleShare;
 
-async function toggleShare(){
-  if(S.sharing){
-    S.screenStream?.getTracks().forEach(t=>t.stop());
-    S.screenStream=null; S.sharing=false;
-    // Restore camera track to all peers
-    const camT=S.localStream?.getVideoTracks()[0];
-    if(camT){
-      Object.values(S.peers).forEach(p=>{
-        const s=p.pc.getSenders().find(s=>s.track?.kind==='video');
-        if(s) s.replaceTrack(camT).catch(()=>{});
-      });
-      $('local-video').srcObject=S.localStream;
-    }
-    updateCtrl(); return;
+async function toggleShare() {
+  // ── Stop sharing ──
+  if (S.sharing) {
+    S.screenStream?.getTracks().forEach(t => t.stop());
+    S.screenStream = null; S.sharing = false;
+    const camT = S.localStream?.getVideoTracks()[0];
+    Object.values(S.peers).forEach(p => {
+      const s = p.pc.getSenders().find(s => s.track?.kind === 'video');
+      if (s && camT) s.replaceTrack(camT).catch(() => {});
+    });
+    $('local-vid').srcObject = S.localStream;
+    updateCtrlBtns(); return;
   }
-  try{
-    // Request entire monitor + system audio
-    S.screenStream=await navigator.mediaDevices.getDisplayMedia({
-      video:{ displaySurface:'monitor', width:{ideal:1920}, height:{ideal:1080}, frameRate:{ideal:30} },
-      audio:true   // includes tab + system audio where supported
+
+  // ── Security check ──
+  if (!isSecureContext()) {
+    showNotif('⚠ 螢幕分享需要 HTTPS 環境。', 5000); return;
+  }
+  // getDisplayMedia requires a secure context AND exists on mediaDevices
+  if (!navigator.mediaDevices || typeof navigator.mediaDevices.getDisplayMedia !== 'function') {
+    showNotif('⚠ 此瀏覽器不支援螢幕分享，請使用 Chrome / Edge。', 5000); return;
+  }
+
+  try {
+    // Request full screen + audio (system audio supported on Chrome/Edge on Windows)
+    // We try the most permissive options; browsers will show their own picker UI.
+    S.screenStream = await navigator.mediaDevices.getDisplayMedia({
+      video: {
+        displaySurface: 'monitor',   // hint: prefer entire screen
+        width:  { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 30 }
+      },
+      audio: {
+        // These hints tell Chrome to include the "Share system audio" checkbox
+        suppressLocalAudioPlayback: false,
+        // echoCancellation / noiseSuppression not applicable to system audio
+      }
     });
-    const vt=S.screenStream.getVideoTracks()[0];
-    S.sharing=true;
-    // Push screen track to all peers
-    Object.values(S.peers).forEach(p=>{
-      const s=p.pc.getSenders().find(s=>s.track?.kind==='video');
-      if(s) s.replaceTrack(vt).catch(()=>{});
+
+    const vTrack = S.screenStream.getVideoTracks()[0];
+    const aTrack = S.screenStream.getAudioTracks()[0]; // may be null if user didn't tick "Share audio"
+    S.sharing = true;
+
+    // Replace video track on all active peer connections
+    Object.values(S.peers).forEach(p => {
+      const sender = p.pc.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) sender.replaceTrack(vTrack).catch(() => {});
+      // If screen has audio, add it as a new track (best-effort)
+      if (aTrack) {
+        const audioSender = p.pc.getSenders().find(s => s.track?.kind === 'audio');
+        if (!audioSender) {
+          p.pc.addTrack(aTrack, S.screenStream);
+        }
+      }
     });
+
     // Local preview
-    $('local-video').srcObject=new MediaStream([vt,...S.screenStream.getAudioTracks()]);
-    // Auto-stop when user clicks browser's stop button
-    vt.onended=()=>{ if(S.sharing) toggleShare(); };
-    updateCtrl();
-  } catch(e){
-    if(e.name!=='NotAllowedError') notif('無法取得螢幕分享：'+e.message);
+    const preview = new MediaStream([vTrack]);
+    if (aTrack) preview.addTrack(aTrack);
+    $('local-vid').srcObject = preview;
+
+    // Auto-revert when user clicks browser's "Stop sharing"
+    vTrack.onended = () => { if (S.sharing) toggleShare(); };
+
+    updateCtrlBtns();
+  } catch (e) {
+    S.sharing = false;
+    if (e.name !== 'NotAllowedError') {
+      showNotif('螢幕分享失敗：' + e.message, 6000);
+    }
   }
 }
 
-function updateCtrl(){
-  const mic=$('btn-mic'), cam=$('btn-cam'), sh=$('btn-share');
-  mic.className='ctrl-btn'+(S.micOn?'':' off');
-  mic.innerHTML=S.micOn?'🎤 麥克風':'🔇 靜音中';
-  cam.className='ctrl-btn'+(S.camOn?'':' off');
-  cam.innerHTML=S.camOn?'📷 相機':'📷 相機關閉';
-  sh.className='ctrl-btn'+(S.sharing?' active':'');
-  sh.innerHTML=S.sharing?'⏹ 停止分享':'🖥 分享螢幕';
+function updateCtrlBtns() {
+  const mic = $('cb-mic'), cam = $('cb-cam'), sh = $('cb-share');
+  mic.className = 'cb' + (S.micOn ? '' : ' off');
+  mic.innerHTML = S.micOn ? '🎤 <span class="cb-text">麥克風</span>' : '🔇 <span class="cb-text">靜音中</span>';
+  cam.className = 'cb' + (S.camOn ? '' : ' off');
+  cam.innerHTML = S.camOn ? '📷 <span class="cb-text">相機</span>'   : '📷 <span class="cb-text">相機關閉</span>';
+  sh.className  = 'cb' + (S.sharing ? ' active' : '');
+  sh.innerHTML  = S.sharing ? '⏹ <span class="cb-text">停止分享</span>' : '🖥 <span class="cb-text">分享螢幕</span>';
 }
-function updateCamOff(){
-  $('local-camoff').classList.toggle('hidden',S.camOn);
+function updateCamOff() {
+  $('local-camoff').classList.toggle('hidden', S.camOn);
 }
 
 // ── Leave / End ───────────────────────────────────────────────
-$('btn-leave').onclick=()=>leaveMeeting(false);
-$('btn-end').onclick  =()=>{ if(confirm('確定要結束會議？所有人都將被中斷連線。')) leaveMeeting(true); };
+$('cb-leave').onclick = () => leaveMeeting(false);
+$('cb-end').onclick   = () => {
+  if (confirm('確定要結束會議？所有參與者都將被中斷連線。')) leaveMeeting(true);
+};
 
-async function leaveMeeting(end){
-  await cleanup(end);
-  // Reset grid
-  const grid=$('video-grid');
-  [...grid.children].forEach(c=>{ if(c.id!=='tile-local') c.remove(); });
-  $('pending-strip').innerHTML='';
-  $('local-video').srcObject=null;
+async function leaveMeeting(endAll) {
+  await cleanup(endAll);
+  // Reset grid: remove all remote tiles
+  const grid = $('vgrid');
+  [...grid.children].forEach(c => { if (c.id !== 'tile-local') c.remove(); });
+  $('local-vid').srcObject = null;
+  $('local-camoff').classList.add('hidden');
+  $('pending-strip').innerHTML = '';
   updateGrid();
   renderLobby(); showScreen('lobby');
 }
 
-async function cleanup(endAll=false){
-  Object.values(S.peers).forEach(p=>p.pc.close()); S.peers={};
-  S.localStream?.getTracks().forEach(t=>t.stop());  S.localStream=null;
-  S.screenStream?.getTracks().forEach(t=>t.stop()); S.screenStream=null;
-  S.sharing=false; S.camOn=true; S.micOn=true;
-  S.unsubReqs?.(); S.unsubReqs=null;
-  S.waitUnsub?.(); S.waitUnsub=null;
-  remove(ref(rtdb,`signaling/${S.roomCode}`)).catch(()=>{});
-  if(endAll&&S.isHost){
-    const q=query(collection(db,'room_requests'),where('room_code','==',S.roomCode),where('status','==','pending'));
-    const sn=await getDocs(q).catch(()=>({docs:[]}));
-    sn.docs.forEach(d=>updateDoc(d.ref,{status:'rejected'}).catch(()=>{}));
-    await deleteDoc(doc(db,'rooms',S.roomCode)).catch(()=>{});
+async function cleanup(endAll = false) {
+  Object.values(S.peers).forEach(p => p.pc.close()); S.peers = {};
+  S.localStream?.getTracks().forEach(t => t.stop());  S.localStream = null;
+  S.screenStream?.getTracks().forEach(t => t.stop()); S.screenStream = null;
+  S.sharing = false; S.camOn = true; S.micOn = true;
+  S.unsubReqs?.(); S.unsubReqs = null;
+  S.waitUnsub?.(); S.waitUnsub = null;
+  rtRemove(rtRef(rtdb, `signaling/${S.roomCode}`)).catch(() => {});
+
+  if (endAll && S.isHost) {
+    const q = query(
+      collection(db, 'room_requests'),
+      where('room_code', '==', S.roomCode),
+      where('status', '==', 'pending')
+    );
+    const sn = await getDocs(q).catch(() => ({ docs: [] }));
+    sn.docs.forEach(d => updateDoc(d.ref, { status: 'rejected' }).catch(() => {}));
+    await deleteDoc(doc(db, 'rooms', S.roomCode)).catch(() => {});
   }
-  if(S.myReqId){ deleteDoc(doc(db,'room_requests',S.myReqId)).catch(()=>{}); S.myReqId=null; }
-  S.roomCode=''; S.isHost=false;
+  if (S.myReqId) {
+    deleteDoc(doc(db, 'room_requests', S.myReqId)).catch(() => {});
+    S.myReqId = null;
+  }
+  S.roomCode = ''; S.isHost = false;
 }
 
-// ── Host: listen for pending requests ────────────────────────
-function listenRequests(){
-  const q=query(collection(db,'room_requests'),where('room_code','==',S.roomCode),where('status','==','pending'));
-  S.unsubReqs=onSnapshot(q,snap=>{
-    const strip=$('pending-strip'); strip.innerHTML='';
-    snap.docs.forEach(d=>{
-      const r=d.data();
-      const card=document.createElement('div'); card.className='pending-card';
-      card.innerHTML=`<span>[${r.user_role==='teacher'?'T':'S'}] ${esc(r.user_name||r.user_email)}</span>
-        <button class="btn-approve" data-id="${d.id}" data-uid="${r.user_id}" data-name="${esc(r.user_name)}" data-role="${r.user_role}">核准</button>
-        <button class="btn-reject"  data-id="${d.id}">拒絕</button>`;
+// ── Host: listen for join requests ────────────────────────────
+function listenRequests() {
+  const q = query(
+    collection(db, 'room_requests'),
+    where('room_code', '==', S.roomCode),
+    where('status', '==', 'pending')
+  );
+  S.unsubReqs = onSnapshot(q, snap => {
+    const strip = $('pending-strip');
+    strip.innerHTML = '';
+    snap.docs.forEach(d => {
+      const r = d.data();
+      const card = document.createElement('div');
+      card.className = 'req-card';
+      card.innerHTML =
+        `<span>[${r.user_role === 'teacher' ? 'T' : 'S'}] ${esc(r.user_name || r.user_email)}</span>
+         <button class="btn-approve" data-id="${d.id}" data-uid="${r.user_id}"
+           data-name="${esc(r.user_name)}" data-role="${r.user_role}">核准</button>
+         <button class="btn-reject"  data-id="${d.id}">拒絕</button>`;
       strip.appendChild(card);
     });
-    strip.querySelectorAll('.btn-approve').forEach(b=>b.onclick=()=>approve(b.dataset.id,b.dataset.uid,b.dataset.name,b.dataset.role));
-    strip.querySelectorAll('.btn-reject' ).forEach(b=>b.onclick=()=>updateDoc(doc(db,'room_requests',b.dataset.id),{status:'rejected'}));
-    snap.docChanges().filter(c=>c.type==='added').forEach(c=>{
-      const r=c.doc.data(); notif(`[${r.user_role==='teacher'?'TEACHER':'STUDENT'}] ${r.user_name} 申請加入`);
+    strip.querySelectorAll('.btn-approve').forEach(b => b.onclick = () =>
+      approveReq(b.dataset.id, b.dataset.uid, b.dataset.name, b.dataset.role));
+    strip.querySelectorAll('.btn-reject').forEach(b => b.onclick = () =>
+      updateDoc(doc(db, 'room_requests', b.dataset.id), { status: 'rejected' }));
+    // Notification for new entries
+    snap.docChanges().filter(c => c.type === 'added').forEach(c => {
+      const r = c.doc.data();
+      showNotif(`[${r.user_role === 'teacher' ? 'TEACHER' : 'STUDENT'}] ${r.user_name} 申請加入`);
     });
   });
 }
 
-async function approve(reqId,uid,name,role2){
-  await updateDoc(doc(db,'room_requests',reqId),{status:'approved'});
-  await initP2P(uid,name,role2);
+async function approveReq(reqId, uid, name, role2) {
+  await updateDoc(doc(db, 'room_requests', reqId), { status: 'approved' });
+  await initP2P(uid, name, role2);
 }
 
 // ── WebRTC: Host initiates ────────────────────────────────────
-async function initP2P(guestUid,guestName,guestRole){
-  const pc=buildPC(guestUid);
-  S.peers[guestUid]={pc,name:guestName,role:guestRole};
+async function initP2P(guestUid, guestName, guestRole) {
+  const pc = buildPC(guestUid);
+  S.peers[guestUid] = { pc, name: guestName, role: guestRole };
 
-  const offer=await pc.createOffer();
+  const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
-  await set(ref(rtdb,`signaling/${S.roomCode}/offer/${guestUid}`),{sdp:offer.sdp,type:offer.type,from:S.user.uid});
+
+  await rtSet(rtRef(rtdb, `signaling/${S.roomCode}/offer/${guestUid}`), {
+    sdp: offer.sdp, type: offer.type, from: S.user.uid
+  });
 
   // Listen for answer
-  onValue(ref(rtdb,`signaling/${S.roomCode}/answer/${S.user.uid}`),async s=>{
-    if(!s.exists()) return;
-    const a=s.val(); if(a.from!==guestUid) return;
-    if(pc.signalingState==='have-local-offer')
-      await pc.setRemoteDescription(new RTCSessionDescription(a)).catch(()=>{});
-  });
-  // Listen for ICE from guest
-  onChildAdded(ref(rtdb,`signaling/${S.roomCode}/ice/${S.user.uid}_from_${guestUid}`),async s=>{
-    if(s.exists()) await pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{});
+  onValue(rtRef(rtdb, `signaling/${S.roomCode}/answer/${S.user.uid}`), async snap => {
+    if (!snap.exists()) return;
+    const a = snap.val();
+    if (a.from !== guestUid) return;
+    if (pc.signalingState === 'have-local-offer') {
+      await pc.setRemoteDescription(new RTCSessionDescription(a)).catch(() => {});
+    }
   });
 
-  addTile(guestUid,guestName,guestRole);
+  // ICE from guest
+  onChildAdded(rtRef(rtdb, `signaling/${S.roomCode}/ice/${S.user.uid}_from_${guestUid}`), async snap => {
+    if (snap.exists()) await pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
+  });
+
+  addTile(guestUid, guestName, guestRole);
 }
 
 // ── WebRTC: Guest listens for offer ──────────────────────────
-function listenOffer(){
-  onValue(ref(rtdb,`signaling/${S.roomCode}/offer/${S.user.uid}`),async s=>{
-    if(!s.exists()) return;
-    const od=s.val(); const hostUid=od.from;
-    let hostName='Host',hostRole='teacher';
-    const hs=await getDoc(doc(db,'profiles',hostUid)).catch(()=>null);
-    if(hs?.exists()){ hostName=hs.data().full_name||'Host'; hostRole=hs.data().role||'teacher'; }
+function listenOffer() {
+  onValue(rtRef(rtdb, `signaling/${S.roomCode}/offer/${S.user.uid}`), async snap => {
+    if (!snap.exists()) return;
+    const od = snap.val(); const hostUid = od.from;
 
-    const pc=buildPC(hostUid);
-    S.peers[hostUid]={pc,name:hostName,role:hostRole};
+    let hostName = 'Host', hostRole = 'teacher';
+    const hs = await getDoc(doc(db, 'profiles', hostUid)).catch(() => null);
+    if (hs?.exists()) { hostName = hs.data().full_name || 'Host'; hostRole = hs.data().role; }
 
-    await pc.setRemoteDescription(new RTCSessionDescription(od)).catch(()=>{});
-    const ans=await pc.createAnswer();
+    const pc = buildPC(hostUid);
+    S.peers[hostUid] = { pc, name: hostName, role: hostRole };
+
+    await pc.setRemoteDescription(new RTCSessionDescription(od)).catch(() => {});
+    const ans = await pc.createAnswer();
     await pc.setLocalDescription(ans);
-    await set(ref(rtdb,`signaling/${S.roomCode}/answer/${hostUid}`),{sdp:ans.sdp,type:ans.type,from:S.user.uid});
 
-    // ICE from host
-    onChildAdded(ref(rtdb,`signaling/${S.roomCode}/ice/${S.user.uid}_from_${hostUid}`),async s2=>{
-      if(s2.exists()) await pc.addIceCandidate(new RTCIceCandidate(s2.val())).catch(()=>{});
+    await rtSet(rtRef(rtdb, `signaling/${S.roomCode}/answer/${hostUid}`), {
+      sdp: ans.sdp, type: ans.type, from: S.user.uid
     });
 
-    addTile(hostUid,hostName,hostRole);
+    // ICE from host
+    onChildAdded(rtRef(rtdb, `signaling/${S.roomCode}/ice/${S.user.uid}_from_${hostUid}`), async snap2 => {
+      if (snap2.exists()) await pc.addIceCandidate(new RTCIceCandidate(snap2.val())).catch(() => {});
+    });
+
+    addTile(hostUid, hostName, hostRole);
   });
 }
 
 // ── Build RTCPeerConnection ───────────────────────────────────
-function buildPC(remoteUid){
-  const pc=new RTCPeerConnection({iceServers:ICE});
-  if(S.localStream) S.localStream.getTracks().forEach(t=>pc.addTrack(t,S.localStream));
+function buildPC(remoteUid) {
+  const pc = new RTCPeerConnection(ICE_CFG);
 
-  const rs=new MediaStream();
-  pc.ontrack=e=>{
+  // Add current local tracks
+  if (S.localStream) S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
+
+  // Remote stream
+  const rs = new MediaStream();
+  pc.ontrack = e => {
     rs.addTrack(e.track);
-    const v=$(`vid-${remoteUid}`); if(v) v.srcObject=rs;
+    const v = $(`vid-${remoteUid}`);
+    if (v) v.srcObject = rs;
   };
-  pc.onicecandidate=e=>{
-    if(e.candidate) push(ref(rtdb,`signaling/${S.roomCode}/ice/${remoteUid}_from_${S.user.uid}`),e.candidate.toJSON());
+
+  // ICE
+  pc.onicecandidate = e => {
+    if (!e.candidate) return;
+    rtPush(rtRef(rtdb, `signaling/${S.roomCode}/ice/${remoteUid}_from_${S.user.uid}`), e.candidate.toJSON());
   };
-  pc.onconnectionstatechange=()=>{
-    if(['disconnected','failed','closed'].includes(pc.connectionState)) removeTile(remoteUid);
+
+  // Connection state
+  pc.onconnectionstatechange = () => {
+    if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
+      removeTile(remoteUid);
+    }
   };
   return pc;
 }
 
-// ── Video grid management ─────────────────────────────────────
-function addTile(uid,name,role2){
-  const grid=$('video-grid');
-  const tile=document.createElement('div'); tile.className='video-tile'; tile.id=`tile-${uid}`;
-  tile.innerHTML=`<video id="vid-${uid}" autoplay playsinline></video>
-    <div class="tile-label">${esc(name)} [${role2==='teacher'?'T':'S'}]</div>`;
+// ── Video grid ────────────────────────────────────────────────
+function addTile(uid, name, role2) {
+  const grid = $('vgrid');
+  const tile = document.createElement('div');
+  tile.className = 'video-tile'; tile.id = `tile-${uid}`;
+  tile.innerHTML =
+    `<video id="vid-${uid}" autoplay playsinline></video>
+     <div class="tile-lbl">${esc(name)} [${role2 === 'teacher' ? 'T' : 'S'}]</div>`;
   grid.appendChild(tile);
   updateGrid(); updateCount();
 }
-function removeTile(uid){
+function removeTile(uid) {
   S.peers[uid]?.pc.close(); delete S.peers[uid];
   $(`tile-${uid}`)?.remove();
   updateGrid(); updateCount();
 }
-function updateGrid(){
-  const grid=$('video-grid');
-  const n=Object.keys(S.peers).length+1;
-  let cols=1;
-  if(n===2) cols=2;
-  else if(n<=4) cols=2;
-  else if(n<=6) cols=3;
-  else cols=4;
-  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+function updateGrid() {
+  const grid = $('vgrid');
+  const n = Object.keys(S.peers).length + 1;
+  // Responsive column count
+  const cols = n <= 1 ? 1 : n <= 2 ? 2 : n <= 4 ? 2 : n <= 6 ? 3 : 4;
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
 }
-function updateCount(){
-  $('meeting-count').textContent=(Object.keys(S.peers).length+1)+' 人';
+function updateCount() {
+  $('m-count').textContent = (Object.keys(S.peers).length + 1) + ' 人';
 }
 </script>
 </body>
