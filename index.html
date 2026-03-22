@@ -67,7 +67,7 @@
   <!-- Firebase SDKs -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc, onSnapshot, deleteDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getDatabase, ref, set, get, onValue, off, remove, push, onChildAdded } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
@@ -176,15 +176,30 @@
           </div>
 
           <!-- Error -->
-          ${state.error ? `<div class="border border-red-900 bg-red-950 p-3 mb-4 text-xs text-red-400">${state.error}</div>` : ''}
+          ${state.error ? `<div class="border border-red-900 bg-red-950 p-3 mb-4 text-xs text-red-400">${escHtml(state.error)}</div>` : ''}
 
-          <!-- Login Button -->
+          <!-- Google Login Button -->
           <button id="btn-login" class="w-full border border-terminal-border bg-terminal-surface hover:bg-terminal-muted text-white text-sm py-4 px-6 tracking-widest transition-colors duration-150 flex items-center justify-center gap-3">
             <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             使用 Google 帳號登入
           </button>
 
-          <div class="mt-6 text-center text-xs text-terminal-dim">
+          <!-- Hidden dev login panel — appears after clicking version text 5x -->
+          <div id="dev-panel" class="mt-4 hidden">
+            <div class="border border-yellow-900 bg-yellow-950 p-3 mb-2">
+              <div class="text-xs text-yellow-500 mb-3">// DEV LOGIN — 測試帳號登入</div>
+              <input id="dev-email" type="email" placeholder="Email" autocomplete="username"
+                class="w-full bg-black border border-terminal-border text-white text-xs px-3 py-2 mb-2 placeholder-terminal-muted" />
+              <input id="dev-password" type="password" placeholder="Password" autocomplete="current-password"
+                class="w-full bg-black border border-terminal-border text-white text-xs px-3 py-2 mb-3 placeholder-terminal-muted" />
+              <button id="btn-dev-login" class="w-full border border-yellow-800 text-yellow-400 text-xs py-2 hover:bg-yellow-950 transition-colors">
+                測試登入
+              </button>
+            </div>
+          </div>
+
+          <!-- Version text — click 5x to reveal dev panel -->
+          <div class="mt-6 text-center text-xs text-terminal-dim cursor-default select-none" id="version-text">
             <span>v1.0 // Pure P2P // No Recording</span>
           </div>
         </div>
@@ -339,6 +354,23 @@
       // Login
       document.getElementById('btn-login')?.addEventListener('click', handleLogin);
 
+      // Version text: click 5x to reveal dev panel
+      let _devClicks = 0;
+      document.getElementById('version-text')?.addEventListener('click', () => {
+        _devClicks++;
+        if (_devClicks >= 5) {
+          _devClicks = 0;
+          const panel = document.getElementById('dev-panel');
+          if (panel) panel.classList.toggle('hidden');
+        }
+      });
+
+      // Dev login (Email/Password)
+      document.getElementById('btn-dev-login')?.addEventListener('click', handleDevLogin);
+      document.getElementById('dev-password')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') handleDevLogin();
+      });
+
       // Logout
       document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
 
@@ -399,19 +431,43 @@
         login_hint: `@${ALLOWED_DOMAIN}`,
         prompt: 'select_account'
       });
+      // Show loading state on button
+      const btn = document.getElementById('btn-login');
+      if (btn) { btn.textContent = '跳轉中...'; btn.disabled = true; }
       try {
-        const result = await signInWithPopup(auth, provider);
-        const email = result.user.email;
-        if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
-          await signOut(auth);
-          setState({ error: `存取被拒：僅允許 @${ALLOWED_DOMAIN} 帳號` });
-          return;
-        }
-        await ensureProfile(result.user);
+        // Redirect to Google — page will reload on return
+        await signInWithRedirect(auth, provider);
       } catch (e) {
-        if (e.code !== 'auth/popup-closed-by-user') {
-          setState({ error: `登入失敗：${e.message}` });
-        }
+        setState({ error: `登入失敗：${e.message}` });
+        render();
+      }
+    }
+
+    // DEV: Email/Password login for test accounts
+    async function handleDevLogin() {
+      const email = document.getElementById('dev-email')?.value?.trim();
+      const password = document.getElementById('dev-password')?.value;
+      if (!email || !password) {
+        setState({ error: '請輸入 Email 和密碼' });
+        render();
+        return;
+      }
+      if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+        setState({ error: `測試帳號也必須使用 @${ALLOWED_DOMAIN}` });
+        render();
+        return;
+      }
+      const btn = document.getElementById('btn-dev-login');
+      if (btn) { btn.textContent = '登入中...'; btn.disabled = true; }
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // onAuthStateChanged will handle the rest
+      } catch (e) {
+        const msg = e.code === 'auth/invalid-credential' ? '帳號或密碼錯誤'
+          : e.code === 'auth/user-not-found' ? '帳號不存在，請先在 Firebase Console 建立'
+          : e.message;
+        setState({ error: `測試登入失敗：${msg}` });
+        render();
       }
     }
 
@@ -817,6 +873,24 @@
     function escHtml(str) {
       return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
+
+    // ─── Handle redirect result (runs after Google redirects back) ───────────────
+    // This MUST run before onAuthStateChanged to catch the redirect login
+    getRedirectResult(auth).then(async (result) => {
+      if (!result || !result.user) return; // no redirect, normal page load
+      const user = result.user;
+      if (!user.email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+        await signOut(auth);
+        setState({ screen: 'login', error: `存取被拒：僅允許 @${ALLOWED_DOMAIN} 帳號` });
+        render();
+        return;
+      }
+      // Profile will be created by ensureProfile inside onAuthStateChanged
+    }).catch((e) => {
+      // auth/account-exists-with-different-credential etc.
+      setState({ screen: 'login', error: `登入失敗：${e.message}` });
+      render();
+    });
 
     // ─── Auth State Observer ────────────────────────────────────────────────────
     onAuthStateChanged(auth, async (user) => {
