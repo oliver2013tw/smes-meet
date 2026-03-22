@@ -421,6 +421,14 @@
 <!-- Notification -->
 <div class="notif" id="notif"></div>
 
+<!-- Debug panel (tap top-left corner 3x to show) -->
+<div id="debug-panel" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;
+  background:#000;border-top:1px solid #333;padding:8px;font-size:10px;color:#0f0;
+  font-family:monospace;max-height:40vh;overflow-y:auto;white-space:pre-wrap;line-height:1.6">
+  <div style="color:#666;margin-bottom:4px">// 診斷記錄 (點左上角3次關閉)</div>
+  <div id="debug-log"></div>
+</div>
+
 <!-- ════════════════ APP LOGIC ════════════════════════════════ -->
 <script type="module">
 import { initializeApp }
@@ -508,6 +516,29 @@ const S = {
 // ── DOM helpers ───────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const esc = s => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// ── Debug panel (tap top-left 3×) ────────────────────────────
+let _dbgTaps = 0, _dbgTimer = null;
+document.addEventListener('click', e => {
+  if (e.clientX < 60 && e.clientY < 60) {
+    _dbgTaps++;
+    clearTimeout(_dbgTimer);
+    _dbgTimer = setTimeout(() => { _dbgTaps = 0; }, 800);
+    if (_dbgTaps >= 3) {
+      _dbgTaps = 0;
+      const p = $('debug-panel');
+      p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    }
+  }
+});
+function dbg(msg) {
+  const t = new Date().toLocaleTimeString('zh-TW', {hour12:false});
+  const el = $('debug-log');
+  if (!el) return;
+  el.innerHTML += `<div>[${t}] ${esc(String(msg))}</div>`;
+  el.scrollTop = el.scrollHeight;
+  console.log('[DBG]', msg);
+}
 function detectRole(email) {
   const m = email.match(STU_RE);
   return (m && parseInt(m[2], 10) <= 180) ? 'student' : 'teacher';
@@ -560,6 +591,7 @@ onAuthStateChanged(auth, async user => {
     }
     S.user = user;
     S.profile = await ensureProfile(user);
+    dbg('登入成功：' + user.email + ' [' + S.profile.role + ']');
     renderLobby();
     showScreen('lobby');
   } else {
@@ -807,6 +839,7 @@ async function goMeeting() {
     rEl.textContent = '[S]'; rEl.className = 'tag tag-grey';
   }
 
+  dbg('取得媒體：cam=' + S.camOn + ' mic=' + S.micOn);
   $('local-vid').srcObject = S.localStream;
   $('local-lbl').textContent = (S.profile.full_name || '나') + (S.isHost ? ' [HOST]' : '');
   updateCamOff(); updateCtrlBtns(); updateGrid();
@@ -1002,6 +1035,7 @@ async function approveReq(reqId, uid, name, role2) {
 
 // ── WebRTC: Host initiates ────────────────────────────────────
 async function initP2P(guestUid, guestName, guestRole) {
+  dbg('[HOST] 開始建立 P2P → ' + guestName);
   const pc = buildPC(guestUid);
   S.peers[guestUid] = { pc, name: guestName, role: guestRole };
 
@@ -1013,6 +1047,7 @@ async function initP2P(guestUid, guestName, guestRole) {
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
 
+  dbg('[HOST] Offer 已送出 → ' + guestUid.slice(0,6));
   await rtSet(rtRef(rtdb, `signaling/${S.roomCode}/offer/${guestUid}`), {
     sdp: offer.sdp, type: offer.type, from: S.user.uid
   });
@@ -1039,6 +1074,7 @@ async function initP2P(guestUid, guestName, guestRole) {
 function listenOffer() {
   onValue(rtRef(rtdb, `signaling/${S.roomCode}/offer/${S.user.uid}`), async snap => {
     if (!snap.exists()) return;
+    dbg('[GUEST] 收到 Offer，開始握手');
     const od = snap.val(); const hostUid = od.from;
 
     let hostName = 'Host', hostRole = 'teacher';
@@ -1060,6 +1096,7 @@ function listenOffer() {
     const ans = await pc.createAnswer();
     await pc.setLocalDescription(ans);
 
+    dbg('[GUEST] Answer 已送出');
     await rtSet(rtRef(rtdb, `signaling/${S.roomCode}/answer/${hostUid}`), {
       sdp: ans.sdp, type: ans.type, from: S.user.uid
     });
@@ -1084,6 +1121,7 @@ function buildPC(remoteUid) {
   // Remote stream — collect incoming tracks
   const rs = new MediaStream();
   pc.ontrack = e => {
+    dbg('[TRACK] 收到遠端軌道：' + e.track.kind + ' from ' + remoteUid.slice(0,6));
     e.streams[0]?.getTracks().forEach(t => {
       if (!rs.getTracks().includes(t)) rs.addTrack(t);
     });
@@ -1094,11 +1132,13 @@ function buildPC(remoteUid) {
   // ICE candidates → write to RTDB
   pc.onicecandidate = e => {
     if (!e.candidate) return;
+    dbg('[ICE候選] ' + e.candidate.type + ' ' + e.candidate.protocol);
     rtPush(rtRef(rtdb, `signaling/${S.roomCode}/ice/${remoteUid}_from_${S.user.uid}`), e.candidate.toJSON());
   };
 
   // Connection state changes
   pc.onconnectionstatechange = () => {
+    dbg('[PC ' + remoteUid.slice(0,6) + '] ' + pc.connectionState);
     console.log(`[PC ${remoteUid.slice(0,6)}] state:`, pc.connectionState);
     if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
       removeTile(remoteUid);
@@ -1106,7 +1146,8 @@ function buildPC(remoteUid) {
   };
 
   pc.oniceconnectionstatechange = () => {
-    console.log(`[ICE ${remoteUid.slice(0,6)}] state:`, pc.iceConnectionState);
+    dbg('[ICE ' + remoteUid.slice(0,6) + '] ' + pc.iceConnectionState);
+  console.log(`[ICE ${remoteUid.slice(0,6)}] state:`, pc.iceConnectionState);
   };
 
   return pc;
