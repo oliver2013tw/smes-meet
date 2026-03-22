@@ -537,10 +537,18 @@ async function checkRedirect() {
 
 // Step 2: Auth state observer — waits until redirect check is done
 onAuthStateChanged(auth, async user => {
-  // If redirect hasn't resolved yet, wait a tick
+  // Wait for redirect result to fully resolve before deciding screen.
+  // Without this, Google redirect causes: loading → login → lobby (flash).
   if (!redirectChecked) {
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise(r => {
+      const poll = setInterval(() => {
+        if (redirectChecked) { clearInterval(poll); r(); }
+      }, 20);
+      // Safety timeout: give up waiting after 3s
+      setTimeout(() => { clearInterval(poll); r(); }, 3000);
+    });
   }
+
   if (user) {
     if (!user.email.endsWith('@' + DOMAIN)) {
       await signOut(auth);
@@ -553,12 +561,15 @@ onAuthStateChanged(auth, async user => {
     renderLobby();
     showScreen('lobby');
   } else {
-    S.user = null; S.profile = null;
-    showScreen('login');
+    // Only show login if we're sure there's no active redirect in progress
+    if (redirectChecked) {
+      S.user = null; S.profile = null;
+      showScreen('login');
+    }
   }
 });
 
-// Kick off redirect check immediately
+// Kick off redirect check immediately — keeps loading screen until done
 checkRedirect();
 
 // Google login button
@@ -798,36 +809,26 @@ async function toggleShare() {
   }
 
   try {
-    // Request full screen + audio (system audio supported on Chrome/Edge on Windows)
-    // We try the most permissive options; browsers will show their own picker UI.
+    // Minimal constraints — Chrome requires NO sub-constraints on audio for getDisplayMedia.
+    // audio:true triggers Chrome's native "Share system audio" checkbox automatically.
     S.screenStream = await navigator.mediaDevices.getDisplayMedia({
-      video: {
-        displaySurface: 'monitor',   // hint: prefer entire screen
-        width:  { ideal: 1920 },
-        height: { ideal: 1080 },
-        frameRate: { ideal: 30 }
-      },
-      audio: {
-        // These hints tell Chrome to include the "Share system audio" checkbox
-        suppressLocalAudioPlayback: false,
-        // echoCancellation / noiseSuppression not applicable to system audio
-      }
+      video: true,
+      audio: true
     });
 
     const vTrack = S.screenStream.getVideoTracks()[0];
-    const aTrack = S.screenStream.getAudioTracks()[0]; // may be null if user didn't tick "Share audio"
+    // aTrack exists only if the user ticked "Share system audio" in Chrome's picker
+    const aTrack = S.screenStream.getAudioTracks()[0] || null;
     S.sharing = true;
 
-    // Replace video track on all active peer connections
+    // Replace video track on all peer connections
     Object.values(S.peers).forEach(p => {
-      const sender = p.pc.getSenders().find(s => s.track?.kind === 'video');
-      if (sender) sender.replaceTrack(vTrack).catch(() => {});
-      // If screen has audio, add it as a new track (best-effort)
+      const vs = p.pc.getSenders().find(s => s.track?.kind === 'video');
+      if (vs) vs.replaceTrack(vTrack).catch(() => {});
       if (aTrack) {
-        const audioSender = p.pc.getSenders().find(s => s.track?.kind === 'audio');
-        if (!audioSender) {
-          p.pc.addTrack(aTrack, S.screenStream);
-        }
+        const as2 = p.pc.getSenders().find(s => s.track?.kind === 'audio');
+        if (as2) as2.replaceTrack(aTrack).catch(() => {});
+        else p.pc.addTrack(aTrack, S.screenStream);
       }
     });
 
@@ -836,14 +837,15 @@ async function toggleShare() {
     if (aTrack) preview.addTrack(aTrack);
     $('local-vid').srcObject = preview;
 
-    // Auto-revert when user clicks browser's "Stop sharing"
+    // When user clicks Chrome's "Stop sharing" button
     vTrack.onended = () => { if (S.sharing) toggleShare(); };
 
     updateCtrlBtns();
   } catch (e) {
     S.sharing = false;
+    // NotAllowedError = user cancelled picker — not a real error
     if (e.name !== 'NotAllowedError') {
-      showNotif('螢幕分享失敗：' + e.message, 6000);
+      showNotif('螢幕分享失敗：' + e.name + ' ' + e.message, 6000);
     }
   }
 }
