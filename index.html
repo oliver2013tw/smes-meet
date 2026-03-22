@@ -771,6 +771,10 @@ async function goMeeting() {
   $('cb-end').style.display   = S.isHost ? 'inline-flex' : 'none';
   $('cb-leave').style.display = S.isHost ? 'none'        : 'inline-flex';
 
+  // Hide screen share on mobile (iOS/Android don't support getDisplayMedia)
+  const canShare = !!(navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia);
+  $('cb-share').style.display = canShare ? 'inline-flex' : 'none';
+
   const rEl = $('tag-role');
   if (S.profile.role === 'teacher') {
     rEl.textContent = '[T]'; rEl.className = 'tag tag-blue';
