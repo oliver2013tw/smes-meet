@@ -513,26 +513,8 @@ function isSafari() {
   return /^((?!chrome|android).)*safari/i.test(ua) || /iPad|iPhone|iPod/.test(ua);
 }
 
-// Handle redirect result on page load (for Safari redirect flow)
-let redirectHandled = false;
-getRedirectResult(auth).then(async result => {
-  redirectHandled = true;
-  if (!result?.user) return;
-  if (!result.user.email.endsWith('@' + DOMAIN)) {
-    await signOut(auth);
-    toast('login-toast', '存取被拒：僅允許 @' + DOMAIN);
-    showScreen('login');
-  }
-  // onAuthStateChanged will handle navigation to lobby
-}).catch(e => {
-  redirectHandled = true;
-  if (e.code !== 'auth/no-auth-event') {
-    toast('login-toast', '登入失敗：' + e.message);
-    showScreen('login');
-  }
-});
-
-// Auth state observer
+// Auth state observer — single source of truth.
+// getRedirectResult is handled separately only for Safari domain validation.
 onAuthStateChanged(auth, async user => {
   if (user) {
     if (!user.email.endsWith('@' + DOMAIN)) {
@@ -546,11 +528,8 @@ onAuthStateChanged(auth, async user => {
     renderLobby();
     showScreen('lobby');
   } else {
-    // Don't flash login screen while redirect is still resolving
-    if (redirectHandled) {
-      S.user = null; S.profile = null;
-      showScreen('login');
-    }
+    S.user = null; S.profile = null;
+    showScreen('login');
   }
 });
 
