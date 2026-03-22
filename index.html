@@ -1,916 +1,712 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SMES MEET — 校園視訊系統</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <!-- Tailwind config MUST be defined before the CDN script executes -->
-  <script>
-    // Pre-define config so Tailwind picks it up on load
-    window.tailwind = window.tailwind || {};
-    window.__tailwindConfig = {
-      theme: {
-        extend: {
-          fontFamily: { mono: ['JetBrains Mono', 'monospace'] },
-          colors: {
-            terminal: { bg: '#000000', surface: '#0A0A0A', border: '#1a1a1a', muted: '#333333', text: '#e0e0e0', dim: '#666666', teacher: '#1a3a5c', student: '#1a1a1a', teacherGlow: '#0066ff', studentGlow: '#444444' }
-          },
-          animation: { 'blink': 'blink 1s step-end infinite', 'scanline': 'scanline 3s linear infinite', 'fadeIn': 'fadeIn 0.3s ease-in' },
-          keyframes: { blink: { '0%,100%': { opacity: 1 }, '50%': { opacity: 0 } }, scanline: { '0%': { transform: 'translateY(-100%)' }, '100%': { transform: 'translateY(100vh)' } }, fadeIn: { '0%': { opacity: 0, transform: 'translateY(4px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } } }
-        }
-      }
-    };
-  </script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    // Apply config after CDN is loaded (runs synchronously after the script tag above)
-    if (window.tailwind && window.tailwind.config !== undefined) {
-      tailwind.config = window.__tailwindConfig;
-    } else {
-      document.addEventListener('DOMContentLoaded', () => {
-        if (window.tailwind) tailwind.config = window.__tailwindConfig;
-      });
-    }
-  </script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SMES MEET</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; width: 100%; overflow: hidden; overscroll-behavior: none; background: #000; }
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: #000; }
-    ::-webkit-scrollbar-thumb { background: #333; }
-    * { font-family: 'JetBrains Mono', monospace !important; }
-    .teacher-border { box-shadow: 0 0 0 1px #0066ff22, inset 0 0 20px #0066ff08; border-color: #0066ff44 !important; }
-    .student-border { box-shadow: 0 0 0 1px #44444422, inset 0 0 20px #44444408; border-color: #44444444 !important; }
-    .glow-teacher { text-shadow: 0 0 8px #0066ff88; color: #4499ff; }
-    .glow-student { text-shadow: 0 0 8px #aaaaaa44; color: #aaaaaa; }
-    .scanline-overlay { pointer-events: none; position: fixed; inset: 0; z-index: 9999; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px); }
-    .video-grid-1 { grid-template-columns: 1fr; }
-    .video-grid-2 { grid-template-columns: 1fr 1fr; }
-    .video-grid-3, .video-grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-    .video-grid-5, .video-grid-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
-    @keyframes pulse-border { 0%, 100% { border-color: #0066ff44; } 50% { border-color: #0066ffaa; } }
-    .pending-pulse { animation: pulse-border 1.5s ease-in-out infinite; }
-    input, button { border-radius: 0 !important; outline: none; }
-    input:focus { box-shadow: 0 0 0 1px #0066ff88 !important; }
-    .modal-backdrop { backdrop-filter: blur(2px); background: rgba(0,0,0,0.85); }
-    video { object-fit: cover; background: #0a0a0a; }
-    .chat-area { scrollbar-width: thin; scrollbar-color: #333 #000; }
+    html, body { height: 100%; width: 100%; overflow: hidden; overscroll-behavior: none; background: #000; color: #e0e0e0; font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-track { background: #000; } ::-webkit-scrollbar-thumb { background: #333; }
+    input, button { font-family: 'JetBrains Mono', monospace; border-radius: 0 !important; outline: none; }
+
+    /* Scanlines */
+    #scanline { pointer-events: none; position: fixed; inset: 0; z-index: 9999;
+      background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px); }
+
+    /* Screens */
+    .screen { display: none; position: fixed; inset: 0; }
+    .screen.active { display: flex; }
+
+    /* ── Loading ── */
+    #screen-loading { align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+    .blink { animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── Login ── */
+    #screen-login { align-items: center; justify-content: center; }
+    .login-box { width: 100%; max-width: 360px; padding: 0 24px; }
+    .divider { height: 1px; background: #1a1a1a; margin: 20px 0; }
+    .domain-box { border: 1px solid #1a1a1a; padding: 10px 12px; margin-bottom: 20px; }
+    .btn-google { width: 100%; border: 1px solid #1a1a1a; background: #0a0a0a; color: #fff;
+      padding: 14px; font-size: 13px; letter-spacing: 2px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px; transition: background .15s; }
+    .btn-google:hover { background: #111; }
+    .btn-google:disabled { opacity: .5; cursor: not-allowed; }
+    .dev-panel { display: none; margin-top: 12px; border: 1px solid #332200; background: #0a0800; padding: 12px; }
+    .dev-panel.show { display: block; }
+    .dev-input { width: 100%; background: #000; border: 1px solid #332200; color: #ccc;
+      padding: 8px 10px; font-size: 11px; margin-bottom: 8px; }
+    .btn-dev { width: 100%; border: 1px solid #886600; background: transparent; color: #aa8800;
+      padding: 8px; font-size: 11px; cursor: pointer; letter-spacing: 1px; transition: background .15s; }
+    .btn-dev:hover { background: #1a1000; }
+    .version-text { margin-top: 20px; text-align: center; font-size: 10px; color: #2a2a2a; cursor: default; user-select: none; }
+
+    /* Toast */
+    .toast { padding: 10px 12px; font-size: 11px; margin-bottom: 12px; display: none; }
+    .toast.show { display: block; }
+    .toast.error { border: 1px solid #4a0000; background: #1a0000; color: #ff6666; }
+    .toast.info  { border: 1px solid #003366; background: #000d1a; color: #4499ff; }
+
+    /* ── Lobby ── */
+    #screen-lobby { align-items: center; justify-content: center; }
+    .lobby-box { width: 100%; max-width: 400px; padding: 0 24px; }
+    .profile-bar { border: 1px solid #1a1a1a; padding: 12px 14px; margin-bottom: 20px;
+      display: flex; align-items: center; justify-content: space-between; }
+    .role-teacher { color: #4499ff; text-shadow: 0 0 8px #0066ff44; }
+    .role-student { color: #888; }
+    .btn-logout { border: 1px solid #1a1a1a; background: transparent; color: #444;
+      padding: 6px 12px; font-size: 10px; cursor: pointer; letter-spacing: 1px; transition: color .15s; }
+    .btn-logout:hover { color: #ff4444; border-color: #4a0000; }
+    .room-panel { border: 1px solid #1a1a1a; padding: 16px; margin-bottom: 12px; }
+    .room-row { display: flex; gap: 8px; }
+    .room-input { flex: 1; min-width: 0; background: #000; border: 1px solid #1a1a1a; color: #fff;
+      padding: 12px; font-size: 16px; letter-spacing: 4px; text-transform: uppercase; transition: border-color .15s; }
+    .room-input:focus { border-color: #0066ff88; }
+    .room-input::placeholder { color: #222; letter-spacing: 2px; }
+    .btn-enter { background: #fff; color: #000; border: none; padding: 12px 20px;
+      font-size: 12px; font-weight: 700; cursor: pointer; letter-spacing: 2px; white-space: nowrap; transition: background .15s; }
+    .btn-enter:hover { background: #ddd; }
+
+    /* ── Waiting ── */
+    #screen-waiting { align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+    .dots { display: flex; gap: 6px; }
+    .dot { width: 6px; height: 6px; background: #0066ff; animation: bounce .9s infinite; }
+    .dot:nth-child(2){ animation-delay: .15s; } .dot:nth-child(3){ animation-delay: .3s; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    .btn-cancel { border: 1px solid #1a1a1a; background: transparent; color: #444;
+      padding: 8px 20px; font-size: 11px; cursor: pointer; transition: color .15s; }
+    .btn-cancel:hover { color: #ff4444; border-color: #4a0000; }
+
+    /* ── Meeting ── */
+    #screen-meeting { flex-direction: column; background: #000; }
+
+    .meeting-topbar { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 14px; border-bottom: 1px solid #1a1a1a; height: 44px; gap: 8px; }
+    .topbar-left  { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .topbar-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .topbar-title { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 3px; white-space: nowrap; }
+    .topbar-code  { font-size: 10px; color: #444; border: 1px solid #1a1a1a; padding: 3px 8px; white-space: nowrap; }
+    .topbar-count { font-size: 10px; color: #444; white-space: nowrap; }
+    .tag-host { font-size: 10px; color: #4499ff; border: 1px solid #0066ff44; padding: 2px 8px; white-space: nowrap; }
+    .tag-role { font-size: 10px; white-space: nowrap; }
+
+    /* Video grid */
+    .video-area { flex: 1; min-height: 0; display: grid; gap: 2px; padding: 2px; background: #111; }
+    .video-tile { position: relative; background: #0a0a0a; overflow: hidden; min-height: 0; }
+    .video-tile video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0a0a0a; }
+    .tile-label { position: absolute; bottom: 6px; left: 6px;
+      background: rgba(0,0,0,.75); padding: 2px 8px; font-size: 10px; color: #fff; }
+    .tile-camoff { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: #0a0a0a; font-size: 11px; color: #333; }
+    .tile-camoff.hidden { display: none; }
+
+    /* Control bar */
+    .control-bar { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-top: 1px solid #1a1a1a; background: #0a0a0a;
+      gap: 8px; flex-wrap: wrap; min-height: 56px; }
+    .ctrl-left   { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .ctrl-center { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; flex: 1; justify-content: center; }
+    .ctrl-right  { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .ctrl-btn { border: 1px solid #1a1a1a; background: transparent; color: #ccc;
+      padding: 8px 12px; font-size: 11px; cursor: pointer; letter-spacing: 1px;
+      transition: all .15s; white-space: nowrap; display: flex; align-items: center; gap: 5px; }
+    .ctrl-btn:hover { background: #111; border-color: #333; }
+    .ctrl-btn.off    { border-color: #4a000088; color: #ff6666; background: #1a0000; }
+    .ctrl-btn.active { border-color: #00664488; color: #44cc88; background: #001a0d; }
+    .ctrl-btn.danger { border-color: #4a000088; color: #ff4444; }
+    .ctrl-btn.danger:hover { background: #1a0000; }
+
+    /* Pending cards */
+    .pending-card { border: 1px solid #0066ff44; padding: 5px 10px; font-size: 10px; color: #4499ff;
+      display: flex; align-items: center; gap: 6px; animation: pulse-b 1.5s ease-in-out infinite; }
+    @keyframes pulse-b { 0%,100%{border-color:#0066ff22} 50%{border-color:#0066ffbb} }
+    .btn-approve { background: #003399; border: none; color: #fff; padding: 3px 8px; font-size: 10px; cursor: pointer; font-family: 'JetBrains Mono',monospace; }
+    .btn-approve:hover { background: #0044cc; }
+    .btn-reject  { background: transparent; border: 1px solid #4a0000; color: #ff4444; padding: 3px 7px; font-size: 10px; cursor: pointer; font-family: 'JetBrains Mono',monospace; }
+    .btn-reject:hover { background: #1a0000; }
+
+    /* Notification */
+    .notif { position: fixed; top: 52px; right: 12px; z-index: 1000; max-width: 280px;
+      border: 1px solid #0066ff44; background: #000d1a; padding: 10px 14px;
+      font-size: 11px; color: #4499ff; display: none; }
+    .notif.show { display: block; }
+
+    /* Responsive: on small screens stack controls */
+    @media (max-width: 520px) {
+      .topbar-title { letter-spacing: 2px; font-size: 12px; }
+      .ctrl-btn { padding: 7px 9px; font-size: 10px; }
+      .control-bar { padding: 8px 10px; }
+    }
   </style>
 </head>
 <body>
-  <div class="scanline-overlay"></div>
-  <div id="root"></div>
+<div id="scanline"></div>
 
-  <!-- Firebase SDKs -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc, onSnapshot, deleteDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { getDatabase, ref, set, get, onValue, off, remove, push, onChildAdded } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+<!-- LOADING -->
+<div id="screen-loading" class="screen active">
+  <div style="font-size:22px;font-weight:700;letter-spacing:6px;color:#fff">SMES_MEET</div>
+  <div style="font-size:11px;color:#333">系統初始化中<span class="blink">█</span></div>
+</div>
 
-    // ─── Firebase Config ───────────────────────────────────────────────────────
-    const firebaseConfig = {
-      apiKey: "AIzaSyC_j0PxmMBNAtGtFotdFe8WjHQj0K8pwO8",
-      authDomain: "smes-meet.firebaseapp.com",
-      projectId: "smes-meet",
-      storageBucket: "smes-meet.firebasestorage.app",
-      messagingSenderId: "897771756747",
-      appId: "1:897771756747:web:4a227140a386cef3860f4e",
-      measurementId: "G-PXB8VFKF1G",
-      databaseURL: "https://smes-meet-default-rtdb.asia-southeast1.firebasedatabase.app"
-    };
+<!-- LOGIN -->
+<div id="screen-login" class="screen">
+  <div class="login-box">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:10px;color:#333;letter-spacing:3px;margin-bottom:8px">[ SYSTEM INIT ]</div>
+      <div style="font-size:28px;font-weight:700;letter-spacing:6px;color:#fff">SMES_MEET</div>
+      <div style="font-size:11px;color:#555;margin-top:4px;letter-spacing:2px">校園 P2P 視訊會議系統</div>
+      <div class="divider"></div>
+    </div>
+    <div class="domain-box">
+      <div style="font-size:10px;color:#444;margin-bottom:4px">// 存取限制</div>
+      <div style="font-size:11px;color:#ccc">僅接受 @mail2.smes.tyc.edu.tw</div>
+    </div>
+    <div id="login-toast" class="toast error"></div>
+    <button class="btn-google" id="btn-google-login">
+      <svg width="16" height="16" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      使用 Google 帳號登入
+    </button>
+    <div class="dev-panel" id="dev-panel">
+      <div style="font-size:10px;color:#886600;margin-bottom:10px">// DEV — 測試帳號登入</div>
+      <input class="dev-input" id="dev-email" type="email" placeholder="test@mail2.smes.tyc.edu.tw" autocomplete="username"/>
+      <input class="dev-input" id="dev-password" type="password" placeholder="密碼" autocomplete="current-password"/>
+      <button class="btn-dev" id="btn-dev-login">測試登入</button>
+    </div>
+    <div class="version-text" id="version-text">v2.0 // Pure P2P // No Recording</div>
+  </div>
+</div>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const rtdb = getDatabase(app);
+<!-- LOBBY -->
+<div id="screen-lobby" class="screen">
+  <div class="lobby-box">
+    <div class="profile-bar" id="profile-bar">
+      <div>
+        <div style="font-size:13px;color:#fff" id="profile-name">—</div>
+        <div style="font-size:10px;margin-top:4px" id="profile-role">—</div>
+      </div>
+      <button class="btn-logout" id="btn-logout">登出</button>
+    </div>
+    <div class="room-panel">
+      <div style="font-size:10px;color:#444;margin-bottom:12px">// 輸入會議代碼</div>
+      <div class="room-row">
+        <input class="room-input" id="room-input" type="text" maxlength="10" placeholder="XXXXXXXX" autocomplete="off" spellcheck="false"/>
+        <button class="btn-enter" id="btn-enter">進入</button>
+      </div>
+    </div>
+    <div id="lobby-toast" class="toast error"></div>
+    <div style="text-align:center;font-size:10px;color:#2a2a2a;margin-top:12px">純 P2P 加密傳輸 // 無伺服器錄影 // 無時間限制</div>
+  </div>
+</div>
 
-    // ─── Utilities ─────────────────────────────────────────────────────────────
-    const ALLOWED_DOMAIN = 'mail2.smes.tyc.edu.tw';
-    const STUDENT_REGEX = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
+<!-- WAITING -->
+<div id="screen-waiting" class="screen" style="flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="font-size:10px;color:#333;letter-spacing:2px">[ PENDING APPROVAL ]</div>
+  <div style="font-size:24px;font-weight:700;color:#fff;letter-spacing:6px" id="waiting-code">——</div>
+  <div style="font-size:11px;color:#444">正在等待主持人核准加入請求...</div>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  <button class="btn-cancel" id="btn-cancel-req">取消請求</button>
+</div>
 
-    function detectRole(email) {
-      const m = email.match(STUDENT_REGEX);
-      if (m) {
-        const seq = parseInt(m[2], 10);
-        return seq <= 180 ? 'student' : 'teacher';
-      }
-      return 'teacher';
+<!-- MEETING -->
+<div id="screen-meeting" class="screen">
+  <!-- Top bar -->
+  <div class="meeting-topbar">
+    <div class="topbar-left">
+      <span class="topbar-title">SMES_MEET</span>
+      <span class="topbar-code" id="meeting-code-tag">—</span>
+      <span class="topbar-count" id="meeting-count">1 人</span>
+    </div>
+    <div class="topbar-right">
+      <span class="tag-host" id="tag-host" style="display:none">[HOST]</span>
+      <span class="tag-role" id="tag-role"></span>
+    </div>
+  </div>
+
+  <!-- Video grid -->
+  <div class="video-area" id="video-grid">
+    <div class="video-tile" id="tile-local">
+      <video id="local-video" autoplay muted playsinline></video>
+      <div class="tile-camoff hidden" id="local-camoff">CAM_OFF</div>
+      <div class="tile-label" id="local-label">나</div>
+    </div>
+  </div>
+
+  <!-- Control bar -->
+  <div class="control-bar">
+    <div class="ctrl-left">
+      <button class="ctrl-btn" id="btn-mic">🎤 麥克風</button>
+      <button class="ctrl-btn" id="btn-cam">📷 相機</button>
+      <button class="ctrl-btn" id="btn-share">🖥 分享螢幕</button>
+    </div>
+    <div class="ctrl-center" id="pending-strip"></div>
+    <div class="ctrl-right">
+      <button class="ctrl-btn danger" id="btn-leave" style="display:none">✕ 離開</button>
+      <button class="ctrl-btn danger" id="btn-end"   style="display:none">⏹ 結束會議</button>
+    </div>
+  </div>
+</div>
+
+<!-- Notification popup -->
+<div class="notif" id="notif"></div>
+
+<!-- ════════════ LOGIC ════════════ -->
+<script type="module">
+import { initializeApp }  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult,
+         signInWithEmailAndPassword, signOut, onAuthStateChanged }
+                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc,
+         onSnapshot, deleteDoc, query, where, serverTimestamp, getDocs }
+                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getDatabase, ref, set, onValue, remove, push, onChildAdded }
+                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ── Constants ─────────────────────────────────────────────────
+const CFG = {
+  apiKey:            "AIzaSyC_j0PxmMBNAtGtFotdFe8WjHQj0K8pwO8",
+  authDomain:        "smes-meet.firebaseapp.com",
+  projectId:         "smes-meet",
+  storageBucket:     "smes-meet.firebasestorage.app",
+  messagingSenderId: "897771756747",
+  appId:             "1:897771756747:web:4a227140a386cef3860f4e",
+  databaseURL:       "https://smes-meet-default-rtdb.asia-southeast1.firebasedatabase.app"
+};
+const DOMAIN  = 'mail2.smes.tyc.edu.tw';
+const STU_RE  = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
+const ICE     = [
+  { urls:'stun:stun.l.google.com:19302' },
+  { urls:'stun:stun1.l.google.com:19302' },
+  { urls:'stun:stun.services.mozilla.com' }
+];
+
+// ── Firebase ──────────────────────────────────────────────────
+const app  = initializeApp(CFG);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const rtdb = getDatabase(app);
+
+// ── State ─────────────────────────────────────────────────────
+const S = {
+  user:null, profile:null,
+  roomCode:'', isHost:false,
+  localStream:null, screenStream:null,
+  micOn:true, camOn:true, sharing:false,
+  peers:{},          // uid → { pc, name, role }
+  myReqId:null,      // pending request doc id
+  unsubReqs:null,    // firestore listener
+  waitUnsub:null,    // firestore listener while waiting
+};
+
+// ── Utils ─────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const esc= s  => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function role(email){ const m=email.match(STU_RE); return m&&parseInt(m[2])<=180?'student':'teacher'; }
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('screen-'+id).classList.add('active');
+}
+function toast(elId,msg,type='error'){
+  const el=$(elId); if(!el)return;
+  el.textContent=msg; el.className=`toast ${type} show`;
+  if(type!=='info') setTimeout(()=>el.classList.remove('show'),5000);
+}
+function hideToast(elId){ const el=$(elId); if(el) el.classList.remove('show'); }
+function notif(msg,ms=4000){
+  const el=$('notif'); el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),ms);
+}
+
+// ── Auth: Google ──────────────────────────────────────────────
+$('btn-google-login').onclick = async()=>{
+  const p = new GoogleAuthProvider();
+  p.setCustomParameters({ hd:DOMAIN, login_hint:`@${DOMAIN}`, prompt:'select_account' });
+  const btn=$('btn-google-login');
+  btn.textContent='跳轉中...'; btn.disabled=true;
+  try{ await signInWithRedirect(auth,p); }
+  catch(e){ btn.innerHTML='使用 Google 帳號登入'; btn.disabled=false; toast('login-toast',e.message); }
+};
+
+// ── Auth: Dev (email/pw) ──────────────────────────────────────
+let _vc=0;
+$('version-text').onclick=()=>{ if(++_vc>=5){ _vc=0; $('dev-panel').classList.toggle('show'); } };
+$('btn-dev-login').onclick = devLogin;
+$('dev-password').onkeydown = e=>{ if(e.key==='Enter') devLogin(); };
+async function devLogin(){
+  const email=$('dev-email').value.trim(), pw=$('dev-password').value;
+  if(!email||!pw){ toast('login-toast','請輸入 Email 和密碼'); return; }
+  if(!email.endsWith('@'+DOMAIN)){ toast('login-toast','測試帳號也必須使用 @'+DOMAIN); return; }
+  try{ await signInWithEmailAndPassword(auth,email,pw); }
+  catch(e){
+    toast('login-toast', e.code==='auth/invalid-credential'?'帳號或密碼錯誤'
+        : e.code==='auth/user-not-found'?'帳號不存在，請先在 Firebase Console 建立'
+        : e.message);
+  }
+}
+
+// Handle redirect return
+getRedirectResult(auth).then(async r=>{
+  if(!r?.user) return;
+  if(!r.user.email.endsWith('@'+DOMAIN)){ await signOut(auth); toast('login-toast','存取被拒：僅允許 @'+DOMAIN); }
+}).catch(e=>toast('login-toast',e.message));
+
+// Auth state observer
+onAuthStateChanged(auth, async user=>{
+  if(user){
+    if(!user.email.endsWith('@'+DOMAIN)){ await signOut(auth); toast('login-toast','僅允許 @'+DOMAIN); return; }
+    S.user=user; S.profile=await ensureProfile(user);
+    renderLobby(); showScreen('lobby');
+  } else {
+    S.user=null; S.profile=null; showScreen('login');
+  }
+});
+
+async function ensureProfile(user){
+  const r=doc(db,'profiles',user.uid), snap=await getDoc(r);
+  if(snap.exists()) return snap.data();
+  const p={ uid:user.uid, email:user.email, full_name:user.displayName||user.email.split('@')[0], role:role(user.email) };
+  await setDoc(r,p); return p;
+}
+
+// ── Lobby ─────────────────────────────────────────────────────
+$('btn-logout').onclick = async()=>{ await cleanup(); await signOut(auth); };
+
+function renderLobby(){
+  const p=S.profile;
+  $('profile-name').textContent=p.full_name||p.email;
+  const re=$('profile-role');
+  re.textContent=p.role==='teacher'?'[TEACHER]':'[STUDENT]';
+  re.className=p.role==='teacher'?'role-teacher':'role-student';
+  const bar=$('profile-bar');
+  bar.style.borderColor=p.role==='teacher'?'#0066ff44':'#1a1a1a';
+  bar.style.boxShadow =p.role==='teacher'?'0 0 0 1px #0066ff22':'none';
+}
+
+$('room-input').oninput=function(){ this.value=this.value.toUpperCase(); };
+$('room-input').onkeydown=e=>{ if(e.key==='Enter') enterRoom(); };
+$('btn-enter').onclick=enterRoom;
+
+async function enterRoom(){
+  hideToast('lobby-toast');
+  const code=$('room-input').value.trim().toUpperCase();
+  if(!code){ toast('lobby-toast','請輸入會議代碼'); return; }
+
+  let snap;
+  try{ snap=await getDoc(doc(db,'rooms',code)); }
+  catch(e){ toast('lobby-toast','網路錯誤：'+e.message); return; }
+
+  if(!snap.exists()){
+    // Room doesn't exist
+    if(S.profile.role!=='teacher'){ toast('lobby-toast','會議室不存在。僅有教師具備建立新會議的權限。'); return; }
+    if(!confirm(`會議室「${code}」尚未建立，是否建立新會議？`)) return;
+    try{ await setDoc(doc(db,'rooms',code),{ code, host_id:S.user.uid, created_at:serverTimestamp() }); }
+    catch(e){ toast('lobby-toast','建立失敗：'+e.message); return; }
+    S.roomCode=code; S.isHost=true;
+    await goMeeting();
+    return;
+  }
+
+  // Room exists
+  const rd=snap.data();
+
+  // If this user is the host, enter directly
+  if(rd.host_id===S.user.uid){ S.roomCode=code; S.isHost=true; await goMeeting(); return; }
+
+  // Everyone else (including teachers) must request to join
+  if(!confirm(`會議室「${code}」已開啟，是否送出加入要求？`)) return;
+
+  let reqRef;
+  try{
+    reqRef=await addDoc(collection(db,'room_requests'),{
+      room_code:code, user_id:S.user.uid,
+      user_name:S.profile.full_name, user_role:S.profile.role,
+      user_email:S.profile.email, status:'pending', created_at:serverTimestamp()
+    });
+  } catch(e){ toast('lobby-toast','送出請求失敗：'+e.message); return; }
+
+  S.myReqId=reqRef.id; S.roomCode=code;
+  $('waiting-code').textContent=code;
+  showScreen('waiting');
+
+  // Listen for approval / rejection
+  S.waitUnsub=onSnapshot(doc(db,'room_requests',reqRef.id), snap2=>{
+    if(!snap2.exists()) return;
+    const d=snap2.data();
+    if(d.status==='approved'){
+      S.waitUnsub?.(); S.waitUnsub=null; S.myReqId=null; S.isHost=false;
+      goMeeting();
+    } else if(d.status==='rejected'){
+      S.waitUnsub?.(); S.waitUnsub=null; S.myReqId=null; S.roomCode='';
+      toast('lobby-toast','主持人已拒絕您的加入請求。');
+      showScreen('lobby');
     }
+  });
+}
 
-    function genCode() {
-      return Math.random().toString(36).substr(2, 8).toUpperCase();
-    }
+// Cancel waiting
+$('btn-cancel-req').onclick=async()=>{
+  S.waitUnsub?.(); S.waitUnsub=null;
+  if(S.myReqId){ await deleteDoc(doc(db,'room_requests',S.myReqId)).catch(()=>{}); S.myReqId=null; }
+  S.roomCode='';
+  showScreen('lobby');
+};
 
-    // ─── State ─────────────────────────────────────────────────────────────────
-    let state = {
-      screen: 'loading', // loading | login | lobby | waiting | meeting
-      user: null,
-      profile: null,
-      roomCode: '',
-      roomCodeInput: '',
-      isHost: false,
-      peers: {}, // uid → { pc, stream, name, role, dataChannel }
-      localStream: null,
-      screenStream: null,
-      chatMessages: [],
-      pendingRequests: [],
-      myRequest: null,
-      micOn: true,
-      camOn: true,
-      sharing: false,
-      error: '',
-      info: '',
-    };
+// ── Enter Meeting ─────────────────────────────────────────────
+async function goMeeting(){
+  // Acquire media
+  try{ S.localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true}); S.camOn=true; S.micOn=true; }
+  catch(e){
+    try{ S.localStream=await navigator.mediaDevices.getUserMedia({audio:true}); S.camOn=false; S.micOn=true; }
+    catch(e2){ S.localStream=new MediaStream(); S.camOn=false; S.micOn=false; }
+  }
 
-    let unsubRequests = null;
-    let unsubRoom = null;
-    let signalingListeners = {};
+  // Setup UI
+  $('meeting-code-tag').textContent=S.roomCode;
+  $('tag-host').style.display=S.isHost?'inline':'none';
+  $('btn-end').style.display  =S.isHost?'inline-flex':'none';
+  $('btn-leave').style.display=S.isHost?'none':'inline-flex';
+  const re=$('tag-role');
+  re.textContent=S.profile.role==='teacher'?'[TEACHER]':'[STUDENT]';
+  re.className='tag-role '+(S.profile.role==='teacher'?'role-teacher':'role-student');
 
-    // ─── Render Engine ─────────────────────────────────────────────────────────
-    function render() {
-      const root = document.getElementById('root');
-      const role = state.profile?.role || 'student';
-      const borderClass = role === 'teacher' ? 'teacher-border' : 'student-border';
-      const glowClass = role === 'teacher' ? 'glow-teacher' : 'glow-student';
+  // Local video
+  $('local-video').srcObject=S.localStream;
+  $('local-label').textContent=(S.profile.full_name||'나')+(S.isHost?' [HOST]':'');
+  updateCamOff();
+  updateCtrl();
+  updateGrid();
+  showScreen('meeting');
 
-      const screens = {
-        loading: renderLoading,
-        login: renderLogin,
-        lobby: () => renderLobby(borderClass, glowClass),
-        waiting: renderWaiting,
-        meeting: () => renderMeeting(borderClass),
-      };
+  if(S.isHost) listenRequests();
+  else         listenOffer();
+}
 
-      root.innerHTML = (screens[state.screen] || renderLoading)();
-      bindEvents();
-    }
+// ── Media controls ────────────────────────────────────────────
+$('btn-mic').onclick=()=>{
+  S.micOn=!S.micOn;
+  S.localStream?.getAudioTracks().forEach(t=>t.enabled=S.micOn);
+  updateCtrl();
+};
+$('btn-cam').onclick=()=>{
+  S.camOn=!S.camOn;
+  S.localStream?.getVideoTracks().forEach(t=>t.enabled=S.camOn);
+  updateCamOff(); updateCtrl();
+};
+$('btn-share').onclick=toggleShare;
 
-    function renderLoading() {
-      return `<div class="flex items-center justify-center h-screen bg-black text-terminal-text">
-        <div class="text-center">
-          <div class="text-2xl font-bold tracking-widest mb-4">SMES_MEET</div>
-          <div class="text-terminal-dim text-sm">系統初始化中<span class="animate-blink">█</span></div>
-        </div>
-      </div>`;
-    }
-
-    function renderLogin() {
-      return `<div class="flex items-center justify-center h-screen bg-black overflow-hidden">
-        <div class="w-full max-w-sm px-6">
-          <!-- Header -->
-          <div class="mb-12 text-center">
-            <div class="text-xs text-terminal-dim tracking-widest mb-3">[ SYSTEM INIT ]</div>
-            <div class="text-3xl font-bold text-white tracking-widest mb-2">SMES_MEET</div>
-            <div class="text-xs text-terminal-dim tracking-wider">校園 P2P 視訊會議系統</div>
-            <div class="mt-3 h-px bg-terminal-border"></div>
-          </div>
-
-          <!-- Domain notice -->
-          <div class="border border-terminal-border p-3 mb-6">
-            <div class="text-xs text-terminal-dim mb-1">// 存取限制</div>
-            <div class="text-xs text-white">僅接受 @${ALLOWED_DOMAIN}</div>
-          </div>
-
-          <!-- Error -->
-          ${state.error ? `<div class="border border-red-900 bg-red-950 p-3 mb-4 text-xs text-red-400">${escHtml(state.error)}</div>` : ''}
-
-          <!-- Google Login Button -->
-          <button id="btn-login" class="w-full border border-terminal-border bg-terminal-surface hover:bg-terminal-muted text-white text-sm py-4 px-6 tracking-widest transition-colors duration-150 flex items-center justify-center gap-3">
-            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            使用 Google 帳號登入
-          </button>
-
-          <!-- Hidden dev login panel — appears after clicking version text 5x -->
-          <div id="dev-panel" class="mt-4 hidden">
-            <div class="border border-yellow-900 bg-yellow-950 p-3 mb-2">
-              <div class="text-xs text-yellow-500 mb-3">// DEV LOGIN — 測試帳號登入</div>
-              <input id="dev-email" type="email" placeholder="Email" autocomplete="username"
-                class="w-full bg-black border border-terminal-border text-white text-xs px-3 py-2 mb-2 placeholder-terminal-muted" />
-              <input id="dev-password" type="password" placeholder="Password" autocomplete="current-password"
-                class="w-full bg-black border border-terminal-border text-white text-xs px-3 py-2 mb-3 placeholder-terminal-muted" />
-              <button id="btn-dev-login" class="w-full border border-yellow-800 text-yellow-400 text-xs py-2 hover:bg-yellow-950 transition-colors">
-                測試登入
-              </button>
-            </div>
-          </div>
-
-          <!-- Version text — click 5x to reveal dev panel -->
-          <div class="mt-6 text-center text-xs text-terminal-dim cursor-default select-none" id="version-text">
-            <span>v1.0 // Pure P2P // No Recording</span>
-          </div>
-        </div>
-      </div>`;
-    }
-
-    function renderLobby(borderClass, glowClass) {
-      const p = state.profile;
-      return `<div class="flex items-center justify-center h-screen bg-black overflow-hidden">
-        <div class="w-full max-w-md px-6">
-          <!-- Profile Bar -->
-          <div class="border ${borderClass} border p-3 mb-6 flex items-center justify-between">
-            <div>
-              <div class="text-xs text-terminal-dim mb-1">// 已驗證身分</div>
-              <div class="text-sm text-white">${escHtml(p?.full_name || p?.email || '')}</div>
-              <div class="text-xs ${glowClass} mt-1">[${p?.role === 'teacher' ? 'TEACHER' : 'STUDENT'}]</div>
-            </div>
-            <button id="btn-logout" class="text-xs text-terminal-dim hover:text-red-400 transition-colors border border-terminal-border px-3 py-2">登出</button>
-          </div>
-
-          <!-- Meeting Code Input -->
-          <div class="border border-terminal-border p-4 mb-4">
-            <div class="text-xs text-terminal-dim mb-3">// 輸入會議代碼</div>
-            <div class="flex gap-2">
-              <input id="room-input" type="text" maxlength="10" placeholder="XXXXXXXX" value="${escHtml(state.roomCodeInput)}"
-                class="flex-1 bg-black border border-terminal-border text-white text-base px-3 py-3 tracking-widest uppercase placeholder-terminal-muted focus:border-blue-500 transition-colors" />
-              <button id="btn-join" class="bg-white text-black text-sm px-5 py-3 hover:bg-terminal-text transition-colors font-bold tracking-wider">進入</button>
-            </div>
-          </div>
-
-          ${state.error ? `<div class="border border-red-900 bg-red-950 p-3 mb-4 text-xs text-red-400">${escHtml(state.error)}</div>` : ''}
-          ${state.info ? `<div class="border border-blue-900 bg-blue-950 p-3 mb-4 text-xs text-blue-300">${escHtml(state.info)}</div>` : ''}
-
-          <div class="text-center text-xs text-terminal-dim">
-            純 P2P 加密傳輸 // 無伺服器錄影 // 無時間限制
-          </div>
-        </div>
-      </div>`;
-    }
-
-    function renderWaiting() {
-      return `<div class="flex items-center justify-center h-screen bg-black">
-        <div class="text-center max-w-sm px-6">
-          <div class="text-xs text-terminal-dim mb-4">// 等待主持人核准</div>
-          <div class="text-xl text-white mb-2">房間代碼：${escHtml(state.roomCode)}</div>
-          <div class="text-sm text-terminal-dim mb-8">正在等待主持人確認您的加入請求...</div>
-          <div class="flex justify-center mb-6">
-            <div class="w-2 h-2 bg-blue-500 mr-2 animate-bounce" style="animation-delay:0ms"></div>
-            <div class="w-2 h-2 bg-blue-500 mr-2 animate-bounce" style="animation-delay:150ms"></div>
-            <div class="w-2 h-2 bg-blue-500 animate-bounce" style="animation-delay:300ms"></div>
-          </div>
-          <button id="btn-cancel-request" class="border border-terminal-border text-terminal-dim text-xs px-6 py-2 hover:text-white transition-colors">取消請求</button>
-        </div>
-      </div>`;
-    }
-
-    function renderMeeting(borderClass) {
-      const peerList = Object.entries(state.peers);
-      const count = peerList.length + 1;
-      const gridClass = `video-grid-${Math.min(count, 6)}`;
-      const p = state.profile;
-
-      return `<div class="flex flex-col h-screen bg-black overflow-hidden" style="overscroll-behavior:none">
-        <!-- Top Bar -->
-        <div class="flex items-center justify-between px-4 py-2 border-b border-terminal-border flex-shrink-0">
-          <div class="flex items-center gap-4">
-            <span class="text-white text-sm font-bold tracking-widest">SMES_MEET</span>
-            <span class="text-terminal-dim text-xs border border-terminal-border px-2 py-1">${escHtml(state.roomCode)}</span>
-            <span class="text-terminal-dim text-xs">${count} 人連線</span>
-          </div>
-          <div class="flex items-center gap-2">
-            ${state.isHost ? `<div class="text-xs text-blue-400 border border-blue-900 px-2 py-1">[HOST]</div>` : ''}
-            <div class="text-xs ${p?.role === 'teacher' ? 'glow-teacher' : 'glow-student'}">[${p?.role === 'teacher' ? 'TEACHER' : 'STUDENT'}]</div>
-          </div>
-        </div>
-
-        <!-- Main Area: Video + Chat -->
-        <div class="flex-1 flex overflow-hidden min-h-0">
-          <!-- Video Grid -->
-          <div class="flex-1 grid ${gridClass} gap-px bg-terminal-border overflow-hidden p-px" id="video-grid">
-            <!-- Local video -->
-            <div class="relative bg-terminal-surface overflow-hidden border ${borderClass}">
-              <video id="local-video" autoplay muted playsinline class="w-full h-full"></video>
-              <div class="absolute bottom-2 left-2 bg-black bg-opacity-70 px-2 py-1 text-xs text-white">
-                ${escHtml(p?.full_name || '나')} ${state.isHost ? '[HOST]' : ''}
-              </div>
-              ${!state.camOn ? `<div class="absolute inset-0 flex items-center justify-center bg-black">
-                <span class="text-terminal-dim text-xs">CAM_OFF</span>
-              </div>` : ''}
-            </div>
-            <!-- Remote videos -->
-            ${peerList.map(([uid, peer]) => `
-              <div class="relative bg-terminal-surface overflow-hidden border border-terminal-border" id="peer-tile-${uid}">
-                <video id="video-${uid}" autoplay playsinline class="w-full h-full"></video>
-                <div class="absolute bottom-2 left-2 bg-black bg-opacity-70 px-2 py-1 text-xs text-white">
-                  ${escHtml(peer.name || uid.slice(0,8))} [${peer.role === 'teacher' ? 'T' : 'S'}]
-                </div>
-              </div>`).join('')}
-          </div>
-
-          <!-- Chat Panel -->
-          <div class="w-72 flex flex-col border-l border-terminal-border flex-shrink-0 hidden md:flex">
-            <div class="px-3 py-2 border-b border-terminal-border text-xs text-terminal-dim">// P2P 私密聊天 [閱後即焚]</div>
-            <div id="chat-messages" class="flex-1 overflow-y-auto chat-area p-3 space-y-2 text-xs"></div>
-            <div class="border-t border-terminal-border p-2 flex gap-2">
-              <input id="chat-input" type="text" placeholder="輸入訊息..." maxlength="500"
-                class="flex-1 bg-black border border-terminal-border text-white text-xs px-2 py-2 placeholder-terminal-muted" />
-              <button id="btn-send-chat" class="bg-terminal-border text-white text-xs px-3 py-2 hover:bg-terminal-muted transition-colors">↑</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Controls Bar -->
-        <div class="flex items-center justify-between px-4 py-3 border-t border-terminal-border flex-shrink-0 bg-terminal-surface">
-          <div class="flex gap-2">
-            <button id="btn-mic" class="text-xs px-4 py-2 border ${state.micOn ? 'border-terminal-border text-white' : 'border-red-900 text-red-400 bg-red-950'} hover:bg-terminal-muted transition-colors">
-              ${state.micOn ? '🎤 MIC' : '🔇 MIC'}
-            </button>
-            <button id="btn-cam" class="text-xs px-4 py-2 border ${state.camOn ? 'border-terminal-border text-white' : 'border-red-900 text-red-400 bg-red-950'} hover:bg-terminal-muted transition-colors">
-              ${state.camOn ? '📷 CAM' : '📷 OFF'}
-            </button>
-            <button id="btn-share" class="text-xs px-4 py-2 border ${state.sharing ? 'border-blue-700 text-blue-400 bg-blue-950' : 'border-terminal-border text-white'} hover:bg-terminal-muted transition-colors">
-              ${state.sharing ? '⏹ 停止分享' : '🖥 分享畫面'}
-            </button>
-          </div>
-
-          <!-- Pending Requests (Host only) -->
-          ${state.isHost && state.pendingRequests.length > 0 ? `
-            <div class="flex gap-2">
-              ${state.pendingRequests.slice(0,2).map(req => `
-                <div class="border border-blue-700 pending-pulse px-3 py-2 text-xs text-blue-300 flex items-center gap-2">
-                  <span>[${req.role === 'teacher' ? 'T' : 'S'}] ${escHtml(req.name || req.userId.slice(0,6))}</span>
-                  <button onclick="approveRequest('${req.id}')" class="bg-blue-700 text-white px-2 py-1 hover:bg-blue-600">核准</button>
-                  <button onclick="rejectRequest('${req.id}')" class="border border-red-900 text-red-400 px-2 py-1 hover:bg-red-950">拒絕</button>
-                </div>`).join('')}
-            </div>` : ''}
-
-          <button id="btn-leave" class="text-xs px-5 py-2 border border-red-900 text-red-400 hover:bg-red-950 transition-colors">
-            ✕ 離開
-          </button>
-        </div>
-
-        <!-- Mobile Chat Toggle -->
-        <button id="btn-chat-toggle" class="fixed bottom-20 right-4 md:hidden bg-terminal-surface border border-terminal-border text-white text-xs px-3 py-2 z-50">
-          💬
-        </button>
-      </div>`;
-    }
-
-    // ─── Event Binding ──────────────────────────────────────────────────────────
-    function bindEvents() {
-      // Login
-      document.getElementById('btn-login')?.addEventListener('click', handleLogin);
-
-      // Version text: click 5x to reveal dev panel
-      let _devClicks = 0;
-      document.getElementById('version-text')?.addEventListener('click', () => {
-        _devClicks++;
-        if (_devClicks >= 5) {
-          _devClicks = 0;
-          const panel = document.getElementById('dev-panel');
-          if (panel) panel.classList.toggle('hidden');
-        }
+async function toggleShare(){
+  if(S.sharing){
+    S.screenStream?.getTracks().forEach(t=>t.stop());
+    S.screenStream=null; S.sharing=false;
+    // Restore camera track to all peers
+    const camT=S.localStream?.getVideoTracks()[0];
+    if(camT){
+      Object.values(S.peers).forEach(p=>{
+        const s=p.pc.getSenders().find(s=>s.track?.kind==='video');
+        if(s) s.replaceTrack(camT).catch(()=>{});
       });
-
-      // Dev login (Email/Password)
-      document.getElementById('btn-dev-login')?.addEventListener('click', handleDevLogin);
-      document.getElementById('dev-password')?.addEventListener('keydown', e => {
-        if (e.key === 'Enter') handleDevLogin();
-      });
-
-      // Logout
-      document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
-
-      // Room input
-      const roomInput = document.getElementById('room-input');
-      if (roomInput) {
-        roomInput.addEventListener('input', e => { state.roomCodeInput = e.target.value.toUpperCase(); });
-        roomInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleJoin(); });
-      }
-      document.getElementById('btn-join')?.addEventListener('click', handleJoin);
-
-      // Cancel request
-      document.getElementById('btn-cancel-request')?.addEventListener('click', handleCancelRequest);
-
-      // Meeting controls
-      document.getElementById('btn-mic')?.addEventListener('click', toggleMic);
-      document.getElementById('btn-cam')?.addEventListener('click', toggleCam);
-      document.getElementById('btn-share')?.addEventListener('click', toggleShare);
-      document.getElementById('btn-leave')?.addEventListener('click', handleLeave);
-
-      // Chat
-      const chatInput = document.getElementById('chat-input');
-      chatInput?.addEventListener('keydown', e => { if (e.key === 'Enter') sendChatMessage(); });
-      document.getElementById('btn-send-chat')?.addEventListener('click', sendChatMessage);
-
-      // Attach local video
-      if (state.localStream && document.getElementById('local-video')) {
-        document.getElementById('local-video').srcObject = state.localStream;
-      }
-
-      // Attach remote videos
-      Object.entries(state.peers).forEach(([uid, peer]) => {
-        const vid = document.getElementById(`video-${uid}`);
-        if (vid && peer.stream) vid.srcObject = peer.stream;
-      });
-
-      // Render chat
-      renderChat();
+      $('local-video').srcObject=S.localStream;
     }
+    updateCtrl(); return;
+  }
+  try{
+    // Request entire monitor + system audio
+    S.screenStream=await navigator.mediaDevices.getDisplayMedia({
+      video:{ displaySurface:'monitor', width:{ideal:1920}, height:{ideal:1080}, frameRate:{ideal:30} },
+      audio:true   // includes tab + system audio where supported
+    });
+    const vt=S.screenStream.getVideoTracks()[0];
+    S.sharing=true;
+    // Push screen track to all peers
+    Object.values(S.peers).forEach(p=>{
+      const s=p.pc.getSenders().find(s=>s.track?.kind==='video');
+      if(s) s.replaceTrack(vt).catch(()=>{});
+    });
+    // Local preview
+    $('local-video').srcObject=new MediaStream([vt,...S.screenStream.getAudioTracks()]);
+    // Auto-stop when user clicks browser's stop button
+    vt.onended=()=>{ if(S.sharing) toggleShare(); };
+    updateCtrl();
+  } catch(e){
+    if(e.name!=='NotAllowedError') notif('無法取得螢幕分享：'+e.message);
+  }
+}
 
-    function renderChat() {
-      const area = document.getElementById('chat-messages');
-      if (!area) return;
-      area.innerHTML = state.chatMessages.map(m => `
-        <div class="animate-fadeIn">
-          <span class="text-terminal-dim">${escHtml(m.sender)}:</span>
-          <span class="text-terminal-text ml-1">${escHtml(m.text)}</span>
-        </div>`).join('');
-      area.scrollTop = area.scrollHeight;
-    }
+function updateCtrl(){
+  const mic=$('btn-mic'), cam=$('btn-cam'), sh=$('btn-share');
+  mic.className='ctrl-btn'+(S.micOn?'':' off');
+  mic.innerHTML=S.micOn?'🎤 麥克風':'🔇 靜音中';
+  cam.className='ctrl-btn'+(S.camOn?'':' off');
+  cam.innerHTML=S.camOn?'📷 相機':'📷 相機關閉';
+  sh.className='ctrl-btn'+(S.sharing?' active':'');
+  sh.innerHTML=S.sharing?'⏹ 停止分享':'🖥 分享螢幕';
+}
+function updateCamOff(){
+  $('local-camoff').classList.toggle('hidden',S.camOn);
+}
 
-    // ─── Auth ───────────────────────────────────────────────────────────────────
-    async function handleLogin() {
-      clearMessages();
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({
-        hd: ALLOWED_DOMAIN,
-        login_hint: `@${ALLOWED_DOMAIN}`,
-        prompt: 'select_account'
-      });
-      // Show loading state on button
-      const btn = document.getElementById('btn-login');
-      if (btn) { btn.textContent = '跳轉中...'; btn.disabled = true; }
-      try {
-        // Redirect to Google — page will reload on return
-        await signInWithRedirect(auth, provider);
-      } catch (e) {
-        setState({ error: `登入失敗：${e.message}` });
-        render();
-      }
-    }
+// ── Leave / End ───────────────────────────────────────────────
+$('btn-leave').onclick=()=>leaveMeeting(false);
+$('btn-end').onclick  =()=>{ if(confirm('確定要結束會議？所有人都將被中斷連線。')) leaveMeeting(true); };
 
-    // DEV: Email/Password login for test accounts
-    async function handleDevLogin() {
-      const email = document.getElementById('dev-email')?.value?.trim();
-      const password = document.getElementById('dev-password')?.value;
-      if (!email || !password) {
-        setState({ error: '請輸入 Email 和密碼' });
-        render();
-        return;
-      }
-      if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
-        setState({ error: `測試帳號也必須使用 @${ALLOWED_DOMAIN}` });
-        render();
-        return;
-      }
-      const btn = document.getElementById('btn-dev-login');
-      if (btn) { btn.textContent = '登入中...'; btn.disabled = true; }
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        // onAuthStateChanged will handle the rest
-      } catch (e) {
-        const msg = e.code === 'auth/invalid-credential' ? '帳號或密碼錯誤'
-          : e.code === 'auth/user-not-found' ? '帳號不存在，請先在 Firebase Console 建立'
-          : e.message;
-        setState({ error: `測試登入失敗：${msg}` });
-        render();
-      }
-    }
+async function leaveMeeting(end){
+  await cleanup(end);
+  // Reset grid
+  const grid=$('video-grid');
+  [...grid.children].forEach(c=>{ if(c.id!=='tile-local') c.remove(); });
+  $('pending-strip').innerHTML='';
+  $('local-video').srcObject=null;
+  updateGrid();
+  renderLobby(); showScreen('lobby');
+}
 
-    async function ensureProfile(user) {
-      const role = detectRole(user.email);
-      const profileRef = doc(db, 'profiles', user.uid);
-      const snap = await getDoc(profileRef);
-      let profile;
-      if (!snap.exists()) {
-        profile = { email: user.email, full_name: user.displayName || user.email.split('@')[0], role, uid: user.uid };
-        await setDoc(profileRef, profile);
-      } else {
-        profile = snap.data();
-      }
-      setState({ user, profile });
-    }
+async function cleanup(endAll=false){
+  Object.values(S.peers).forEach(p=>p.pc.close()); S.peers={};
+  S.localStream?.getTracks().forEach(t=>t.stop());  S.localStream=null;
+  S.screenStream?.getTracks().forEach(t=>t.stop()); S.screenStream=null;
+  S.sharing=false; S.camOn=true; S.micOn=true;
+  S.unsubReqs?.(); S.unsubReqs=null;
+  S.waitUnsub?.(); S.waitUnsub=null;
+  remove(ref(rtdb,`signaling/${S.roomCode}`)).catch(()=>{});
+  if(endAll&&S.isHost){
+    const q=query(collection(db,'room_requests'),where('room_code','==',S.roomCode),where('status','==','pending'));
+    const sn=await getDocs(q).catch(()=>({docs:[]}));
+    sn.docs.forEach(d=>updateDoc(d.ref,{status:'rejected'}).catch(()=>{}));
+    await deleteDoc(doc(db,'rooms',S.roomCode)).catch(()=>{});
+  }
+  if(S.myReqId){ deleteDoc(doc(db,'room_requests',S.myReqId)).catch(()=>{}); S.myReqId=null; }
+  S.roomCode=''; S.isHost=false;
+}
 
-    async function handleLogout() {
-      await signOut(auth);
-      setState({ user: null, profile: null, screen: 'login', roomCode: '', roomCodeInput: '', error: '', info: '' });
-    }
+// ── Host: listen for pending requests ────────────────────────
+function listenRequests(){
+  const q=query(collection(db,'room_requests'),where('room_code','==',S.roomCode),where('status','==','pending'));
+  S.unsubReqs=onSnapshot(q,snap=>{
+    const strip=$('pending-strip'); strip.innerHTML='';
+    snap.docs.forEach(d=>{
+      const r=d.data();
+      const card=document.createElement('div'); card.className='pending-card';
+      card.innerHTML=`<span>[${r.user_role==='teacher'?'T':'S'}] ${esc(r.user_name||r.user_email)}</span>
+        <button class="btn-approve" data-id="${d.id}" data-uid="${r.user_id}" data-name="${esc(r.user_name)}" data-role="${r.user_role}">核准</button>
+        <button class="btn-reject"  data-id="${d.id}">拒絕</button>`;
+      strip.appendChild(card);
+    });
+    strip.querySelectorAll('.btn-approve').forEach(b=>b.onclick=()=>approve(b.dataset.id,b.dataset.uid,b.dataset.name,b.dataset.role));
+    strip.querySelectorAll('.btn-reject' ).forEach(b=>b.onclick=()=>updateDoc(doc(db,'room_requests',b.dataset.id),{status:'rejected'}));
+    snap.docChanges().filter(c=>c.type==='added').forEach(c=>{
+      const r=c.doc.data(); notif(`[${r.user_role==='teacher'?'TEACHER':'STUDENT'}] ${r.user_name} 申請加入`);
+    });
+  });
+}
 
-    // ─── Lobby / Room Logic ─────────────────────────────────────────────────────
-    async function handleJoin() {
-      clearMessages();
-      const code = state.roomCodeInput.trim().toUpperCase();
-      if (!code) { setState({ error: '請輸入會議代碼' }); return; }
+async function approve(reqId,uid,name,role2){
+  await updateDoc(doc(db,'room_requests',reqId),{status:'approved'});
+  await initP2P(uid,name,role2);
+}
 
-      const roomRef = doc(db, 'rooms', code);
-      const snap = await getDoc(roomRef);
+// ── WebRTC: Host initiates ────────────────────────────────────
+async function initP2P(guestUid,guestName,guestRole){
+  const pc=buildPC(guestUid);
+  S.peers[guestUid]={pc,name:guestName,role:guestRole};
 
-      if (!snap.exists()) {
-        // Room doesn't exist
-        if (state.profile.role === 'teacher') {
-          if (!confirm(`會議室「${code}」尚未建立，是否建立新會議？`)) return;
-          await setDoc(roomRef, { code, host_id: state.user.uid, created_at: serverTimestamp() });
-          setState({ roomCode: code, isHost: true });
-          await startMeeting(true);
-        } else {
-          setState({ error: '會議室不存在。僅有教師具備建立新會議的權限。' });
-        }
-      } else {
-        // Room exists — request to join
-        if (!confirm(`會議室「${code}」已開啟，是否送出加入要求？`)) return;
-        const roomData = snap.data();
-        const isHost = roomData.host_id === state.user.uid;
+  const offer=await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await set(ref(rtdb,`signaling/${S.roomCode}/offer/${guestUid}`),{sdp:offer.sdp,type:offer.type,from:S.user.uid});
 
-        if (isHost) {
-          setState({ roomCode: code, isHost: true });
-          await startMeeting(true);
-          return;
-        }
+  // Listen for answer
+  onValue(ref(rtdb,`signaling/${S.roomCode}/answer/${S.user.uid}`),async s=>{
+    if(!s.exists()) return;
+    const a=s.val(); if(a.from!==guestUid) return;
+    if(pc.signalingState==='have-local-offer')
+      await pc.setRemoteDescription(new RTCSessionDescription(a)).catch(()=>{});
+  });
+  // Listen for ICE from guest
+  onChildAdded(ref(rtdb,`signaling/${S.roomCode}/ice/${S.user.uid}_from_${guestUid}`),async s=>{
+    if(s.exists()) await pc.addIceCandidate(new RTCIceCandidate(s.val())).catch(()=>{});
+  });
 
-        // Create request
-        const reqRef = collection(db, 'room_requests');
-        const reqDoc = await addDoc(reqRef, {
-          room_code: code,
-          user_id: state.user.uid,
-          user_name: state.profile.full_name,
-          user_role: state.profile.role,
-          status: 'pending',
-          created_at: serverTimestamp()
-        });
+  addTile(guestUid,guestName,guestRole);
+}
 
-        setState({ roomCode: code, myRequest: reqDoc.id, screen: 'waiting', isHost: false });
-        render();
+// ── WebRTC: Guest listens for offer ──────────────────────────
+function listenOffer(){
+  onValue(ref(rtdb,`signaling/${S.roomCode}/offer/${S.user.uid}`),async s=>{
+    if(!s.exists()) return;
+    const od=s.val(); const hostUid=od.from;
+    let hostName='Host',hostRole='teacher';
+    const hs=await getDoc(doc(db,'profiles',hostUid)).catch(()=>null);
+    if(hs?.exists()){ hostName=hs.data().full_name||'Host'; hostRole=hs.data().role||'teacher'; }
 
-        // Listen for approval
-        const reqDocRef = doc(db, 'room_requests', reqDoc.id);
-        const unsub = onSnapshot(reqDocRef, async (snap) => {
-          if (!snap.exists()) return;
-          const data = snap.data();
-          if (data.status === 'approved') {
-            unsub();
-            setState({ myRequest: null });
-            await startMeeting(false);
-          } else if (data.status === 'rejected') {
-            unsub();
-            setState({ myRequest: null, screen: 'lobby', error: '主持人已拒絕您的加入請求。', roomCode: '' });
-            render();
-          }
-        });
-      }
-    }
+    const pc=buildPC(hostUid);
+    S.peers[hostUid]={pc,name:hostName,role:hostRole};
 
-    async function handleCancelRequest() {
-      if (state.myRequest) {
-        await deleteDoc(doc(db, 'room_requests', state.myRequest));
-      }
-      setState({ screen: 'lobby', myRequest: null, roomCode: '', error: '' });
-      render();
-    }
+    await pc.setRemoteDescription(new RTCSessionDescription(od)).catch(()=>{});
+    const ans=await pc.createAnswer();
+    await pc.setLocalDescription(ans);
+    await set(ref(rtdb,`signaling/${S.roomCode}/answer/${hostUid}`),{sdp:ans.sdp,type:ans.type,from:S.user.uid});
 
-    // ─── Meeting Start ──────────────────────────────────────────────────────────
-    async function startMeeting(isHost) {
-      // Get local media
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        setState({ localStream: stream, screen: 'meeting', isHost, peers: {}, chatMessages: [] });
-      } catch (e) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => new MediaStream());
-        setState({ localStream: stream, screen: 'meeting', isHost, peers: {}, chatMessages: [], camOn: false });
-      }
-
-      render();
-
-      // Set local video
-      const vid = document.getElementById('local-video');
-      if (vid && state.localStream) vid.srcObject = state.localStream;
-
-      if (isHost) {
-        // Host listens for approved requests and initiates P2P
-        listenForApprovedRequests();
-      } else {
-        // Guest listens for offer from host
-        listenForSignaling(state.user.uid);
-      }
-    }
-
-    // ─── Host: Listen for pending requests ─────────────────────────────────────
-    function listenForApprovedRequests() {
-      const q = query(collection(db, 'room_requests'), where('room_code', '==', state.roomCode), where('status', '==', 'pending'));
-      unsubRequests = onSnapshot(q, (snap) => {
-        const reqs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        setState({ pendingRequests: reqs });
-        if (state.screen === 'meeting') {
-          // Re-render just the controls
-          const bar = document.querySelector('[id=btn-leave]')?.closest('.flex.items-center.justify-between');
-          if (bar) {
-            render(); // full re-render for simplicity
-          }
-        }
-      });
-    }
-
-    // Exposed globally for inline onclick
-    window.approveRequest = async function(reqId) {
-      const reqRef = doc(db, 'room_requests', reqId);
-      const snap = await getDoc(reqRef);
-      if (!snap.exists()) return;
-      const reqData = snap.data();
-      const guestUid = reqData.user_id;
-
-      await updateDoc(reqRef, { status: 'approved' });
-
-      // Initiate WebRTC with guest
-      await initiateP2P(guestUid, reqData.user_name, reqData.user_role);
-    };
-
-    window.rejectRequest = async function(reqId) {
-      await updateDoc(doc(db, 'room_requests', reqId), { status: 'rejected' });
-    };
-
-    // ─── WebRTC ─────────────────────────────────────────────────────────────────
-    const ICE_SERVERS = [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-    ];
-
-    function createPC(remoteUid) {
-      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-
-      // Add local tracks
-      if (state.localStream) {
-        state.localStream.getTracks().forEach(track => pc.addTrack(track, state.localStream));
-      }
-
-      // Remote stream
-      const remoteStream = new MediaStream();
-      pc.ontrack = (e) => {
-        remoteStream.addTrack(e.track);
-        if (state.peers[remoteUid]) {
-          state.peers[remoteUid].stream = remoteStream;
-        }
-        const vid = document.getElementById(`video-${remoteUid}`);
-        if (vid) vid.srcObject = remoteStream;
-      };
-
-      // ICE candidates
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          const icePath = `signaling/${state.roomCode}/${remoteUid}_${state.user.uid}/ice`;
-          push(ref(rtdb, icePath), e.candidate.toJSON());
-        }
-      };
-
-      pc.onconnectionstatechange = () => {
-        if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
-          removePeer(remoteUid);
-        }
-      };
-
-      return { pc, stream: remoteStream };
-    }
-
-    async function initiateP2P(guestUid, guestName, guestRole) {
-      const { pc, stream } = createPC(guestUid);
-
-      // DataChannel for chat
-      const dc = pc.createDataChannel('chat');
-      setupDataChannel(dc, guestUid);
-
-      state.peers[guestUid] = { pc, stream, name: guestName, role: guestRole, dataChannel: dc };
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      // Write offer to RTDB
-      const offerPath = `signaling/${state.roomCode}/${guestUid}/offer`;
-      await set(ref(rtdb, offerPath), { sdp: offer.sdp, type: offer.type, from: state.user.uid });
-
-      // Listen for answer
-      const answerPath = `signaling/${state.roomCode}/${state.user.uid}_${guestUid}/answer`;
-      onValue(ref(rtdb, answerPath), async (snap) => {
-        if (!snap.exists()) return;
-        const answer = snap.val();
-        if (pc.signalingState === 'have-local-offer') {
-          await pc.setRemoteDescription(new RTCSessionDescription(answer));
-        }
-      }, { onlyOnce: false });
-
-      // Listen for ICE from guest
-      const icePath = `signaling/${state.roomCode}/${state.user.uid}_${guestUid}/ice`;
-      onChildAdded(ref(rtdb, icePath), async (snap) => {
-        const candidate = snap.val();
-        if (candidate && pc.remoteDescription) {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
-        }
-      });
-
-      render();
-    }
-
-    async function listenForSignaling(myUid) {
-      const offerPath = `signaling/${state.roomCode}/${myUid}/offer`;
-      onValue(ref(rtdb, offerPath), async (snap) => {
-        if (!snap.exists()) return;
-        const offerData = snap.val();
-        const hostUid = offerData.from;
-
-        const { pc, stream } = createPC(hostUid);
-
-        // DataChannel receive
-        pc.ondatachannel = (e) => {
-          setupDataChannel(e.channel, hostUid);
-          if (state.peers[hostUid]) state.peers[hostUid].dataChannel = e.channel;
-        };
-
-        state.peers[hostUid] = { pc, stream, name: 'Host', role: 'teacher', dataChannel: null };
-
-        await pc.setRemoteDescription(new RTCSessionDescription(offerData));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-
-        // Write answer
-        const answerPath = `signaling/${state.roomCode}/${hostUid}_${myUid}/answer`;
-        await set(ref(rtdb, answerPath), { sdp: answer.sdp, type: answer.type });
-
-        // Listen for ICE from host
-        const icePath = `signaling/${state.roomCode}/${hostUid}_${myUid}/ice`;
-        onChildAdded(ref(rtdb, icePath), async (snap) => {
-          const candidate = snap.val();
-          if (candidate) {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
-          }
-        });
-
-        render();
-      }, { onlyOnce: false });
-    }
-
-    function setupDataChannel(dc, remoteUid) {
-      dc.onopen = () => { console.log(`DataChannel open with ${remoteUid}`); };
-      dc.onmessage = (e) => {
-        try {
-          const msg = JSON.parse(e.data);
-          state.chatMessages.push(msg);
-          renderChat();
-        } catch (ex) {}
-      };
-      dc.onclose = () => {};
-    }
-
-    function sendChatMessage() {
-      const input = document.getElementById('chat-input');
-      const text = input?.value?.trim();
-      if (!text) return;
-
-      const msg = { sender: state.profile?.full_name || '我', text, time: Date.now() };
-      state.chatMessages.push({ ...msg, sender: '我' });
-
-      const payload = JSON.stringify({ sender: state.profile?.full_name || '?', text, time: Date.now() });
-      Object.values(state.peers).forEach(peer => {
-        if (peer.dataChannel?.readyState === 'open') {
-          peer.dataChannel.send(payload);
-        }
-      });
-
-      if (input) input.value = '';
-      renderChat();
-    }
-
-    function removePeer(uid) {
-      if (state.peers[uid]) {
-        state.peers[uid].pc.close();
-        delete state.peers[uid];
-        render();
-      }
-    }
-
-    // ─── Media Controls ─────────────────────────────────────────────────────────
-    function toggleMic() {
-      const micOn = !state.micOn;
-      state.localStream?.getAudioTracks().forEach(t => { t.enabled = micOn; });
-      setState({ micOn });
-      render();
-    }
-
-    function toggleCam() {
-      const camOn = !state.camOn;
-      state.localStream?.getVideoTracks().forEach(t => { t.enabled = camOn; });
-      setState({ camOn });
-      render();
-      const vid = document.getElementById('local-video');
-      if (vid && state.localStream) vid.srcObject = state.localStream;
-    }
-
-    async function toggleShare() {
-      if (state.sharing) {
-        // Stop sharing
-        state.screenStream?.getTracks().forEach(t => t.stop());
-        const camTrack = state.localStream?.getVideoTracks()[0];
-        if (camTrack) {
-          Object.values(state.peers).forEach(peer => {
-            const sender = peer.pc.getSenders().find(s => s.track?.kind === 'video');
-            if (sender) sender.replaceTrack(camTrack).catch(() => {});
-          });
-        }
-        setState({ sharing: false, screenStream: null });
-        render();
-        return;
-      }
-
-      try {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { displaySurface: 'monitor' },
-          audio: true
-        });
-
-        const screenTrack = screenStream.getVideoTracks()[0];
-        Object.values(state.peers).forEach(peer => {
-          const sender = peer.pc.getSenders().find(s => s.track?.kind === 'video');
-          if (sender) sender.replaceTrack(screenTrack).catch(() => {});
-        });
-
-        screenTrack.onended = () => toggleShare();
-        setState({ sharing: true, screenStream });
-        render();
-
-        // Replace local preview
-        const vid = document.getElementById('local-video');
-        if (vid) {
-          const previewStream = new MediaStream([screenTrack]);
-          vid.srcObject = previewStream;
-        }
-      } catch (e) {
-        if (e.name !== 'NotAllowedError') alert('無法取得螢幕分享：' + e.message);
-      }
-    }
-
-    // ─── Leave ──────────────────────────────────────────────────────────────────
-    async function handleLeave() {
-      // Close all peers
-      Object.values(state.peers).forEach(peer => peer.pc.close());
-      // Stop media
-      state.localStream?.getTracks().forEach(t => t.stop());
-      state.screenStream?.getTracks().forEach(t => t.stop());
-      // Cleanup signaling
-      remove(ref(rtdb, `signaling/${state.roomCode}`)).catch(() => {});
-      // Cleanup subscriptions
-      unsubRequests?.();
-      // If host, remove room
-      if (state.isHost) {
-        await deleteDoc(doc(db, 'rooms', state.roomCode)).catch(() => {});
-      }
-      setState({
-        screen: 'lobby', peers: {}, localStream: null, screenStream: null,
-        roomCode: '', isHost: false, chatMessages: [], pendingRequests: [],
-        micOn: true, camOn: true, sharing: false, error: '', info: ''
-      });
-      render();
-    }
-
-    // ─── State Management ───────────────────────────────────────────────────────
-    function setState(patch) {
-      Object.assign(state, patch);
-    }
-
-    function clearMessages() {
-      setState({ error: '', info: '' });
-    }
-
-    function escHtml(str) {
-      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    }
-
-    // ─── Handle redirect result (runs after Google redirects back) ───────────────
-    // This MUST run before onAuthStateChanged to catch the redirect login
-    getRedirectResult(auth).then(async (result) => {
-      if (!result || !result.user) return; // no redirect, normal page load
-      const user = result.user;
-      if (!user.email.endsWith(`@${ALLOWED_DOMAIN}`)) {
-        await signOut(auth);
-        setState({ screen: 'login', error: `存取被拒：僅允許 @${ALLOWED_DOMAIN} 帳號` });
-        render();
-        return;
-      }
-      // Profile will be created by ensureProfile inside onAuthStateChanged
-    }).catch((e) => {
-      // auth/account-exists-with-different-credential etc.
-      setState({ screen: 'login', error: `登入失敗：${e.message}` });
-      render();
+    // ICE from host
+    onChildAdded(ref(rtdb,`signaling/${S.roomCode}/ice/${S.user.uid}_from_${hostUid}`),async s2=>{
+      if(s2.exists()) await pc.addIceCandidate(new RTCIceCandidate(s2.val())).catch(()=>{});
     });
 
-    // ─── Auth State Observer ────────────────────────────────────────────────────
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        if (!user.email.endsWith(`@${ALLOWED_DOMAIN}`)) {
-          await signOut(auth);
-          setState({ screen: 'login', error: `僅允許 @${ALLOWED_DOMAIN} 帳號` });
-          render();
-          return;
-        }
-        await ensureProfile(user);
-        setState({ screen: 'lobby' });
-      } else {
-        setState({ screen: 'login', user: null, profile: null });
-      }
-      render();
-    });
+    addTile(hostUid,hostName,hostRole);
+  });
+}
 
-    // Initial render
-    render();
-  </script>
+// ── Build RTCPeerConnection ───────────────────────────────────
+function buildPC(remoteUid){
+  const pc=new RTCPeerConnection({iceServers:ICE});
+  if(S.localStream) S.localStream.getTracks().forEach(t=>pc.addTrack(t,S.localStream));
+
+  const rs=new MediaStream();
+  pc.ontrack=e=>{
+    rs.addTrack(e.track);
+    const v=$(`vid-${remoteUid}`); if(v) v.srcObject=rs;
+  };
+  pc.onicecandidate=e=>{
+    if(e.candidate) push(ref(rtdb,`signaling/${S.roomCode}/ice/${remoteUid}_from_${S.user.uid}`),e.candidate.toJSON());
+  };
+  pc.onconnectionstatechange=()=>{
+    if(['disconnected','failed','closed'].includes(pc.connectionState)) removeTile(remoteUid);
+  };
+  return pc;
+}
+
+// ── Video grid management ─────────────────────────────────────
+function addTile(uid,name,role2){
+  const grid=$('video-grid');
+  const tile=document.createElement('div'); tile.className='video-tile'; tile.id=`tile-${uid}`;
+  tile.innerHTML=`<video id="vid-${uid}" autoplay playsinline></video>
+    <div class="tile-label">${esc(name)} [${role2==='teacher'?'T':'S'}]</div>`;
+  grid.appendChild(tile);
+  updateGrid(); updateCount();
+}
+function removeTile(uid){
+  S.peers[uid]?.pc.close(); delete S.peers[uid];
+  $(`tile-${uid}`)?.remove();
+  updateGrid(); updateCount();
+}
+function updateGrid(){
+  const grid=$('video-grid');
+  const n=Object.keys(S.peers).length+1;
+  let cols=1;
+  if(n===2) cols=2;
+  else if(n<=4) cols=2;
+  else if(n<=6) cols=3;
+  else cols=4;
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+}
+function updateCount(){
+  $('meeting-count').textContent=(Object.keys(S.peers).length+1)+' 人';
+}
+</script>
 </body>
 </html>
