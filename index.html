@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMES MEET — 校園視訊系統</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Tailwind config MUST be defined before the CDN script executes -->
+  <script>
+    // Pre-define config so Tailwind picks it up on load
+    window.tailwind = window.tailwind || {};
+    window.__tailwindConfig = {
+      theme: {
+        extend: {
+          fontFamily: { mono: ['JetBrains Mono', 'monospace'] },
+          colors: {
+            terminal: { bg: '#000000', surface: '#0A0A0A', border: '#1a1a1a', muted: '#333333', text: '#e0e0e0', dim: '#666666', teacher: '#1a3a5c', student: '#1a1a1a', teacherGlow: '#0066ff', studentGlow: '#444444' }
+          },
+          animation: { 'blink': 'blink 1s step-end infinite', 'scanline': 'scanline 3s linear infinite', 'fadeIn': 'fadeIn 0.3s ease-in' },
+          keyframes: { blink: { '0%,100%': { opacity: 1 }, '50%': { opacity: 0 } }, scanline: { '0%': { transform: 'translateY(-100%)' }, '100%': { transform: 'translateY(100vh)' } }, fadeIn: { '0%': { opacity: 0, transform: 'translateY(4px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } } }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Apply config after CDN is loaded (runs synchronously after the script tag above)
+    if (window.tailwind && window.tailwind.config !== undefined) {
+      tailwind.config = window.__tailwindConfig;
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        if (window.tailwind) tailwind.config = window.__tailwindConfig;
+      });
+    }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; width: 100%; overflow: hidden; overscroll-behavior: none; background: #000; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #333; }
+    * { font-family: 'JetBrains Mono', monospace !important; }
+    .teacher-border { box-shadow: 0 0 0 1px #0066ff22, inset 0 0 20px #0066ff08; border-color: #0066ff44 !important; }
+    .student-border { box-shadow: 0 0 0 1px #44444422, inset 0 0 20px #44444408; border-color: #44444444 !important; }
+    .glow-teacher { text-shadow: 0 0 8px #0066ff88; color: #4499ff; }
+    .glow-student { text-shadow: 0 0 8px #aaaaaa44; color: #aaaaaa; }
+    .scanline-overlay { pointer-events: none; position: fixed; inset: 0; z-index: 9999; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px); }
+    .video-grid-1 { grid-template-columns: 1fr; }
+    .video-grid-2 { grid-template-columns: 1fr 1fr; }
+    .video-grid-3, .video-grid-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    .video-grid-5, .video-grid-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    @keyframes pulse-border { 0%, 100% { border-color: #0066ff44; } 50% { border-color: #0066ffaa; } }
+    .pending-pulse { animation: pulse-border 1.5s ease-in-out infinite; }
+    input, button { border-radius: 0 !important; outline: none; }
+    input:focus { box-shadow: 0 0 0 1px #0066ff88 !important; }
+    .modal-backdrop { backdrop-filter: blur(2px); background: rgba(0,0,0,0.85); }
+    video { object-fit: cover; background: #0a0a0a; }
+    .chat-area { scrollbar-width: thin; scrollbar-color: #333 #000; }
+  </style>
+</head>
+<body>
+  <div class="scanline-overlay"></div>
+  <div id="root"></div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc, onSnapshot, deleteDoc, query, where, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getDatabase, ref, set, get, onValue, off, remove, push, onChildAdded } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+    // ─── Firebase Config ───────────────────────────────────────────────────────
+    const firebaseConfig = {
+      apiKey: "AIzaSyC_j0PxmMBNAtGtFotdFe8WjHQj0K8pwO8",
+      authDomain: "smes-meet.firebaseapp.com",
+      projectId: "smes-meet",
+      storageBucket: "smes-meet.firebasestorage.app",
+      messagingSenderId: "897771756747",
+      appId: "1:897771756747:web:4a227140a386cef3860f4e",
+      measurementId: "G-PXB8VFKF1G",
+      databaseURL: "https://smes-meet-default-rtdb.asia-southeast1.firebasedatabase.app"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const rtdb = getDatabase(app);
+
+    // ─── Utilities ─────────────────────────────────────────────────────────────
+    const ALLOWED_DOMAIN = 'mail2.smes.tyc.edu.tw';
+    const STUDENT_REGEX = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
+
+    function detectRole(email) {
+      const m = email.match(STUDENT_REGEX);
+      if (m) {
+        const seq = parseInt(m[2], 10);
+        return seq <= 180 ? 'student' : 'teacher';
+      }
+      return 'teacher';
+    }
+
+    function genCode() {
+      return Math.random().toString(36).substr(2, 8).toUpperCase();
+    }
+
+    // ─── State ─────────────────────────────────────────────────────────────────
+    let state = {
+      screen: 'loading', // loading | login | lobby | waiting | meeting
+      user: null,
+      profile: null,
+      roomCode: '',
+      roomCodeInput: '',
+      isHost: false,
+      peers: {}, // uid → { pc, stream, name, role, dataChannel }
+      localStream: null,
+      screenStream: null,
+      chatMessages: [],
+      pendingRequests: [],
+      myRequest: null,
+      micOn: true,
+      camOn: true,
+      sharing: false,
+      error: '',
+      info: '',
+    };
+
+    let unsubRequests = null;
+    let unsubRoom = null;
+    let signalingListeners = {};
+
+    // ─── Render Engine ─────────────────────────────────────────────────────────
+    function render() {
+      const root = document.getElementById('root');
+      const role = state.profile?.role || 'student';
+      const borderClass = role === 'teacher' ? 'teacher-border' : 'student-border';
+      const glowClass = role === 'teacher' ? 'glow-teacher' : 'glow-student';
+
+      const screens = {
+        loading: renderLoading,
+        login: renderLogin,
+        lobby: () => renderLobby(borderClass, glowClass),
+        waiting: renderWaiting,
+        meeting: () => renderMeeting(borderClass),
+      };
+
+      root.innerHTML = (screens[state.screen] || renderLoading)();
+      bindEvents();
+    }
+
+    function renderLoading() {
+      return `<div class="flex items-center justify-center h-screen bg-black text-terminal-text">
+        <div class="text-center">
+          <div class="text-2xl font-bold tracking-widest mb-4">SMES_MEET</div>
+          <div class="text-terminal-dim text-sm">系統初始化中<span class="animate-blink">█</span></div>
+        </div>
+      </div>`;
+    }
+
+    function renderLogin() {
+      return `<div class="flex items-center justify-center h-screen bg-black overflow-hidden">
+        <div class="w-full max-w-sm px-6">
+          <!-- Header -->
+          <div class="mb-12 text-center">
+            <div class="text-xs text-terminal-dim tracking-widest mb-3">[ SYSTEM INIT ]</div>
+            <div class="text-3xl font-bold text-white tracking-widest mb-2">SMES_MEET</div>
+            <div class="text-xs text-terminal-dim tracking-wider">校園 P2P 視訊會議系統</div>
+            <div class="mt-3 h-px bg-terminal-border"></div>
+          </div>
+
+          <!-- Domain notice -->
+          <div class="border border-terminal-border p-3 mb-6">
+            <div class="text-xs text-terminal-dim mb-1">// 存取限制</div>
+            <div class="text-xs text-white">僅接受 @${ALLOWED_DOMAIN}</div>
+          </div>
+
+          <!-- Error -->
+          ${state.error ? `<div class="border border-red-900 bg-red-950 p-3 mb-4 text-xs text-red-400">${state.error}</div>` : ''}
+
+          <!-- Login Button -->
+          <button id="btn-login" class="w-full border border-terminal-border bg-terminal-surface hover:bg-terminal-muted text-white text-sm py-4 px-6 tracking-widest transition-colors duration-150 flex items-center justify-center gap-3">
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            使用 Google 帳號登入
+          </button>
+
+          <div class="mt-6 text-center text-xs text-terminal-dim">
+            <span>v1.0 // Pure P2P // No Recording</span>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderLobby(borderClass, glowClass) {
+      const p = state.profile;
+      return `<div class="flex items-center justify-center h-screen bg-black overflow-hidden">
+        <div class="w-full max-w-md px-6">
+          <!-- Profile Bar -->
+          <div class="border ${borderClass} border p-3 mb-6 flex items-center justify-between">
+            <div>
+              <div class="text-xs text-terminal-dim mb-1">// 已驗證身分</div>
+              <div class="text-sm text-white">${escHtml(p?.full_name || p?.email || '')}</div>
+              <div class="text-xs ${glowClass} mt-1">[${p?.role === 'teacher' ? 'TEACHER' : 'STUDENT'}]</div>
+            </div>
+            <button id="btn-logout" class="text-xs text-terminal-dim hover:text-red-400 transition-colors border border-terminal-border px-3 py-2">登出</button>
+          </div>
+
+          <!-- Meeting Code Input -->
+          <div class="border border-terminal-border p-4 mb-4">
+            <div class="text-xs text-terminal-dim mb-3">// 輸入會議代碼</div>
+            <div class="flex gap-2">
+              <input id="room-input" type="text" maxlength="10" placeholder="XXXXXXXX" value="${escHtml(state.roomCodeInput)}"
+                class="flex-1 bg-black border border-terminal-border text-white text-base px-3 py-3 tracking-widest uppercase placeholder-terminal-muted focus:border-blue-500 transition-colors" />
+              <button id="btn-join" class="bg-white text-black text-sm px-5 py-3 hover:bg-terminal-text transition-colors font-bold tracking-wider">進入</button>
+            </div>
+          </div>
+
+          ${state.error ? `<div class="border border-red-900 bg-red-950 p-3 mb-4 text-xs text-red-400">${escHtml(state.error)}</div>` : ''}
+          ${state.info ? `<div class="border border-blue-900 bg-blue-950 p-3 mb-4 text-xs text-blue-300">${escHtml(state.info)}</div>` : ''}
+
+          <div class="text-center text-xs text-terminal-dim">
+            純 P2P 加密傳輸 // 無伺服器錄影 // 無時間限制
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderWaiting() {
+      return `<div class="flex items-center justify-center h-screen bg-black">
+        <div class="text-center max-w-sm px-6">
+          <div class="text-xs text-terminal-dim mb-4">// 等待主持人核准</div>
+          <div class="text-xl text-white mb-2">房間代碼：${escHtml(state.roomCode)}</div>
+          <div class="text-sm text-terminal-dim mb-8">正在等待主持人確認您的加入請求...</div>
+          <div class="flex justify-center mb-6">
+            <div class="w-2 h-2 bg-blue-500 mr-2 animate-bounce" style="animation-delay:0ms"></div>
+            <div class="w-2 h-2 bg-blue-500 mr-2 animate-bounce" style="animation-delay:150ms"></div>
+            <div class="w-2 h-2 bg-blue-500 animate-bounce" style="animation-delay:300ms"></div>
+          </div>
+          <button id="btn-cancel-request" class="border border-terminal-border text-terminal-dim text-xs px-6 py-2 hover:text-white transition-colors">取消請求</button>
+        </div>
+      </div>`;
+    }
+
+    function renderMeeting(borderClass) {
+      const peerList = Object.entries(state.peers);
+      const count = peerList.length + 1;
+      const gridClass = `video-grid-${Math.min(count, 6)}`;
+      const p = state.profile;
+
+      return `<div class="flex flex-col h-screen bg-black overflow-hidden" style="overscroll-behavior:none">
+        <!-- Top Bar -->
+        <div class="flex items-center justify-between px-4 py-2 border-b border-terminal-border flex-shrink-0">
+          <div class="flex items-center gap-4">
+            <span class="text-white text-sm font-bold tracking-widest">SMES_MEET</span>
+            <span class="text-terminal-dim text-xs border border-terminal-border px-2 py-1">${escHtml(state.roomCode)}</span>
+            <span class="text-terminal-dim text-xs">${count} 人連線</span>
+          </div>
+          <div class="flex items-center gap-2">
+            ${state.isHost ? `<div class="text-xs text-blue-400 border border-blue-900 px-2 py-1">[HOST]</div>` : ''}
+            <div class="text-xs ${p?.role === 'teacher' ? 'glow-teacher' : 'glow-student'}">[${p?.role === 'teacher' ? 'TEACHER' : 'STUDENT'}]</div>
+          </div>
+        </div>
+
+        <!-- Main Area: Video + Chat -->
+        <div class="flex-1 flex overflow-hidden min-h-0">
+          <!-- Video Grid -->
+          <div class="flex-1 grid ${gridClass} gap-px bg-terminal-border overflow-hidden p-px" id="video-grid">
+            <!-- Local video -->
+            <div class="relative bg-terminal-surface overflow-hidden border ${borderClass}">
+              <video id="local-video" autoplay muted playsinline class="w-full h-full"></video>
+              <div class="absolute bottom-2 left-2 bg-black bg-opacity-70 px-2 py-1 text-xs text-white">
+                ${escHtml(p?.full_name || '나')} ${state.isHost ? '[HOST]' : ''}
+              </div>
+              ${!state.camOn ? `<div class="absolute inset-0 flex items-center justify-center bg-black">
+                <span class="text-terminal-dim text-xs">CAM_OFF</span>
+              </div>` : ''}
+            </div>
+            <!-- Remote videos -->
+            ${peerList.map(([uid, peer]) => `
+              <div class="relative bg-terminal-surface overflow-hidden border border-terminal-border" id="peer-tile-${uid}">
+                <video id="video-${uid}" autoplay playsinline class="w-full h-full"></video>
+                <div class="absolute bottom-2 left-2 bg-black bg-opacity-70 px-2 py-1 text-xs text-white">
+                  ${escHtml(peer.name || uid.slice(0,8))} [${peer.role === 'teacher' ? 'T' : 'S'}]
+                </div>
+              </div>`).join('')}
+          </div>
+
+          <!-- Chat Panel -->
+          <div class="w-72 flex flex-col border-l border-terminal-border flex-shrink-0 hidden md:flex">
+            <div class="px-3 py-2 border-b border-terminal-border text-xs text-terminal-dim">// P2P 私密聊天 [閱後即焚]</div>
+            <div id="chat-messages" class="flex-1 overflow-y-auto chat-area p-3 space-y-2 text-xs"></div>
+            <div class="border-t border-terminal-border p-2 flex gap-2">
+              <input id="chat-input" type="text" placeholder="輸入訊息..." maxlength="500"
+                class="flex-1 bg-black border border-terminal-border text-white text-xs px-2 py-2 placeholder-terminal-muted" />
+              <button id="btn-send-chat" class="bg-terminal-border text-white text-xs px-3 py-2 hover:bg-terminal-muted transition-colors">↑</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls Bar -->
+        <div class="flex items-center justify-between px-4 py-3 border-t border-terminal-border flex-shrink-0 bg-terminal-surface">
+          <div class="flex gap-2">
+            <button id="btn-mic" class="text-xs px-4 py-2 border ${state.micOn ? 'border-terminal-border text-white' : 'border-red-900 text-red-400 bg-red-950'} hover:bg-terminal-muted transition-colors">
+              ${state.micOn ? '🎤 MIC' : '🔇 MIC'}
+            </button>
+            <button id="btn-cam" class="text-xs px-4 py-2 border ${state.camOn ? 'border-terminal-border text-white' : 'border-red-900 text-red-400 bg-red-950'} hover:bg-terminal-muted transition-colors">
+              ${state.camOn ? '📷 CAM' : '📷 OFF'}
+            </button>
+            <button id="btn-share" class="text-xs px-4 py-2 border ${state.sharing ? 'border-blue-700 text-blue-400 bg-blue-950' : 'border-terminal-border text-white'} hover:bg-terminal-muted transition-colors">
+              ${state.sharing ? '⏹ 停止分享' : '🖥 分享畫面'}
+            </button>
+          </div>
+
+          <!-- Pending Requests (Host only) -->
+          ${state.isHost && state.pendingRequests.length > 0 ? `
+            <div class="flex gap-2">
+              ${state.pendingRequests.slice(0,2).map(req => `
+                <div class="border border-blue-700 pending-pulse px-3 py-2 text-xs text-blue-300 flex items-center gap-2">
+                  <span>[${req.role === 'teacher' ? 'T' : 'S'}] ${escHtml(req.name || req.userId.slice(0,6))}</span>
+                  <button onclick="approveRequest('${req.id}')" class="bg-blue-700 text-white px-2 py-1 hover:bg-blue-600">核准</button>
+                  <button onclick="rejectRequest('${req.id}')" class="border border-red-900 text-red-400 px-2 py-1 hover:bg-red-950">拒絕</button>
+                </div>`).join('')}
+            </div>` : ''}
+
+          <button id="btn-leave" class="text-xs px-5 py-2 border border-red-900 text-red-400 hover:bg-red-950 transition-colors">
+            ✕ 離開
+          </button>
+        </div>
+
+        <!-- Mobile Chat Toggle -->
+        <button id="btn-chat-toggle" class="fixed bottom-20 right-4 md:hidden bg-terminal-surface border border-terminal-border text-white text-xs px-3 py-2 z-50">
+          💬
+        </button>
+      </div>`;
+    }
+
+    // ─── Event Binding ──────────────────────────────────────────────────────────
+    function bindEvents() {
+      // Login
+      document.getElementById('btn-login')?.addEventListener('click', handleLogin);
+
+      // Logout
+      document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
+
+      // Room input
+      const roomInput = document.getElementById('room-input');
+      if (roomInput) {
+        roomInput.addEventListener('input', e => { state.roomCodeInput = e.target.value.toUpperCase(); });
+        roomInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleJoin(); });
+      }
+      document.getElementById('btn-join')?.addEventListener('click', handleJoin);
+
+      // Cancel request
+      document.getElementById('btn-cancel-request')?.addEventListener('click', handleCancelRequest);
+
+      // Meeting controls
+      document.getElementById('btn-mic')?.addEventListener('click', toggleMic);
+      document.getElementById('btn-cam')?.addEventListener('click', toggleCam);
+      document.getElementById('btn-share')?.addEventListener('click', toggleShare);
+      document.getElementById('btn-leave')?.addEventListener('click', handleLeave);
+
+      // Chat
+      const chatInput = document.getElementById('chat-input');
+      chatInput?.addEventListener('keydown', e => { if (e.key === 'Enter') sendChatMessage(); });
+      document.getElementById('btn-send-chat')?.addEventListener('click', sendChatMessage);
+
+      // Attach local video
+      if (state.localStream && document.getElementById('local-video')) {
+        document.getElementById('local-video').srcObject = state.localStream;
+      }
+
+      // Attach remote videos
+      Object.entries(state.peers).forEach(([uid, peer]) => {
+        const vid = document.getElementById(`video-${uid}`);
+        if (vid && peer.stream) vid.srcObject = peer.stream;
+      });
+
+      // Render chat
+      renderChat();
+    }
+
+    function renderChat() {
+      const area = document.getElementById('chat-messages');
+      if (!area) return;
+      area.innerHTML = state.chatMessages.map(m => `
+        <div class="animate-fadeIn">
+          <span class="text-terminal-dim">${escHtml(m.sender)}:</span>
+          <span class="text-terminal-text ml-1">${escHtml(m.text)}</span>
+        </div>`).join('');
+      area.scrollTop = area.scrollHeight;
+    }
+
+    // ─── Auth ───────────────────────────────────────────────────────────────────
+    async function handleLogin() {
+      clearMessages();
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        hd: ALLOWED_DOMAIN,
+        login_hint: `@${ALLOWED_DOMAIN}`,
+        prompt: 'select_account'
+      });
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const email = result.user.email;
+        if (!email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+          await signOut(auth);
+          setState({ error: `存取被拒：僅允許 @${ALLOWED_DOMAIN} 帳號` });
+          return;
+        }
+        await ensureProfile(result.user);
+      } catch (e) {
+        if (e.code !== 'auth/popup-closed-by-user') {
+          setState({ error: `登入失敗：${e.message}` });
+        }
+      }
+    }
+
+    async function ensureProfile(user) {
+      const role = detectRole(user.email);
+      const profileRef = doc(db, 'profiles', user.uid);
+      const snap = await getDoc(profileRef);
+      let profile;
+      if (!snap.exists()) {
+        profile = { email: user.email, full_name: user.displayName || user.email.split('@')[0], role, uid: user.uid };
+        await setDoc(profileRef, profile);
+      } else {
+        profile = snap.data();
+      }
+      setState({ user, profile });
+    }
+
+    async function handleLogout() {
+      await signOut(auth);
+      setState({ user: null, profile: null, screen: 'login', roomCode: '', roomCodeInput: '', error: '', info: '' });
+    }
+
+    // ─── Lobby / Room Logic ─────────────────────────────────────────────────────
+    async function handleJoin() {
+      clearMessages();
+      const code = state.roomCodeInput.trim().toUpperCase();
+      if (!code) { setState({ error: '請輸入會議代碼' }); return; }
+
+      const roomRef = doc(db, 'rooms', code);
+      const snap = await getDoc(roomRef);
+
+      if (!snap.exists()) {
+        // Room doesn't exist
+        if (state.profile.role === 'teacher') {
+          if (!confirm(`會議室「${code}」尚未建立，是否建立新會議？`)) return;
+          await setDoc(roomRef, { code, host_id: state.user.uid, created_at: serverTimestamp() });
+          setState({ roomCode: code, isHost: true });
+          await startMeeting(true);
+        } else {
+          setState({ error: '會議室不存在。僅有教師具備建立新會議的權限。' });
+        }
+      } else {
+        // Room exists — request to join
+        if (!confirm(`會議室「${code}」已開啟，是否送出加入要求？`)) return;
+        const roomData = snap.data();
+        const isHost = roomData.host_id === state.user.uid;
+
+        if (isHost) {
+          setState({ roomCode: code, isHost: true });
+          await startMeeting(true);
+          return;
+        }
+
+        // Create request
+        const reqRef = collection(db, 'room_requests');
+        const reqDoc = await addDoc(reqRef, {
+          room_code: code,
+          user_id: state.user.uid,
+          user_name: state.profile.full_name,
+          user_role: state.profile.role,
+          status: 'pending',
+          created_at: serverTimestamp()
+        });
+
+        setState({ roomCode: code, myRequest: reqDoc.id, screen: 'waiting', isHost: false });
+        render();
+
+        // Listen for approval
+        const reqDocRef = doc(db, 'room_requests', reqDoc.id);
+        const unsub = onSnapshot(reqDocRef, async (snap) => {
+          if (!snap.exists()) return;
+          const data = snap.data();
+          if (data.status === 'approved') {
+            unsub();
+            setState({ myRequest: null });
+            await startMeeting(false);
+          } else if (data.status === 'rejected') {
+            unsub();
+            setState({ myRequest: null, screen: 'lobby', error: '主持人已拒絕您的加入請求。', roomCode: '' });
+            render();
+          }
+        });
+      }
+    }
+
+    async function handleCancelRequest() {
+      if (state.myRequest) {
+        await deleteDoc(doc(db, 'room_requests', state.myRequest));
+      }
+      setState({ screen: 'lobby', myRequest: null, roomCode: '', error: '' });
+      render();
+    }
+
+    // ─── Meeting Start ──────────────────────────────────────────────────────────
+    async function startMeeting(isHost) {
+      // Get local media
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        setState({ localStream: stream, screen: 'meeting', isHost, peers: {}, chatMessages: [] });
+      } catch (e) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => new MediaStream());
+        setState({ localStream: stream, screen: 'meeting', isHost, peers: {}, chatMessages: [], camOn: false });
+      }
+
+      render();
+
+      // Set local video
+      const vid = document.getElementById('local-video');
+      if (vid && state.localStream) vid.srcObject = state.localStream;
+
+      if (isHost) {
+        // Host listens for approved requests and initiates P2P
+        listenForApprovedRequests();
+      } else {
+        // Guest listens for offer from host
+        listenForSignaling(state.user.uid);
+      }
+    }
+
+    // ─── Host: Listen for pending requests ─────────────────────────────────────
+    function listenForApprovedRequests() {
+      const q = query(collection(db, 'room_requests'), where('room_code', '==', state.roomCode), where('status', '==', 'pending'));
+      unsubRequests = onSnapshot(q, (snap) => {
+        const reqs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        setState({ pendingRequests: reqs });
+        if (state.screen === 'meeting') {
+          // Re-render just the controls
+          const bar = document.querySelector('[id=btn-leave]')?.closest('.flex.items-center.justify-between');
+          if (bar) {
+            render(); // full re-render for simplicity
+          }
+        }
+      });
+    }
+
+    // Exposed globally for inline onclick
+    window.approveRequest = async function(reqId) {
+      const reqRef = doc(db, 'room_requests', reqId);
+      const snap = await getDoc(reqRef);
+      if (!snap.exists()) return;
+      const reqData = snap.data();
+      const guestUid = reqData.user_id;
+
+      await updateDoc(reqRef, { status: 'approved' });
+
+      // Initiate WebRTC with guest
+      await initiateP2P(guestUid, reqData.user_name, reqData.user_role);
+    };
+
+    window.rejectRequest = async function(reqId) {
+      await updateDoc(doc(db, 'room_requests', reqId), { status: 'rejected' });
+    };
+
+    // ─── WebRTC ─────────────────────────────────────────────────────────────────
+    const ICE_SERVERS = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+    ];
+
+    function createPC(remoteUid) {
+      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+
+      // Add local tracks
+      if (state.localStream) {
+        state.localStream.getTracks().forEach(track => pc.addTrack(track, state.localStream));
+      }
+
+      // Remote stream
+      const remoteStream = new MediaStream();
+      pc.ontrack = (e) => {
+        remoteStream.addTrack(e.track);
+        if (state.peers[remoteUid]) {
+          state.peers[remoteUid].stream = remoteStream;
+        }
+        const vid = document.getElementById(`video-${remoteUid}`);
+        if (vid) vid.srcObject = remoteStream;
+      };
+
+      // ICE candidates
+      pc.onicecandidate = (e) => {
+        if (e.candidate) {
+          const icePath = `signaling/${state.roomCode}/${remoteUid}_${state.user.uid}/ice`;
+          push(ref(rtdb, icePath), e.candidate.toJSON());
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
+          removePeer(remoteUid);
+        }
+      };
+
+      return { pc, stream: remoteStream };
+    }
+
+    async function initiateP2P(guestUid, guestName, guestRole) {
+      const { pc, stream } = createPC(guestUid);
+
+      // DataChannel for chat
+      const dc = pc.createDataChannel('chat');
+      setupDataChannel(dc, guestUid);
+
+      state.peers[guestUid] = { pc, stream, name: guestName, role: guestRole, dataChannel: dc };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      // Write offer to RTDB
+      const offerPath = `signaling/${state.roomCode}/${guestUid}/offer`;
+      await set(ref(rtdb, offerPath), { sdp: offer.sdp, type: offer.type, from: state.user.uid });
+
+      // Listen for answer
+      const answerPath = `signaling/${state.roomCode}/${state.user.uid}_${guestUid}/answer`;
+      onValue(ref(rtdb, answerPath), async (snap) => {
+        if (!snap.exists()) return;
+        const answer = snap.val();
+        if (pc.signalingState === 'have-local-offer') {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+      }, { onlyOnce: false });
+
+      // Listen for ICE from guest
+      const icePath = `signaling/${state.roomCode}/${state.user.uid}_${guestUid}/ice`;
+      onChildAdded(ref(rtdb, icePath), async (snap) => {
+        const candidate = snap.val();
+        if (candidate && pc.remoteDescription) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+        }
+      });
+
+      render();
+    }
+
+    async function listenForSignaling(myUid) {
+      const offerPath = `signaling/${state.roomCode}/${myUid}/offer`;
+      onValue(ref(rtdb, offerPath), async (snap) => {
+        if (!snap.exists()) return;
+        const offerData = snap.val();
+        const hostUid = offerData.from;
+
+        const { pc, stream } = createPC(hostUid);
+
+        // DataChannel receive
+        pc.ondatachannel = (e) => {
+          setupDataChannel(e.channel, hostUid);
+          if (state.peers[hostUid]) state.peers[hostUid].dataChannel = e.channel;
+        };
+
+        state.peers[hostUid] = { pc, stream, name: 'Host', role: 'teacher', dataChannel: null };
+
+        await pc.setRemoteDescription(new RTCSessionDescription(offerData));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        // Write answer
+        const answerPath = `signaling/${state.roomCode}/${hostUid}_${myUid}/answer`;
+        await set(ref(rtdb, answerPath), { sdp: answer.sdp, type: answer.type });
+
+        // Listen for ICE from host
+        const icePath = `signaling/${state.roomCode}/${hostUid}_${myUid}/ice`;
+        onChildAdded(ref(rtdb, icePath), async (snap) => {
+          const candidate = snap.val();
+          if (candidate) {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+          }
+        });
+
+        render();
+      }, { onlyOnce: false });
+    }
+
+    function setupDataChannel(dc, remoteUid) {
+      dc.onopen = () => { console.log(`DataChannel open with ${remoteUid}`); };
+      dc.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          state.chatMessages.push(msg);
+          renderChat();
+        } catch (ex) {}
+      };
+      dc.onclose = () => {};
+    }
+
+    function sendChatMessage() {
+      const input = document.getElementById('chat-input');
+      const text = input?.value?.trim();
+      if (!text) return;
+
+      const msg = { sender: state.profile?.full_name || '我', text, time: Date.now() };
+      state.chatMessages.push({ ...msg, sender: '我' });
+
+      const payload = JSON.stringify({ sender: state.profile?.full_name || '?', text, time: Date.now() });
+      Object.values(state.peers).forEach(peer => {
+        if (peer.dataChannel?.readyState === 'open') {
+          peer.dataChannel.send(payload);
+        }
+      });
+
+      if (input) input.value = '';
+      renderChat();
+    }
+
+    function removePeer(uid) {
+      if (state.peers[uid]) {
+        state.peers[uid].pc.close();
+        delete state.peers[uid];
+        render();
+      }
+    }
+
+    // ─── Media Controls ─────────────────────────────────────────────────────────
+    function toggleMic() {
+      const micOn = !state.micOn;
+      state.localStream?.getAudioTracks().forEach(t => { t.enabled = micOn; });
+      setState({ micOn });
+      render();
+    }
+
+    function toggleCam() {
+      const camOn = !state.camOn;
+      state.localStream?.getVideoTracks().forEach(t => { t.enabled = camOn; });
+      setState({ camOn });
+      render();
+      const vid = document.getElementById('local-video');
+      if (vid && state.localStream) vid.srcObject = state.localStream;
+    }
+
+    async function toggleShare() {
+      if (state.sharing) {
+        // Stop sharing
+        state.screenStream?.getTracks().forEach(t => t.stop());
+        const camTrack = state.localStream?.getVideoTracks()[0];
+        if (camTrack) {
+          Object.values(state.peers).forEach(peer => {
+            const sender = peer.pc.getSenders().find(s => s.track?.kind === 'video');
+            if (sender) sender.replaceTrack(camTrack).catch(() => {});
+          });
+        }
+        setState({ sharing: false, screenStream: null });
+        render();
+        return;
+      }
+
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({
+          video: { displaySurface: 'monitor' },
+          audio: true
+        });
+
+        const screenTrack = screenStream.getVideoTracks()[0];
+        Object.values(state.peers).forEach(peer => {
+          const sender = peer.pc.getSenders().find(s => s.track?.kind === 'video');
+          if (sender) sender.replaceTrack(screenTrack).catch(() => {});
+        });
+
+        screenTrack.onended = () => toggleShare();
+        setState({ sharing: true, screenStream });
+        render();
+
+        // Replace local preview
+        const vid = document.getElementById('local-video');
+        if (vid) {
+          const previewStream = new MediaStream([screenTrack]);
+          vid.srcObject = previewStream;
+        }
+      } catch (e) {
+        if (e.name !== 'NotAllowedError') alert('無法取得螢幕分享：' + e.message);
+      }
+    }
+
+    // ─── Leave ──────────────────────────────────────────────────────────────────
+    async function handleLeave() {
+      // Close all peers
+      Object.values(state.peers).forEach(peer => peer.pc.close());
+      // Stop media
+      state.localStream?.getTracks().forEach(t => t.stop());
+      state.screenStream?.getTracks().forEach(t => t.stop());
+      // Cleanup signaling
+      remove(ref(rtdb, `signaling/${state.roomCode}`)).catch(() => {});
+      // Cleanup subscriptions
+      unsubRequests?.();
+      // If host, remove room
+      if (state.isHost) {
+        await deleteDoc(doc(db, 'rooms', state.roomCode)).catch(() => {});
+      }
+      setState({
+        screen: 'lobby', peers: {}, localStream: null, screenStream: null,
+        roomCode: '', isHost: false, chatMessages: [], pendingRequests: [],
+        micOn: true, camOn: true, sharing: false, error: '', info: ''
+      });
+      render();
+    }
+
+    // ─── State Management ───────────────────────────────────────────────────────
+    function setState(patch) {
+      Object.assign(state, patch);
+    }
+
+    function clearMessages() {
+      setState({ error: '', info: '' });
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ─── Auth State Observer ────────────────────────────────────────────────────
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        if (!user.email.endsWith(`@${ALLOWED_DOMAIN}`)) {
+          await signOut(auth);
+          setState({ screen: 'login', error: `僅允許 @${ALLOWED_DOMAIN} 帳號` });
+          render();
+          return;
+        }
+        await ensureProfile(user);
+        setState({ screen: 'lobby' });
+      } else {
+        setState({ screen: 'login', user: null, profile: null });
+      }
+      render();
+    });
+
+    // Initial render
+    render();
+  </script>
+</body>
+</html>
