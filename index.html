@@ -417,7 +417,7 @@ import { initializeApp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getAuth, GoogleAuthProvider,
-  signInWithRedirect, getRedirectResult,
+  signInWithPopup,
   signInWithEmailAndPassword, signOut, onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
@@ -507,48 +507,8 @@ if (!isSecureContext()) {
 
 // ── Auth ──────────────────────────────────────────────────────
 
-// Step 1: Check redirect result FIRST, before onAuthStateChanged fires.
-// This prevents the brief "logged-out → login screen" flash.
-let redirectChecked = false;
-
-async function checkRedirect() {
-  try {
-    const result = await getRedirectResult(auth);
-    if (result?.user) {
-      const email = result.user.email;
-      if (!email.endsWith('@' + DOMAIN)) {
-        await signOut(auth);
-        toast('login-toast', '存取被拒：僅允許 @' + DOMAIN);
-        showScreen('login');
-      }
-      // If valid, onAuthStateChanged below will catch the logged-in user
-    }
-  } catch (e) {
-    // auth/account-exists-with-different-credential, etc.
-    const msg = e.code === 'auth/account-exists-with-different-credential'
-      ? '此 Email 已用其他方式登入，請直接使用測試帳號登入。'
-      : e.message;
-    toast('login-toast', msg);
-    showScreen('login');
-  } finally {
-    redirectChecked = true;
-  }
-}
-
-// Step 2: Auth state observer — waits until redirect check is done
+// Auth state observer — simple, no redirect complexity
 onAuthStateChanged(auth, async user => {
-  // Wait for redirect result to fully resolve before deciding screen.
-  // Without this, Google redirect causes: loading → login → lobby (flash).
-  if (!redirectChecked) {
-    await new Promise(r => {
-      const poll = setInterval(() => {
-        if (redirectChecked) { clearInterval(poll); r(); }
-      }, 20);
-      // Safety timeout: give up waiting after 3s
-      setTimeout(() => { clearInterval(poll); r(); }, 3000);
-    });
-  }
-
   if (user) {
     if (!user.email.endsWith('@' + DOMAIN)) {
       await signOut(auth);
@@ -561,18 +521,12 @@ onAuthStateChanged(auth, async user => {
     renderLobby();
     showScreen('lobby');
   } else {
-    // Only show login if we're sure there's no active redirect in progress
-    if (redirectChecked) {
-      S.user = null; S.profile = null;
-      showScreen('login');
-    }
+    S.user = null; S.profile = null;
+    showScreen('login');
   }
 });
 
-// Kick off redirect check immediately — keeps loading screen until done
-checkRedirect();
-
-// Google login button
+// Google login — uses popup (works on GitHub Pages, no domain restrictions)
 $('btn-google-login').onclick = async () => {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({
@@ -581,14 +535,21 @@ $('btn-google-login').onclick = async () => {
     prompt: 'select_account'
   });
   const btn = $('btn-google-login');
-  btn.querySelector('span').textContent = '跳轉至 Google...';
+  btn.querySelector('span').textContent = '登入中...';
   btn.disabled = true;
   try {
-    await signInWithRedirect(auth, provider);
+    const result = await signInWithPopup(auth, provider);
+    if (!result.user.email.endsWith('@' + DOMAIN)) {
+      await signOut(auth);
+      toast('login-toast', '存取被拒：僅允許 @' + DOMAIN);
+    }
+    // onAuthStateChanged will handle navigation
   } catch (e) {
     btn.querySelector('span').textContent = '使用 Google 帳號登入';
     btn.disabled = false;
-    toast('login-toast', '登入失敗：' + e.message);
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      toast('login-toast', '登入失敗：' + e.message);
+    }
   }
 };
 
