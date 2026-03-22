@@ -417,7 +417,7 @@ import { initializeApp }
   from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getAuth, GoogleAuthProvider,
-  signInWithPopup,
+  signInWithPopup, signInWithRedirect, getRedirectResult,
   signInWithEmailAndPassword, signOut, onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
@@ -507,7 +507,32 @@ if (!isSecureContext()) {
 
 // ── Auth ──────────────────────────────────────────────────────
 
-// Auth state observer — simple, no redirect complexity
+// Detect Safari (including iOS Chrome which uses WebKit engine)
+function isSafari() {
+  const ua = navigator.userAgent;
+  return /^((?!chrome|android).)*safari/i.test(ua) || /iPad|iPhone|iPod/.test(ua);
+}
+
+// Handle redirect result on page load (for Safari redirect flow)
+let redirectHandled = false;
+getRedirectResult(auth).then(async result => {
+  redirectHandled = true;
+  if (!result?.user) return;
+  if (!result.user.email.endsWith('@' + DOMAIN)) {
+    await signOut(auth);
+    toast('login-toast', '存取被拒：僅允許 @' + DOMAIN);
+    showScreen('login');
+  }
+  // onAuthStateChanged will handle navigation to lobby
+}).catch(e => {
+  redirectHandled = true;
+  if (e.code !== 'auth/no-auth-event') {
+    toast('login-toast', '登入失敗：' + e.message);
+    showScreen('login');
+  }
+});
+
+// Auth state observer
 onAuthStateChanged(auth, async user => {
   if (user) {
     if (!user.email.endsWith('@' + DOMAIN)) {
@@ -521,12 +546,15 @@ onAuthStateChanged(auth, async user => {
     renderLobby();
     showScreen('lobby');
   } else {
-    S.user = null; S.profile = null;
-    showScreen('login');
+    // Don't flash login screen while redirect is still resolving
+    if (redirectHandled) {
+      S.user = null; S.profile = null;
+      showScreen('login');
+    }
   }
 });
 
-// Google login — uses popup (works on GitHub Pages, no domain restrictions)
+// Google login button
 $('btn-google-login').onclick = async () => {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({
@@ -535,20 +563,44 @@ $('btn-google-login').onclick = async () => {
     prompt: 'select_account'
   });
   const btn = $('btn-google-login');
-  btn.querySelector('span').textContent = '登入中...';
-  btn.disabled = true;
-  try {
-    const result = await signInWithPopup(auth, provider);
-    if (!result.user.email.endsWith('@' + DOMAIN)) {
-      await signOut(auth);
-      toast('login-toast', '存取被拒：僅允許 @' + DOMAIN);
-    }
-    // onAuthStateChanged will handle navigation
-  } catch (e) {
-    btn.querySelector('span').textContent = '使用 Google 帳號登入';
-    btn.disabled = false;
-    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+
+  if (isSafari()) {
+    // Safari: use redirect (popup gets blocked on iOS Safari)
+    btn.querySelector('span').textContent = '跳轉至 Google...';
+    btn.disabled = true;
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch (e) {
+      btn.querySelector('span').textContent = '使用 Google 帳號登入';
+      btn.disabled = false;
       toast('login-toast', '登入失敗：' + e.message);
+    }
+  } else {
+    // Chrome / Edge / Firefox: use popup (instant, no page reload)
+    btn.querySelector('span').textContent = '登入中...';
+    btn.disabled = true;
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (!result.user.email.endsWith('@' + DOMAIN)) {
+        await signOut(auth);
+        toast('login-toast', '存取被拒：僅允許 @' + DOMAIN);
+        btn.querySelector('span').textContent = '使用 Google 帳號登入';
+        btn.disabled = false;
+      }
+      // onAuthStateChanged handles navigation
+    } catch (e) {
+      btn.querySelector('span').textContent = '使用 Google 帳號登入';
+      btn.disabled = false;
+      if (e.code === 'auth/popup-blocked') {
+        // Popup was blocked — fallback to redirect
+        toast('login-toast', '彈窗被封鎖，改用跳轉登入...', 'info');
+        setTimeout(async () => {
+          try { await signInWithRedirect(auth, provider); }
+          catch (e2) { toast('login-toast', '登入失敗：' + e2.message); }
+        }, 1500);
+      } else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+        toast('login-toast', '登入失敗：' + e.message);
+      }
     }
   }
 };
