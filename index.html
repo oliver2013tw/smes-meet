@@ -455,10 +455,35 @@ const DOMAIN = 'mail2.smes.tyc.edu.tw';
 const STU_RE = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
 const ICE_CFG = {
   iceServers: [
+    // STUN — find public IP, try direct P2P first
     { urls: 'stun:stun.l.google.com:19302'  },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun.services.mozilla.com'}
-  ]
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    // TURN — relay when P2P fails (free, no limit, no signup)
+    {
+      urls:       'turn:numb.viagenie.ca',
+      username:   'smes.meet@gmail.com',
+      credential: 'smesmeet2024'
+    },
+    {
+      urls:       'turn:numb.viagenie.ca?transport=tcp',
+      username:   'smes.meet@gmail.com',
+      credential: 'smesmeet2024'
+    },
+    // Backup TURN
+    {
+      urls:       'turn:relay.metered.ca:80',
+      username:   'openrelayproject',
+      credential: 'openrelayproject'
+    },
+    {
+      urls:       'turn:relay.metered.ca:443?transport=tcp',
+      username:   'openrelayproject',
+      credential: 'openrelayproject'
+    },
+  ],
+  iceCandidatePoolSize: 10,
 };
 
 // ── Firebase init ─────────────────────────────────────────────
@@ -980,6 +1005,11 @@ async function initP2P(guestUid, guestName, guestRole) {
   const pc = buildPC(guestUid);
   S.peers[guestUid] = { pc, name: guestName, role: guestRole };
 
+  // Add local tracks BEFORE createOffer so they appear in the SDP
+  if (S.localStream) {
+    S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
+  }
+
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
 
@@ -1018,7 +1048,15 @@ function listenOffer() {
     const pc = buildPC(hostUid);
     S.peers[hostUid] = { pc, name: hostName, role: hostRole };
 
-    await pc.setRemoteDescription(new RTCSessionDescription(od)).catch(() => {});
+    // Must setRemoteDescription FIRST so we know what tracks the host is sending
+    await pc.setRemoteDescription(new RTCSessionDescription(od)).catch(e => console.error('setRemote err:', e));
+
+    // Add local tracks AFTER setRemoteDescription, BEFORE createAnswer
+    // This is the correct order for the answering side
+    if (S.localStream) {
+      S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
+    }
+
     const ans = await pc.createAnswer();
     await pc.setLocalDescription(ans);
 
@@ -1039,29 +1077,38 @@ function listenOffer() {
 function buildPC(remoteUid) {
   const pc = new RTCPeerConnection(ICE_CFG);
 
-  // Add current local tracks
-  if (S.localStream) S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
+  // NOTE: local tracks are added OUTSIDE this function,
+  // after setRemoteDescription (for answer) or before createOffer.
+  // This ensures correct SDP track direction negotiation.
 
-  // Remote stream
+  // Remote stream — collect incoming tracks
   const rs = new MediaStream();
   pc.ontrack = e => {
-    rs.addTrack(e.track);
+    e.streams[0]?.getTracks().forEach(t => {
+      if (!rs.getTracks().includes(t)) rs.addTrack(t);
+    });
     const v = $(`vid-${remoteUid}`);
-    if (v) v.srcObject = rs;
+    if (v) { v.srcObject = null; v.srcObject = rs; }
   };
 
-  // ICE
+  // ICE candidates → write to RTDB
   pc.onicecandidate = e => {
     if (!e.candidate) return;
     rtPush(rtRef(rtdb, `signaling/${S.roomCode}/ice/${remoteUid}_from_${S.user.uid}`), e.candidate.toJSON());
   };
 
-  // Connection state
+  // Connection state changes
   pc.onconnectionstatechange = () => {
+    console.log(`[PC ${remoteUid.slice(0,6)}] state:`, pc.connectionState);
     if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
       removeTile(remoteUid);
     }
   };
+
+  pc.oniceconnectionstatechange = () => {
+    console.log(`[ICE ${remoteUid.slice(0,6)}] state:`, pc.iceConnectionState);
+  };
+
   return pc;
 }
 
