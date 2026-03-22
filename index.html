@@ -460,6 +460,7 @@ const CFG = {
   databaseURL:       'https://smes-meet-default-rtdb.asia-southeast1.firebasedatabase.app'
 };
 const DOMAIN = 'mail2.smes.tyc.edu.tw';
+const MAX_PEERS = 8; // max people in a room (Mesh: 8 people = 28 connections)
 const STU_RE = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
 const ICE_CFG = {
   iceServers: [
@@ -870,11 +871,23 @@ async function toggleShare() {
     S.screenStream = null; S.sharing = false;
     const camT = S.localStream?.getVideoTracks()[0];
     Object.values(S.peers).forEach(p => {
-      const s = p.pc.getSenders().find(s => s.track?.kind === 'video');
-      if (s && camT) s.replaceTrack(camT).catch(() => {});
+      const sender = p.pc.getSenders().find(s => s.track?.kind === 'video');
+      if (sender) {
+        if (camT) {
+          // Restore camera track
+          camT.enabled = S.camOn;
+          sender.replaceTrack(camT).catch(() => {});
+        } else {
+          // No camera — send a black track so connection stays alive
+          sender.replaceTrack(null).catch(() => {});
+        }
+      }
     });
+    // Restore local preview to camera stream
     $('local-vid').srcObject = S.localStream;
-    updateCtrlBtns(); return;
+    updateCamOff();
+    updateCtrlBtns();
+    return;
   }
 
   // ── Security check ──
@@ -1029,84 +1042,139 @@ function listenRequests() {
 }
 
 async function approveReq(reqId, uid, name, role2) {
+  // Check room capacity (host + all peers = current members)
+  const currentCount = Object.keys(S.peers).length + 1; // +1 for host
+  if (currentCount >= MAX_PEERS) {
+    await updateDoc(doc(db, 'room_requests', reqId), { status: 'rejected' });
+    showNotif(`人數已達上限（${MAX_PEERS} 人），無法加入。`);
+    return;
+  }
   await updateDoc(doc(db, 'room_requests', reqId), { status: 'approved' });
-  await initP2P(uid, name, role2);
+
+  // ── Mesh: tell new guest who else is online ───────────────
+  // Build peer list: all current peers + the host himself
+  const peerList = Object.entries(S.peers).map(([pUid, p]) => ({
+    uid: pUid, name: p.name, role: p.role
+  }));
+  // Include host info so guest knows who the host is
+  peerList.push({ uid: S.user.uid, name: S.profile.full_name, role: S.profile.role, isHost: true });
+
+  // Write peer list to RTDB so guest can read it on join
+  await rtSet(rtRef(rtdb, `signaling/${S.roomCode}/peerlist/${uid}`), { peers: peerList });
+
+  // Host connects to new guest
+  await sendOffer(uid, name, role2);
+
+  // ── Mesh: tell all existing peers about the new guest ─────
+  // Each existing peer will see this and send an offer to the new guest
+  Object.entries(S.peers).forEach(([pUid]) => {
+    if (pUid === uid) return;
+    rtSet(rtRef(rtdb, `signaling/${S.roomCode}/newpeer/${pUid}`), {
+      uid, name, role: role2, ts: Date.now()
+    });
+  });
 }
 
-// ── WebRTC: Host initiates ────────────────────────────────────
-async function initP2P(guestUid, guestName, guestRole) {
-  dbg('[HOST] 開始建立 P2P → ' + guestName);
-  const pc = buildPC(guestUid);
-  S.peers[guestUid] = { pc, name: guestName, role: guestRole };
+// ── WebRTC: send offer to a specific peer (used by both host and guests) ──
+async function sendOffer(remoteUid, remoteName, remoteRole) {
+  if (S.peers[remoteUid]) return; // already connected
+  dbg('[OFFER] 發送 → ' + remoteName);
+  const pc = buildPC(remoteUid);
+  S.peers[remoteUid] = { pc, name: remoteName, role: remoteRole };
 
-  // Add local tracks BEFORE createOffer so they appear in the SDP
-  if (S.localStream) {
-    S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
-  }
+  if (S.localStream) S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
 
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
 
-  dbg('[HOST] Offer 已送出 → ' + guestUid.slice(0,6));
-  await rtSet(rtRef(rtdb, `signaling/${S.roomCode}/offer/${guestUid}`), {
-    sdp: offer.sdp, type: offer.type, from: S.user.uid
+  await rtSet(rtRef(rtdb, `signaling/${S.roomCode}/offer/${remoteUid}_from_${S.user.uid}`), {
+    sdp: offer.sdp, type: offer.type, from: S.user.uid,
+    fromName: S.profile.full_name, fromRole: S.profile.role
   });
 
-  // Listen for answer
-  onValue(rtRef(rtdb, `signaling/${S.roomCode}/answer/${S.user.uid}`), async snap => {
+  // Listen for answer from remote
+  onValue(rtRef(rtdb, `signaling/${S.roomCode}/answer/${S.user.uid}_from_${remoteUid}`), async snap => {
     if (!snap.exists()) return;
     const a = snap.val();
-    if (a.from !== guestUid) return;
     if (pc.signalingState === 'have-local-offer') {
       await pc.setRemoteDescription(new RTCSessionDescription(a)).catch(() => {});
+      dbg('[OFFER] Answer 收到 ← ' + remoteName);
     }
   });
 
-  // ICE from guest
-  onChildAdded(rtRef(rtdb, `signaling/${S.roomCode}/ice/${S.user.uid}_from_${guestUid}`), async snap => {
+  // ICE from remote
+  onChildAdded(rtRef(rtdb, `signaling/${S.roomCode}/ice/${S.user.uid}_from_${remoteUid}`), async snap => {
     if (snap.exists()) await pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
   });
 
-  addTile(guestUid, guestName, guestRole);
+  addTile(remoteUid, remoteName, remoteRole);
 }
 
-// ── WebRTC: Guest listens for offer ──────────────────────────
+// ── WebRTC: receive offer from any peer ──────────────────────
+async function receiveOffer(offerData, senderUid) {
+  if (S.peers[senderUid]) return; // already connected
+  dbg('[ANSWER] 收到 Offer ← ' + (offerData.fromName || senderUid.slice(0,6)));
+
+  const pc = buildPC(senderUid);
+  S.peers[senderUid] = { pc, name: offerData.fromName || '?', role: offerData.fromRole || 'student' };
+
+  await pc.setRemoteDescription(new RTCSessionDescription(offerData)).catch(e => dbg('setRemote err:' + e));
+  if (S.localStream) S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
+
+  const ans = await pc.createAnswer();
+  await pc.setLocalDescription(ans);
+
+  await rtSet(rtRef(rtdb, `signaling/${S.roomCode}/answer/${senderUid}_from_${S.user.uid}`), {
+    sdp: ans.sdp, type: ans.type, from: S.user.uid
+  });
+  dbg('[ANSWER] Answer 已送出 → ' + (offerData.fromName || senderUid.slice(0,6)));
+
+  // ICE from sender
+  onChildAdded(rtRef(rtdb, `signaling/${S.roomCode}/ice/${senderUid}_from_${S.user.uid}`), async snap => {
+    if (snap.exists()) await pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
+  });
+
+  addTile(senderUid, offerData.fromName || '?', offerData.fromRole || 'student');
+}
+
+// ── WebRTC: Guest listens for offers from anyone ──────────────
 function listenOffer() {
-  onValue(rtRef(rtdb, `signaling/${S.roomCode}/offer/${S.user.uid}`), async snap => {
+  const myUid = S.user.uid;
+
+  // 1. Listen for peer list (sent by host on approval) — connect to all existing peers
+  onValue(rtRef(rtdb, `signaling/${S.roomCode}/peerlist/${myUid}`), async snap => {
     if (!snap.exists()) return;
-    dbg('[GUEST] 收到 Offer，開始握手');
-    const od = snap.val(); const hostUid = od.from;
-
-    let hostName = 'Host', hostRole = 'teacher';
-    const hs = await getDoc(doc(db, 'profiles', hostUid)).catch(() => null);
-    if (hs?.exists()) { hostName = hs.data().full_name || 'Host'; hostRole = hs.data().role; }
-
-    const pc = buildPC(hostUid);
-    S.peers[hostUid] = { pc, name: hostName, role: hostRole };
-
-    // Must setRemoteDescription FIRST so we know what tracks the host is sending
-    await pc.setRemoteDescription(new RTCSessionDescription(od)).catch(e => console.error('setRemote err:', e));
-
-    // Add local tracks AFTER setRemoteDescription, BEFORE createAnswer
-    // This is the correct order for the answering side
-    if (S.localStream) {
-      S.localStream.getTracks().forEach(t => pc.addTrack(t, S.localStream));
+    const { peers } = snap.val();
+    dbg('[MESH] 收到在線名單，共 ' + peers.length + ' 人');
+    for (const p of peers) {
+      if (p.uid === myUid) continue;
+      if (p.isHost || !S.peers[p.uid]) {
+        // Send offer to host and all existing peers
+        await sendOffer(p.uid, p.name, p.role);
+      }
     }
+  });
 
-    const ans = await pc.createAnswer();
-    await pc.setLocalDescription(ans);
+  // 2. Listen for offers addressed to me: signaling/{room}/offer/{myUid}_from_{senderUid}
+  // Use onChildAdded on the parent node to catch each sender
+  onChildAdded(rtRef(rtdb, `signaling/${S.roomCode}/offer`), async snap => {
+    if (!snap.exists()) return;
+    const key = snap.key; // e.g. "{myUid}_from_{senderUid}"
+    if (!key.startsWith(myUid + '_from_')) return;
+    const senderUid = key.replace(myUid + '_from_', '');
+    if (S.peers[senderUid]) return;
+    const offerData = snap.val();
+    dbg('[OFFER-IN] 收到來自 ' + (offerData.fromName||senderUid.slice(0,6)));
+    await receiveOffer(offerData, senderUid);
+  });
 
-    dbg('[GUEST] Answer 已送出');
-    await rtSet(rtRef(rtdb, `signaling/${S.roomCode}/answer/${hostUid}`), {
-      sdp: ans.sdp, type: ans.type, from: S.user.uid
-    });
-
-    // ICE from host
-    onChildAdded(rtRef(rtdb, `signaling/${S.roomCode}/ice/${S.user.uid}_from_${hostUid}`), async snap2 => {
-      if (snap2.exists()) await pc.addIceCandidate(new RTCIceCandidate(snap2.val())).catch(() => {});
-    });
-
-    addTile(hostUid, hostName, hostRole);
+  // 3. Listen for "new peer joined" notification (sent by host to existing guests)
+  onValue(rtRef(rtdb, `signaling/${S.roomCode}/newpeer/${myUid}`), async snap => {
+    if (!snap.exists()) return;
+    const { uid, name, role: role2 } = snap.val();
+    if (uid === myUid || S.peers[uid]) return;
+    dbg('[MESH] 新成員加入：' + name + '，我主動發 Offer');
+    await sendOffer(uid, name, role2);
   });
 }
 
@@ -1139,10 +1207,11 @@ function buildPC(remoteUid) {
     }
   };
 
-  // ICE candidates → write to RTDB
+  // ICE candidates → write to RTDB (peer-to-peer path)
   pc.onicecandidate = e => {
     if (!e.candidate) return;
     dbg('[ICE候選] ' + e.candidate.type + ' ' + e.candidate.protocol);
+    // Path: ice/{receiver}_from_{sender}
     rtPush(rtRef(rtdb, `signaling/${S.roomCode}/ice/${remoteUid}_from_${S.user.uid}`), e.candidate.toJSON());
   };
 
