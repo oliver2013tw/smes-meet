@@ -1431,7 +1431,6 @@ function startTimer(){
   },1000);
 }
 function stopTimer(){clearInterval(_timerIv);_timerIv=null;const el=$('m-timer');if(el)el.textContent='00:00';}
-function pad(n){return String(n).padStart(2,'0');}
 
 // ── Wake lock ─────────────────────────────────────────────────
 async function requestWakeLock(){try{if('wakeLock'in navigator)S.wakeLock=await navigator.wakeLock.request('screen');}catch(e){}}
@@ -1480,16 +1479,7 @@ function bumpUnread(){if(document.hidden){_unread++;document.title=`(${_unread})
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){_unread=0;document.title=S.inMeeting?`SMES MEET — ${S.roomCode}`:'SMES MEET';}});
 
 // ── Network / device events ───────────────────────────────────
-window.addEventListener('online', ()=>notif('✓ 網路已恢復連線',3000,'success'));
-window.addEventListener('offline',()=>notif('⚠ 網路連線中斷',8000,'warning'));
-window.addEventListener('orientationchange',()=>setTimeout(updateGrid,300));
-window.addEventListener('resize',()=>{updateGrid();if(S.inMeeting)resetCtrlTimer();});
-window.addEventListener('beforeunload',e=>{if(S.inMeeting){e.preventDefault();e.returnValue='';}lkRoom?.disconnect().catch(()=>{});});
-
-// Lobby clock
-setInterval(()=>{const el=$('lobby-time');if(!el)return;const n=new Date();el.textContent=n.toLocaleTimeString('zh-TW',{hour12:false})+'  '+n.toLocaleDateString('zh-TW');},1000);
-
-// title blink CSS
+window.addEventListener('online', ()=>notif('✓ 網路已恢復連線',3000,'success')); window.addEventListener('offline',()=>notif('⚠ 網路連線中斷',8000,'warning')); window.addEventListener('orientationchange',()=>setTimeout(updateGrid,300)); window.addEventListener('resize',()=>{updateGrid();if(S.inMeeting)resetCtrlTimer();}); window.addEventListener('beforeunload',e=>{if(S.inMeeting){e.preventDefault();e.returnValue='';}lkRoom?.disconnect().catch(()=>{});}); // Lobby clock 修正：使用更穩定的 toLocaleTimeString 以避免名稱衝突 setInterval(() => { const el = $('lobby-time'); if (!el) return; const n = new Date(); // 這裡不使用任何  函數，直接格式化字串 el.textContent = n.toLocaleTimeString('zh-TW', { hour12: false }) + ' ' + n.toLocaleDateString('zh-TW'); }, 1000); // title blink
 const s=document.createElement('style');
 s.textContent='@keyframes titleBlink{0%,100%{color:#fff}50%{color:var(--blue)}}.m-brand.blink-peer{animation:titleBlink .5s ease 4}';
 document.head.appendChild(s);
