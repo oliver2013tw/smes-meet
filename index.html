@@ -418,6 +418,76 @@ button{cursor:pointer}
   .cb{padding:5px 9px}
 }
 #local-vid{transform:scaleX(-1)}
+
+/* ── Settings Panel ────────────────────────────────────────── */
+.settings-panel{
+  display:none;position:fixed;inset:0;z-index:7000;
+  background:rgba(0,0,0,.88);backdrop-filter:blur(6px);
+  align-items:flex-end;justify-content:center;
+}
+.settings-panel.show{display:flex;animation:fadeIn .2s ease}
+.settings-card{
+  width:100%;max-width:480px;
+  background:var(--bg1);border:1px solid var(--b2);
+  border-bottom:none;
+  animation:slideUp .22s ease;
+  max-height:85vh;overflow-y:auto;
+}
+.settings-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px;border-bottom:1px solid var(--b);
+  position:sticky;top:0;background:var(--bg1);z-index:1;
+}
+.settings-title{font-size:13px;font-weight:600;color:#fff;letter-spacing:1px}
+.settings-close{color:var(--t3);font-size:18px;padding:4px 8px;transition:color var(--tf)}
+.settings-close:hover{color:var(--t)}
+.settings-section{padding:14px 18px;border-bottom:1px solid var(--b)}
+.settings-section:last-child{border-bottom:none}
+.settings-sec-title{font-size:10px;color:var(--t3);letter-spacing:2px;margin-bottom:12px}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:6px 0;
+}
+.settings-label{font-size:11px;color:var(--t2)}
+.settings-desc{font-size:10px;color:var(--t3);margin-top:2px}
+/* Toggle switch */
+.toggle{
+  position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer;
+}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{
+  position:absolute;inset:0;background:var(--b2);
+  transition:background var(--tf);
+}
+.toggle input:checked+.toggle-track{background:var(--blue)}
+.toggle-thumb{
+  position:absolute;top:3px;left:3px;
+  width:14px;height:14px;background:#fff;
+  transition:transform var(--tf);
+}
+.toggle input:checked~.toggle-thumb{transform:translateX(16px)}
+/* Select */
+.settings-select{
+  background:var(--bg);border:1px solid var(--b);color:var(--t);
+  padding:6px 10px;font-size:11px;font-family:var(--font);
+  min-width:140px;cursor:pointer;transition:border-color var(--tf);
+}
+.settings-select:focus{border-color:var(--blue)}
+/* Range slider */
+.settings-range{
+  -webkit-appearance:none;appearance:none;
+  width:120px;height:3px;background:var(--b2);outline:none;cursor:pointer;
+}
+.settings-range::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--blue);cursor:pointer}
+.settings-range::-moz-range-thumb{width:14px;height:14px;background:var(--blue);border:none;cursor:pointer}
+.settings-val{font-size:10px;color:var(--t3);min-width:28px;text-align:right}
+.settings-device-btn{
+  border:1px solid var(--b);color:var(--t2);padding:5px 12px;
+  font-size:10px;font-family:var(--font);letter-spacing:.5px;
+  transition:all var(--tf);width:100%;text-align:left;margin-top:4px;
+}
+.settings-device-btn:hover{background:var(--bg2);color:var(--t)}
+.settings-device-btn.active{border-color:var(--blue-b);color:#60a5fa;background:var(--blue-g)}
 </style>
 </head>
 <body>
@@ -558,6 +628,10 @@ button{cursor:pointer}
       </button>
     </div>
     <div class="ctrl-g">
+      <button class="cb" id="cb-settings" aria-label="設定" title="設定 (快捷鍵: ,)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="cb-txt">設定</span>
+      </button>
       <button class="cb danger" id="cb-leave" style="display:none">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         <span class="cb-txt">離開</span>
@@ -583,6 +657,104 @@ button{cursor:pointer}
     <div class="modal-body" id="modal-body"></div>
     <input class="modal-input" id="modal-input" type="text" style="display:none"/>
     <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- Settings Panel -->
+<div class="settings-panel" id="settings-panel">
+  <div class="settings-card">
+    <div class="settings-header">
+      <span class="settings-title">// 會議設定</span>
+      <button class="settings-close" id="settings-close">✕</button>
+    </div>
+
+    <!-- 音訊設定 -->
+    <div class="settings-section">
+      <div class="settings-sec-title">音訊</div>
+      <div class="settings-row">
+        <div><div class="settings-label">麥克風裝置</div></div>
+      </div>
+      <div id="mic-devices"></div>
+      <div class="settings-row" style="margin-top:10px">
+        <div><div class="settings-label">回音消除</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-echo" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">降噪</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-noise" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- 視訊設定 -->
+    <div class="settings-section">
+      <div class="settings-sec-title">視訊</div>
+      <div class="settings-row">
+        <div><div class="settings-label">相機裝置</div></div>
+      </div>
+      <div id="cam-devices"></div>
+      <div class="settings-row" style="margin-top:10px">
+        <div>
+          <div class="settings-label">視訊品質</div>
+          <div class="settings-desc">較低畫質可節省頻寬</div>
+        </div>
+        <select class="settings-select" id="set-quality">
+          <option value="high">高畫質 (720p)</option>
+          <option value="medium">中畫質 (480p)</option>
+          <option value="low">低畫質 (240p)</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">鏡像顯示</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-mirror" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- 介面設定 -->
+    <div class="settings-section">
+      <div class="settings-sec-title">介面</div>
+      <div class="settings-row">
+        <div><div class="settings-label">加入/離開音效</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-sound" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">說話指示器</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-speak" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">防止誤觸關閉</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-guard" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- 連線資訊 -->
+    <div class="settings-section">
+      <div class="settings-sec-title">連線資訊</div>
+      <div id="conn-info" style="font-size:10px;color:var(--t3);line-height:2"></div>
+    </div>
   </div>
 </div>
 
@@ -632,7 +804,7 @@ const FIREBASE_CFG = {
   appId:             '1:897771756747:web:4a227140a386cef3860f4e',
 };
 // !! Replace with your Vercel deployment URL !!
-const TOKEN_API_URL = 'https://smes-meet-vercel.vercel.app/api/get-token';
+const TOKEN_API_URL = 'https://smes-meet.vercel.app/api/get-token';
 const LIVEKIT_URL   = 'wss://smes-meet-l23tvgv2.livekit.cloud';
 const DOMAIN        = 'mail2.smes.tyc.edu.tw';
 const STU_RE        = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
@@ -1034,15 +1206,23 @@ function setSFUStatus(state){
 }
 function onTrackSubscribed(track,pub,participant){
   const tile=$(`tile-${CSS.escape(participant.identity)}`);
-  if(!tile)return;
+  if(!tile){
+    // Tile might not exist yet — add it now
+    addTile(participant); return;
+  }
   if(track.kind===Track.Kind.Video){
     const vid=tile.querySelector('video');
     if(vid){track.attach(vid);vid.play().catch(()=>{});}
     tile.querySelector('.tile-camoff')?.classList.add('hidden');
   }
-  if(track.kind===Track.Kind.Audio) track.attach();
+  // Audio: attach to DOM so browser plays it
+  if(track.kind===Track.Kind.Audio){
+    const el=track.attach();
+    el.style.display='none';
+    document.body.appendChild(el);
+  }
   updateTileIcons(participant);
-  dbg(`[LK] Track subscribed: ${participant.identity} ${track.kind}`);
+  dbg(`[LK] Track subscribed: ${participant.identity} ${pub.source||track.kind}`);
 }
 function onTrackUnsubscribed(track,pub,participant){
   track.detach();
@@ -1091,12 +1271,18 @@ function onDataReceived(payload, participant){
 
 // ── Attach local video ────────────────────────────────────────
 function attachLocalVideo(){
-  const camPub=lkRoom?.localParticipant?.getTrackPublication(Track.Source.Camera);
-  const vid=$('local-vid');
-  if(camPub?.track&&vid){
-    camPub.track.attach(vid);
-    updateCamOff();
+  if(S.sharing) return; // don't override screen share preview
+  const camPub = lkRoom?.localParticipant?.getTrackPublication(Track.Source.Camera);
+  const vid = $('local-vid');
+  if(!vid) return;
+  if(camPub?.track?.mediaStreamTrack){
+    // Build a proper MediaStream — track.attach() sometimes fails on local video
+    vid.srcObject = new MediaStream([camPub.track.mediaStreamTrack]);
+    vid.play().catch(()=>{});
+  } else {
+    vid.srcObject = null;
   }
+  updateCamOff();
 }
 
 // ── Tile management ───────────────────────────────────────────
@@ -1119,17 +1305,17 @@ function addTile(participant){
     </div>`;
   grid.appendChild(tile);
 
-  // Attach existing tracks
-  participant.trackPublications.forEach(pub=>{
-    if(pub.isSubscribed&&pub.track){
-      if(pub.track.kind===Track.Kind.Video){
+  // Attach existing tracks — trackPublications is a Map, must use .values()
+  for(const pub of participant.trackPublications.values()){
+    if(pub.isSubscribed && pub.track){
+      if(pub.source===Track.Source.Camera || pub.kind===Track.Kind.Video){
         pub.track.attach(tile.querySelector('video'));
-        tile.querySelector('.tile-camoff').classList.add('hidden');
-      } else if(pub.track.kind===Track.Kind.Audio){
+        tile.querySelector('.tile-camoff')?.classList.add('hidden');
+      } else if(pub.source===Track.Source.Microphone || pub.kind===Track.Kind.Audio){
         pub.track.attach();
       }
     }
-  });
+  }
 
   // Flash brand
   const brand=document.querySelector('.m-brand');
@@ -1246,33 +1432,63 @@ function setupMuteDetect(stream){
 // ── Screen share ──────────────────────────────────────────────
 async function toggleShare(){
   if(S.sharing){
-    // Stop sharing
-    const pub=lkRoom?.localParticipant?.getTrackPublication(Track.Source.ScreenShare);
-    if(pub){await lkRoom.localParticipant.unpublishTrack(pub.track);}
-    const audPub=lkRoom?.localParticipant?.getTrackPublication(Track.Source.ScreenShareAudio);
-    if(audPub){await lkRoom.localParticipant.unpublishTrack(audPub.track);}
-    S.sharing=false;$('share-banner').classList.remove('show');
-    // Restore local preview to camera
-    attachLocalVideo();
+    // Stop all screen share tracks
+    for(const source of [Track.Source.ScreenShare, Track.Source.ScreenShareAudio]){
+      const pub = lkRoom?.localParticipant?.getTrackPublication(source);
+      if(pub?.track){
+        pub.track.stop(); // stop the browser mediaStreamTrack
+        await lkRoom.localParticipant.unpublishTrack(pub.track).catch(()=>{});
+      }
+    }
+    S.sharing = false;
+    $('share-banner').classList.remove('show');
     $('tile-local').classList.remove('is-sharing');
-    updateCtrl();return;
+    // Restore camera preview properly
+    const camPub = lkRoom?.localParticipant?.getTrackPublication(Track.Source.Camera);
+    const vid = $('local-vid');
+    if(camPub?.track?.mediaStreamTrack){
+      vid.srcObject = new MediaStream([camPub.track.mediaStreamTrack]);
+      vid.play().catch(()=>{});
+    } else {
+      vid.srcObject = null;
+    }
+    updateCamOff();
+    updateCtrl();
+    return;
   }
   if(!isSecure()){notif('⚠ 螢幕分享需要 HTTPS 環境',5000,'warning');return;}
   if(!navigator.mediaDevices?.getDisplayMedia){notif('⚠ 此瀏覽器不支援螢幕分享',5000,'warning');return;}
   try{
-    const tracks=await createLocalScreenTracks({audio:true});
-    for(const t of tracks) await lkRoom.localParticipant.publishTrack(t,{simulcast:false});
-    S.sharing=true;$('share-banner').classList.add('show');
+    // createLocalScreenTracks returns LocalTrack[] (video + optional audio)
+    const tracks = await createLocalScreenTracks({ audio: true });
+    // Publish all screen tracks to LiveKit
+    for(const t of tracks){
+      await lkRoom.localParticipant.publishTrack(t, { simulcast: false });
+    }
+    S.sharing = true;
+    $('share-banner').classList.add('show');
     $('tile-local').classList.add('is-sharing');
-    // Show screen track in local preview
-    const screenVid=tracks.find(t=>t.kind===Track.Kind.Video);
-    if(screenVid){const vid=$('local-vid');screenVid.attach(vid);}
-    // Auto-stop when user clicks browser stop button
-    tracks[0]?.mediaStreamTrack?.addEventListener('ended',()=>{if(S.sharing)toggleShare();});
+
+    // Local preview: build a MediaStream from the raw mediaStreamTrack
+    const videoTrack = tracks.find(t => t.kind === Track.Kind.Video);
+    if(videoTrack?.mediaStreamTrack){
+      const ms = new MediaStream([videoTrack.mediaStreamTrack]);
+      // Also add audio if present
+      const audioTrack = tracks.find(t => t.kind === Track.Kind.Audio);
+      if(audioTrack?.mediaStreamTrack) ms.addTrack(audioTrack.mediaStreamTrack);
+      const vid = $('local-vid');
+      vid.srcObject = ms;
+      vid.play().catch(()=>{});
+    }
+
+    // Auto-stop when user clicks browser "Stop sharing" button
+    const videoMST = tracks.find(t=>t.kind===Track.Kind.Video)?.mediaStreamTrack;
+    if(videoMST) videoMST.addEventListener('ended', ()=>{ if(S.sharing) toggleShare(); });
+
     updateCtrl();
   }catch(e){
-    S.sharing=false;
-    if(e.name!=='NotAllowedError') notif('螢幕分享失敗：'+e.message,6000,'error');
+    S.sharing = false;
+    if(e.name !== 'NotAllowedError') notif('螢幕分享失敗：'+e.name+' '+e.message, 6000, 'error');
   }
 }
 
@@ -1431,7 +1647,6 @@ function startTimer(){
   },1000);
 }
 function stopTimer(){clearInterval(_timerIv);_timerIv=null;const el=$('m-timer');if(el)el.textContent='00:00';}
-
 // ── Wake lock ─────────────────────────────────────────────────
 async function requestWakeLock(){try{if('wakeLock'in navigator)S.wakeLock=await navigator.wakeLock.request('screen');}catch(e){}}
 async function releaseWakeLock(){try{await S.wakeLock?.release();S.wakeLock=null;}catch(e){}}
@@ -1479,10 +1694,192 @@ function bumpUnread(){if(document.hidden){_unread++;document.title=`(${_unread})
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){_unread=0;document.title=S.inMeeting?`SMES MEET — ${S.roomCode}`:'SMES MEET';}});
 
 // ── Network / device events ───────────────────────────────────
-window.addEventListener('online', ()=>notif('✓ 網路已恢復連線',3000,'success')); window.addEventListener('offline',()=>notif('⚠ 網路連線中斷',8000,'warning')); window.addEventListener('orientationchange',()=>setTimeout(updateGrid,300)); window.addEventListener('resize',()=>{updateGrid();if(S.inMeeting)resetCtrlTimer();}); window.addEventListener('beforeunload',e=>{if(S.inMeeting){e.preventDefault();e.returnValue='';}lkRoom?.disconnect().catch(()=>{});}); // Lobby clock 修正：使用更穩定的 toLocaleTimeString 以避免名稱衝突 setInterval(() => { const el = $('lobby-time'); if (!el) return; const n = new Date(); // 這裡不使用任何  函數，直接格式化字串 el.textContent = n.toLocaleTimeString('zh-TW', { hour12: false }) + ' ' + n.toLocaleDateString('zh-TW'); }, 1000); // title blink
+window.addEventListener('online', ()=>notif('✓ 網路已恢復連線',3000,'success'));
+window.addEventListener('offline',()=>notif('⚠ 網路連線中斷',8000,'warning'));
+window.addEventListener('orientationchange',()=>setTimeout(updateGrid,300));
+window.addEventListener('resize',()=>{updateGrid();if(S.inMeeting)resetCtrlTimer();});
+window.addEventListener('beforeunload',e=>{if(S.inMeeting){e.preventDefault();e.returnValue='';}lkRoom?.disconnect().catch(()=>{});});
+
+// Lobby clock
+setInterval(()=>{const el=$('lobby-time');if(!el)return;const n=new Date();el.textContent=n.toLocaleTimeString('zh-TW',{hour12:false})+'  '+n.toLocaleDateString('zh-TW');},1000);
+
+// title blink CSS
 const s=document.createElement('style');
 s.textContent='@keyframes titleBlink{0%,100%{color:#fff}50%{color:var(--blue)}}.m-brand.blink-peer{animation:titleBlink .5s ease 4}';
 document.head.appendChild(s);
+
+// ════════════════════════════════════════════════
+// SETTINGS PANEL
+// ════════════════════════════════════════════════
+const SET = {
+  sound:  true,
+  speak:  true,
+  guard:  true,
+  echo:   true,
+  noise:  true,
+  mirror: true,
+  quality:'high',
+  micId:  '',
+  camId:  '',
+};
+
+// Load from localStorage
+try{ Object.assign(SET, JSON.parse(localStorage.getItem('smes_settings')||'{}')); }catch(e){}
+function saveSettings(){ try{ localStorage.setItem('smes_settings', JSON.stringify(SET)); }catch(e){} }
+
+// Open / close
+$('cb-settings').onclick = openSettings;
+$('settings-close').onclick = closeSettings;
+$('settings-panel').addEventListener('click', e=>{ if(e.target===$('settings-panel')) closeSettings(); });
+
+function openSettings(){
+  $('settings-panel').classList.add('show');
+  // Sync toggles to current state
+  $('set-echo').checked   = SET.echo;
+  $('set-noise').checked  = SET.noise;
+  $('set-mirror').checked = SET.mirror;
+  $('set-sound').checked  = SET.sound;
+  $('set-speak').checked  = SET.speak;
+  $('set-guard').checked  = SET.guard;
+  $('set-quality').value  = SET.quality;
+  loadDevices();
+  updateConnInfo();
+}
+function closeSettings(){ $('settings-panel').classList.remove('show'); }
+
+// Keyboard shortcut
+document.addEventListener('keydown', e=>{
+  if((e.key===','||e.key==='，')&&$('s-meeting').classList.contains('active')&&e.target.tagName!=='INPUT'){
+    $('settings-panel').classList.contains('show') ? closeSettings() : openSettings();
+  }
+});
+
+// Toggle handlers
+$('set-echo').onchange   = e=>{ SET.echo=e.target.checked; saveSettings(); applyAudioConstraints(); };
+$('set-noise').onchange  = e=>{ SET.noise=e.target.checked; saveSettings(); applyAudioConstraints(); };
+$('set-mirror').onchange = e=>{ SET.mirror=e.target.checked; saveSettings(); $('local-vid').style.transform=SET.mirror?'scaleX(-1)':'scaleX(1)'; S.mirrored=SET.mirror; };
+$('set-sound').onchange  = e=>{ SET.sound=e.target.checked; saveSettings(); };
+$('set-speak').onchange  = e=>{ SET.speak=e.target.checked; saveSettings(); };
+$('set-guard').onchange  = e=>{ SET.guard=e.target.checked; saveSettings(); };
+$('set-quality').onchange= e=>{ SET.quality=e.target.value; saveSettings(); applyVideoQuality(); };
+
+// Apply saved mirror on load
+document.addEventListener('DOMContentLoaded',()=>{
+  S.mirrored=SET.mirror;
+  $('set-mirror').checked=SET.mirror;
+});
+
+async function applyAudioConstraints(){
+  if(!lkRoom?.localParticipant) return;
+  try{
+    const pub=lkRoom.localParticipant.getTrackPublication(Track.Source.Microphone);
+    if(pub?.track){
+      await pub.track.restartTrack({
+        deviceId: SET.micId||undefined,
+        echoCancellation: SET.echo,
+        noiseSuppression: SET.noise,
+        autoGainControl: true,
+      });
+    }
+  }catch(e){ dbg('[SET] audio constraints: '+e.message); }
+}
+
+async function applyVideoQuality(){
+  if(!lkRoom?.localParticipant) return;
+  const resMap={ high:{width:1280,height:720,frameRate:24}, medium:{width:854,height:480,frameRate:20}, low:{width:426,height:240,frameRate:15} };
+  const res = resMap[SET.quality]||resMap.high;
+  try{
+    const pub=lkRoom.localParticipant.getTrackPublication(Track.Source.Camera);
+    if(pub?.track) await pub.track.restartTrack({ ...res, deviceId: SET.camId||undefined });
+  }catch(e){ dbg('[SET] video quality: '+e.message); }
+}
+
+// Device enumeration
+async function loadDevices(){
+  try{
+    await navigator.mediaDevices.getUserMedia({audio:true,video:true}).catch(()=>{});
+    const devices=await navigator.mediaDevices.enumerateDevices();
+
+    const mics=devices.filter(d=>d.kind==='audioinput');
+    const cams=devices.filter(d=>d.kind==='videoinput');
+
+    const micEl=$('mic-devices'); micEl.innerHTML='';
+    mics.forEach(d=>{
+      const btn=document.createElement('button');
+      btn.className='settings-device-btn'+(d.deviceId===SET.micId?' active':'');
+      btn.textContent=(d.label||'麥克風 '+d.deviceId.slice(0,6));
+      btn.onclick=async()=>{
+        SET.micId=d.deviceId; saveSettings();
+        micEl.querySelectorAll('.settings-device-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        await applyAudioConstraints();
+      };
+      micEl.appendChild(btn);
+    });
+
+    const camEl=$('cam-devices'); camEl.innerHTML='';
+    cams.forEach(d=>{
+      const btn=document.createElement('button');
+      btn.className='settings-device-btn'+(d.deviceId===SET.camId?' active':'');
+      btn.textContent=(d.label||'相機 '+d.deviceId.slice(0,6));
+      btn.onclick=async()=>{
+        SET.camId=d.deviceId; saveSettings();
+        camEl.querySelectorAll('.settings-device-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        await applyVideoQuality();
+      };
+      camEl.appendChild(btn);
+    });
+  }catch(e){ dbg('[SET] enumerate devices: '+e.message); }
+}
+
+// Connection info
+async function updateConnInfo(){
+  const el=$('conn-info'); if(!el||!lkRoom) return;
+  const local=lkRoom.localParticipant;
+  const lines=[
+    `身分：${local?.identity||'—'}`,
+    `房間：${lkRoom.name||S.roomCode}`,
+    `參與者：${lkRoom.numParticipants} 人`,
+    `SFU：${LIVEKIT_URL.replace('wss://','').split('.')[0]}`,
+    `視訊品質：${SET.quality}`,
+  ];
+  // Try get connection stats
+  try{
+    for(const [,p] of lkRoom.remoteParticipants){
+      const pub=p.getTrackPublication(Track.Source.Camera);
+      if(pub?.track){
+        // no direct stats API, skip
+      }
+    }
+  }catch(e){}
+  el.innerHTML=lines.map(l=>`<div>${esc(l)}</div>`).join('');
+}
+
+// Apply settings to sound/speak (patch playTone and speaking)
+const _origPlayTone=playTone;
+function playTone(f,d,v){ if(SET.sound) _origPlayTone(f,d,v); }
+
+// Override onSpeakerChange to respect setting
+const _origSpeakerChange=onSpeakerChange;
+function onSpeakerChange(speakers){
+  if(!SET.speak){ document.querySelectorAll('.video-tile.speaking').forEach(t=>t.classList.remove('speaking')); return; }
+  _origSpeakerChange(speakers);
+}
+
+// Patch beforeunload to respect guard setting
+window.removeEventListener('beforeunload',window._beforeUnload);
+window._beforeUnload=e=>{
+  if(S.inMeeting&&SET.guard){e.preventDefault();e.returnValue='';}
+  lkRoom?.disconnect().catch(()=>{});
+};
+window.addEventListener('beforeunload',window._beforeUnload);
+
+// Init settings from saved values on page load
+(function initSettings(){
+  $('set-mirror').checked=SET.mirror;
+  if(!SET.mirror){ $('local-vid').style.transform='scaleX(1)'; S.mirrored=false; }
+})();
 </script>
 </body>
 </html>
