@@ -488,85 +488,6 @@ button{cursor:pointer}
 }
 .settings-device-btn:hover{background:var(--bg2);color:var(--t)}
 .settings-device-btn.active{border-color:var(--blue-b);color:#60a5fa;background:var(--blue-g)}
-
-/* ── Chat Panel ─────────────────────────────────────────────── */
-.chat-panel{
-  display:none;position:fixed;inset:0;z-index:7000;
-  background:rgba(0,0,0,.88);backdrop-filter:blur(6px);
-  align-items:flex-end;justify-content:center;
-}
-.chat-panel.show{display:flex;animation:fadeIn .2s ease}
-.chat-card{
-  width:100%;max-width:480px;height:70vh;
-  background:var(--bg1);border:1px solid var(--b2);border-bottom:none;
-  display:flex;flex-direction:column;
-  animation:slideUp .22s ease;
-}
-.chat-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 18px;border-bottom:1px solid var(--b);
-  flex-shrink:0;
-}
-.chat-title{font-size:13px;font-weight:600;color:#fff;letter-spacing:1px}
-.chat-close{color:var(--t3);font-size:18px;padding:4px 8px;transition:color var(--tf)}
-.chat-close:hover{color:var(--t)}
-.chat-msgs{
-  flex:1;overflow-y:auto;padding:12px 16px;
-  display:flex;flex-direction:column;gap:10px;
-}
-.chat-msgs::-webkit-scrollbar{width:3px}
-.chat-msgs::-webkit-scrollbar-thumb{background:var(--b2)}
-.chat-msg{display:flex;flex-direction:column;gap:3px;animation:fadeIn .15s ease}
-.chat-msg-meta{
-  display:flex;align-items:baseline;gap:6px;
-}
-.chat-msg-name{font-size:10px;font-weight:600;color:#60a5fa;letter-spacing:.5px}
-.chat-msg-name.me{color:var(--green)}
-.chat-msg-name.teacher{color:var(--amber)}
-.chat-msg-time{font-size:9px;color:var(--t3)}
-.chat-msg-body{
-  font-size:12px;color:var(--t);line-height:1.6;
-  background:var(--bg2);border:1px solid var(--b);
-  padding:7px 11px;word-break:break-word;
-  border-left:2px solid var(--blue-b);
-}
-.chat-msg.me .chat-msg-body{
-  background:var(--blue-g);border-color:var(--blue-b);
-  border-left-color:var(--blue);
-}
-.chat-msg.system .chat-msg-body{
-  background:transparent;border:none;border-left:none;
-  font-size:10px;color:var(--t3);padding:2px 0;text-align:center;
-}
-.chat-msg.system .chat-msg-meta{display:none}
-.chat-footer{
-  flex-shrink:0;display:flex;gap:0;border-top:1px solid var(--b);
-}
-.chat-inp{
-  flex:1;background:var(--bg);border:none;color:#fff;
-  padding:12px 14px;font-size:12px;font-family:var(--font);
-  transition:background var(--tf);resize:none;height:44px;line-height:1.4;
-}
-.chat-inp:focus{background:var(--bg2)}
-.chat-inp::placeholder{color:var(--t3)}
-.chat-send{
-  background:var(--blue);color:#fff;padding:0 16px;
-  font-size:11px;font-family:var(--font);letter-spacing:.5px;
-  flex-shrink:0;transition:background var(--tf);
-}
-.chat-send:hover{background:var(--blue-d)}
-.chat-send:disabled{opacity:.4;cursor:not-allowed}
-/* Unread badge on chat button */
-.cb-chat-badge{
-  position:absolute;top:-4px;right:-4px;
-  background:var(--red);color:#fff;
-  font-size:9px;font-weight:700;
-  min-width:16px;height:16px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  padding:0 3px;display:none;
-}
-#cb-chat{position:relative}
-#cb-chat.has-unread .cb-chat-badge{display:flex}
 </style>
 </head>
 <body>
@@ -705,11 +626,6 @@ button{cursor:pointer}
         <span style="font-size:14px;line-height:1">✋</span>
         <span class="cb-txt">舉手</span>
       </button>
-      <button class="cb" id="cb-chat" aria-label="聊天室">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        <span class="cb-txt">聊天</span>
-        <span class="cb-chat-badge" id="chat-badge">0</span>
-      </button>
     </div>
     <div class="ctrl-g">
       <button class="cb" id="cb-settings" aria-label="設定" title="設定 (快捷鍵: ,)">
@@ -741,21 +657,6 @@ button{cursor:pointer}
     <div class="modal-body" id="modal-body"></div>
     <input class="modal-input" id="modal-input" type="text" style="display:none"/>
     <div class="modal-actions" id="modal-actions"></div>
-  </div>
-</div>
-
-<!-- Chat Panel -->
-<div class="chat-panel" id="chat-panel">
-  <div class="chat-card">
-    <div class="chat-header">
-      <span class="chat-title">// 聊天室</span>
-      <button class="chat-close" id="chat-close">✕</button>
-    </div>
-    <div class="chat-msgs" id="chat-msgs"></div>
-    <div class="chat-footer">
-      <input class="chat-inp" id="chat-inp" type="text" placeholder="輸入訊息… (Enter 送出)" maxlength="500" autocomplete="off"/>
-      <button class="chat-send" id="chat-send">送出</button>
-    </div>
   </div>
 </div>
 
@@ -1332,14 +1233,15 @@ function onTrackUnsubscribed(track,pub,participant){
   updateTileIcons(participant);
 }
 function onSpeakerChange(speakers){
-  // Clear all speaking classes
+  // Clear all speaking classes first
   document.querySelectorAll('.video-tile.speaking').forEach(t=>t.classList.remove('speaking'));
+  // Respect settings toggle
   if(typeof SET!=='undefined'&&!SET.speak) return;
   // Add to current speakers
   speakers.forEach(p=>{
     const id=p.identity;
     const tileId=id===lkRoom?.localParticipant?.identity?'tile-local':`tile-${CSS.escape(id)}`;
-    $( tileId)?.classList.add('speaking');
+    $(tileId)?.classList.add('speaking');
   });
 }
 function onMetadataChanged(metadata, participant){
@@ -1357,6 +1259,7 @@ function onMetadataChanged(metadata, participant){
   }catch(e){}
 }
 function onDataReceived(payload, participant){
+  // Data channel messages (backup hand-raise broadcast)
   try{
     const msg=JSON.parse(new TextDecoder().decode(payload));
     if(msg.type==='hand'){
@@ -1364,8 +1267,6 @@ function onDataReceived(payload, participant){
       handRaised[id]=msg.raised;
       updateHandIcon(id,msg.raised);
       if(msg.raised&&S.isHost) notif(`✋ ${id} 舉手了`,5000,'info');
-    } else if(msg.type===CHAT_TYPE){
-      appendChatMsg(msg, false);
     }
   }catch(e){}
 }
@@ -1422,9 +1323,6 @@ function addTile(participant){
   const brand=document.querySelector('.m-brand');
   if(brand){brand.style.animation='none';brand.offsetHeight;brand.style.animation='titleBlink .5s ease 4';}
 
-  // Chat system message
-  if($('chat-msgs').children.length > 0) appendChatSystem(`${id} 加入會議`);
-
   updateTileIcons(participant);
   updateGrid();updateCount();
 }
@@ -1434,7 +1332,6 @@ function removeTile(identity){
   if(tile){tile.classList.add('removing');setTimeout(()=>{tile.remove();updateGrid();updateCount();},220);}
   else{updateGrid();updateCount();}
   delete handRaised[identity];
-  appendChatSystem(`${identity} 離開會議`);
 }
 
 function updateTileIcons(participant){
@@ -1758,7 +1655,10 @@ async function requestWakeLock(){try{if('wakeLock'in navigator)S.wakeLock=await 
 async function releaseWakeLock(){try{await S.wakeLock?.release();S.wakeLock=null;}catch(e){}}
 
 // ── Sound cues ────────────────────────────────────────────────
-function playTone(freq=440,dur=.12,vol=.07){ if(typeof SET!=='undefined'&&!SET.sound) return; try{const c=new AudioContext(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=freq;g.gain.setValueAtTime(vol,c.currentTime);g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dur);o.start();o.stop(c.currentTime+dur);setTimeout(()=>c.close(),(dur+.2)*1000);}catch(e){}}
+function playTone(freq=440,dur=.12,vol=.07){
+  if(typeof SET!=='undefined'&&!SET.sound) return;
+  try{const ctx=new AudioContext(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=freq;g.gain.setValueAtTime(vol,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);o.start();o.stop(ctx.currentTime+dur);setTimeout(()=>ctx.close(),(dur+.2)*1000);}catch(e){}
+}
 
 // ── Copy room code ────────────────────────────────────────────
 $('m-code').addEventListener('click',()=>{
@@ -1813,104 +1713,6 @@ setInterval(()=>{const el=$('lobby-time');if(!el)return;const n=new Date();el.te
 const s=document.createElement('style');
 s.textContent='@keyframes titleBlink{0%,100%{color:#fff}50%{color:var(--blue)}}.m-brand.blink-peer{animation:titleBlink .5s ease 4}';
 document.head.appendChild(s);
-
-// ════════════════════════════════════════════════
-// CHAT
-// ════════════════════════════════════════════════
-const CHAT_TYPE = 'chat_msg';
-let _chatUnread = 0;
-let _chatOpen = false;
-
-$('cb-chat').onclick = openChat;
-$('chat-close').onclick = closeChat;
-$('chat-panel').addEventListener('click', e=>{ if(e.target===$('chat-panel')) closeChat(); });
-
-function openChat(){
-  _chatOpen = true;
-  _chatUnread = 0;
-  $('chat-badge').textContent = '0';
-  $('cb-chat').classList.remove('has-unread');
-  $('chat-panel').classList.add('show');
-  setTimeout(()=>{ $('chat-inp').focus(); scrollChatBottom(); }, 80);
-}
-function closeChat(){
-  _chatOpen = false;
-  $('chat-panel').classList.remove('show');
-}
-
-// Keyboard shortcut C
-document.addEventListener('keydown', e=>{
-  if((e.key==='c'||e.key==='C')&&$('s-meeting').classList.contains('active')&&e.target.tagName!=='INPUT'){
-    _chatOpen ? closeChat() : openChat();
-  }
-});
-
-$('chat-inp').addEventListener('keydown', e=>{
-  if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendChat(); }
-});
-$('chat-send').onclick = sendChat;
-
-function sendChat(){
-  const inp = $('chat-inp');
-  const text = inp.value.trim();
-  if(!text||!lkRoom?.localParticipant) return;
-  inp.value = '';
-  const msg = {
-    type: CHAT_TYPE,
-    text,
-    identity: lkRoom.localParticipant.identity,
-    role: S.profile?.role||'student',
-    ts: Date.now(),
-  };
-  // Show locally
-  appendChatMsg(msg, true);
-  // Broadcast via LiveKit data channel
-  try{
-    const payload = new TextEncoder().encode(JSON.stringify(msg));
-    lkRoom.localParticipant.publishData(payload, {reliable:true});
-  }catch(e){ dbg('[CHAT] send failed: '+e.message); }
-}
-
-function appendChatMsg(msg, isMe=false){
-  const container = $('chat-msgs');
-  if(!container) return;
-  const div = document.createElement('div');
-  div.className = 'chat-msg'+(isMe?' me':'')+(msg.role==='teacher'&&!isMe?' teacher':'');
-  const t = new Date(msg.ts||Date.now());
-  const timeStr = t.toLocaleTimeString('zh-TW',{hour12:false,hour:'2-digit',minute:'2-digit'});
-  const nameClass = 'chat-msg-name'+(isMe?' me':msg.role==='teacher'?' teacher':'');
-  div.innerHTML = `
-    <div class="chat-msg-meta">
-      <span class="${nameClass}">${esc(msg.identity||'?')}</span>
-      <span class="chat-msg-time">${timeStr}</span>
-    </div>
-    <div class="chat-msg-body">${esc(msg.text)}</div>`;
-  container.appendChild(div);
-  scrollChatBottom();
-
-  // Unread badge
-  if(!isMe && !_chatOpen){
-    _chatUnread++;
-    $('chat-badge').textContent = _chatUnread > 99 ? '99+' : _chatUnread;
-    $('cb-chat').classList.add('has-unread');
-    notif(`💬 ${esc(msg.identity)}: ${esc(msg.text.slice(0,40))}${msg.text.length>40?'…':''}`, 4000, 'info');
-  }
-}
-
-function appendChatSystem(text){
-  const container = $('chat-msgs');
-  if(!container) return;
-  const div = document.createElement('div');
-  div.className = 'chat-msg system';
-  div.innerHTML = `<div class="chat-msg-body">${esc(text)}</div>`;
-  container.appendChild(div);
-  scrollChatBottom();
-}
-
-function scrollChatBottom(){
-  const c = $('chat-msgs');
-  if(c) c.scrollTop = c.scrollHeight;
-}
 
 // ════════════════════════════════════════════════
 // SETTINGS PANEL
@@ -2059,6 +1861,9 @@ async function updateConnInfo(){
   }catch(e){}
   el.innerHTML=lines.map(l=>`<div>${esc(l)}</div>`).join('');
 }
+
+// Sound and speaker settings are checked inside the original functions.
+// No re-declaration needed — SET.sound and SET.speak are read at call time.
 
 // Patch beforeunload to respect guard setting
 window.removeEventListener('beforeunload',window._beforeUnload);
