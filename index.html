@@ -804,7 +804,7 @@ const FIREBASE_CFG = {
   appId:             '1:897771756747:web:4a227140a386cef3860f4e',
 };
 // !! Replace with your Vercel deployment URL !!
-const TOKEN_API_URL = 'https://smes-meet-vercel.vercel.app';
+const TOKEN_API_URL = 'https://smes-meet-vercel.vercel.app/api/get-token';
 const LIVEKIT_URL   = 'wss://smes-meet-l23tvgv2.livekit.cloud';
 const DOMAIN        = 'mail2.smes.tyc.edu.tw';
 const STU_RE        = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
@@ -1082,23 +1082,36 @@ async function goMeeting(){
   // 1. Get LiveKit token from Vercel API
   let token;
   try{
-    const r=await fetch(TOKEN_API_URL,{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        roomName:S.roomCode,
-        username:S.profile.full_name,
-        email:S.profile.email,
-        role:S.profile.role,
-      })
+    dbg('[TOKEN] 向 API 請求 token: '+TOKEN_API_URL);
+    const r = await fetch(TOKEN_API_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        roomName: S.roomCode,
+        username: S.profile.full_name,
+        email:    S.profile.email,
+        role:     S.profile.role,
+      }),
     });
-    if(!r.ok){const e=await r.json();throw new Error(e.error||'Token 獲取失敗');}
-    const data=await r.json();
-    token=data.token;
-    dbg('Token 已獲取，identity: '+data.identity);
-  }catch(e){
-    notif('無法連接到會議伺服器：'+e.message,8000,'error');
-    S.inMeeting=false;S.roomCode='';S.isHost=false;
-    showScreen('lobby');return;
+    dbg('[TOKEN] HTTP status: '+r.status);
+    if (!r.ok) {
+      let errMsg = 'Token 獲取失敗 (HTTP '+r.status+')';
+      try { const e = await r.json(); errMsg = e.error || errMsg; } catch(_){}
+      throw new Error(errMsg);
+    }
+    const data = await r.json();
+    if (!data.token) throw new Error('API 未回傳 token');
+    token = data.token;
+    dbg('[TOKEN] 成功，identity: '+data.identity);
+  } catch(e) {
+    const isCORS = e.message==='Failed to fetch';
+    const hint   = isCORS
+      ? '可能是 CORS 錯誤或 Vercel API 未部署。請確認 TOKEN_API_URL 設定正確。'
+      : e.message;
+    dbg('[TOKEN] 錯誤: '+e.message);
+    notif('無法取得會議憑證：'+hint, 10000, 'error');
+    S.inMeeting=false; S.roomCode=''; S.isHost=false;
+    showScreen('lobby'); return;
   }
 
   // 2. Create LiveKit room
