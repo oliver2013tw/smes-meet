@@ -229,7 +229,7 @@ button{cursor:pointer}
   border-bottom:1px solid var(--b);gap:8px;
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
-.m-bar-l{display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+.m-bar-l{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;flex:1}
 .m-bar-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .m-brand{font-size:13px;font-weight:700;color:#fff;letter-spacing:4px;white-space:nowrap}
 .m-code{
@@ -254,14 +254,20 @@ button{cursor:pointer}
 .sfu-status.connecting .sfu-dot{background:var(--amber)}
 
 /* Video grid */
-.video-area{flex:1;min-height:0;display:grid;gap:2px;background:var(--bg2);padding:2px}
+.video-area{
+  flex:1;min-height:0;height:0;/* iOS Safari fix: explicit 0 + flex:1 gives correct height */
+  display:grid;gap:2px;background:var(--bg2);padding:2px;
+  overflow:hidden;
+}
 .video-tile{
   position:relative;background:var(--bg1);
   overflow:hidden;min-width:0;min-height:0;
   animation:tileIn .22s ease;
+  contain:layout style;/* perf: isolate tile repaints */
 }
 .video-tile video{width:100%;height:100%;object-fit:cover;display:block;background:var(--bg1)}
-.video-tile.speaking{box-shadow:inset 0 0 0 2px var(--green);animation:speakRing 1s ease-in-out infinite}
+.video-tile.speaking{box-shadow:inset 0 0 0 2px var(--green);animation:speakRing 1.2s ease-in-out infinite}
+.video-tile.removing.speaking{animation:tileOut .2s ease forwards}
 .video-tile.fullscreen{position:fixed!important;inset:0!important;z-index:600;animation:none}
 .video-tile.removing{animation:tileOut .2s ease forwards}
 
@@ -328,9 +334,10 @@ button{cursor:pointer}
 /* Control bar */
 .ctrl-bar{
   flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
-  padding:0 14px;min-height:60px;
+  padding:0 14px;height:60px;
   background:rgba(10,10,10,.85);border-top:1px solid var(--b);gap:8px;
   backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  overflow-x:auto;overflow-y:visible;
 }
 .ctrl-g{display:flex;align-items:center;gap:6px}
 .cb{
@@ -353,7 +360,7 @@ button{cursor:pointer}
 
 /* Share banner */
 .share-banner{
-  position:fixed;top:48px;left:0;right:0;z-index:500;
+  position:fixed;top:48px;left:0;right:0;z-index:490;/* below modal, above video */
   background:rgba(34,197,94,.1);border-bottom:1px solid rgba(34,197,94,.25);
   color:var(--green);font-size:11px;text-align:center;padding:5px;
   display:none;letter-spacing:.5px;
@@ -363,7 +370,7 @@ button{cursor:pointer}
 
 /* Mute warning */
 .mute-warn{
-  position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+  position:fixed;bottom:68px;left:50%;transform:translateX(-50%);
   background:rgba(0,0,0,.9);border:1px solid rgba(239,68,68,.5);
   color:var(--red);padding:8px 18px;font-size:11px;z-index:600;
   display:none;pointer-events:none;white-space:nowrap;
@@ -401,9 +408,10 @@ button{cursor:pointer}
 
 /* RWD */
 @media(max-width:640px){
-  .ctrl-bar{padding:8px 10px;min-height:auto;flex-wrap:wrap;gap:6px}
-  .ctrl-g:last-child{margin-left:auto}
-  .cb{padding:8px 10px}
+  .ctrl-bar{padding:0 8px;height:56px;flex-wrap:nowrap;gap:4px;overflow-x:auto;}
+  .ctrl-bar::-webkit-scrollbar{display:none}
+  .ctrl-g:last-child{margin-left:auto;flex-shrink:0}
+  .cb{padding:7px 9px;flex-shrink:0}
   .pending-bar{padding:6px 10px}
   .m-bar{padding:0 10px;height:42px}
 }
@@ -411,11 +419,13 @@ button{cursor:pointer}
   .cb-txt{display:none}
   .cb{padding:9px 11px}
   .m-brand{letter-spacing:2px;font-size:12px}
+  .m-timer,.m-count{display:none}
 }
 @media(orientation:landscape) and (max-height:500px){
   .m-bar{height:34px}
-  .ctrl-bar{min-height:44px;padding:4px 10px}
-  .cb{padding:5px 9px}
+  .ctrl-bar{height:44px;padding:0 8px}
+  .cb{padding:5px 8px}
+  .share-banner{top:34px}
 }
 #local-vid{transform:scaleX(-1)}
 
@@ -1163,6 +1173,14 @@ async function goMeeting(){
     catch(e2){S.camOn=false;S.micOn=false;}
     dbg('媒體取得失敗：'+e.message);
   }
+  // Setup mute-while-speaking detection using local mic stream
+  try{
+    const micPub=lkRoom.localParticipant.getTrackPublication(Track.Source.Microphone);
+    if(micPub?.track?.mediaStreamTrack){
+      const ms=new MediaStream([micPub.track.mediaStreamTrack]);
+      setupMuteDetect(ms);
+    }
+  }catch(e){}
 
   // 6. Setup UI
   $('m-code').textContent=S.roomCode;
@@ -1184,7 +1202,7 @@ async function goMeeting(){
 
   // 8. Start subsystems
   startTimer();requestWakeLock();
-  if(S.isHost){listenRequests();listenRaisedHands_firestore();}
+  if(S.isHost){ listenRequests(); }
   else{watchRoomDeletion();}
   resetCtrlTimer();
 
@@ -1220,22 +1238,24 @@ function setSFUStatus(state){
 function onTrackSubscribed(track,pub,participant){
   const tile=$(`tile-${CSS.escape(participant.identity)}`);
   if(!tile){
-    // Tile might not exist yet — add it now
     addTile(participant); return;
   }
   if(track.kind===Track.Kind.Video){
     const vid=tile.querySelector('video');
-    if(vid){track.attach(vid);vid.play().catch(()=>{});}
-    tile.querySelector('.tile-camoff')?.classList.add('hidden');
+    if(vid){ track.attach(vid); vid.play().catch(()=>{}); }
+    // Only hide camoff overlay for camera track, not screen share
+    if(pub.source===Track.Source.Camera){
+      tile.querySelector('.tile-camoff')?.classList.add('hidden');
+    }
   }
-  // Audio: attach to DOM so browser plays it
   if(track.kind===Track.Kind.Audio){
+    // Attach audio to body — browser requires it to be in DOM
     const el=track.attach();
-    el.style.display='none';
+    el.style.cssText='position:absolute;width:0;height:0;pointer-events:none';
     document.body.appendChild(el);
   }
   updateTileIcons(participant);
-  dbg(`[LK] Track subscribed: ${participant.identity} ${pub.source||track.kind}`);
+  dbg(`[LK] Track subscribed: ${participant.identity} src=${pub.source} kind=${track.kind}`);
 }
 function onTrackUnsubscribed(track,pub,participant){
   track.detach();
@@ -1337,13 +1357,20 @@ function addTile(participant){
   if(brand){brand.style.animation='none';brand.offsetHeight;brand.style.animation='titleBlink .5s ease 4';}
 
   updateTileIcons(participant);
-  updateGrid();updateCount();
+  updateCount();
+  // Defer grid update one frame so tileIn animation starts cleanly
+  requestAnimationFrame(updateGrid);
 }
 
 function removeTile(identity){
   const tile=$(`tile-${CSS.escape(identity)}`);
-  if(tile){tile.classList.add('removing');setTimeout(()=>{tile.remove();updateGrid();updateCount();},220);}
-  else{updateGrid();updateCount();}
+  if(tile){
+    tile.classList.add('removing');
+    updateCount(); // update count immediately
+    setTimeout(()=>{ tile.remove(); updateGrid(); },230); // update grid after animation
+  } else {
+    updateGrid(); updateCount();
+  }
   delete handRaised[identity];
 }
 
@@ -1373,14 +1400,30 @@ function updateHandIcon(identity,raised){
 
 function updateGrid(){
   const grid=$('vgrid');if(!grid)return;
-  const n=(lkRoom?.remoteParticipants?.size||0)+1;
-  const cols=n<=1?1:n<=2?2:n<=4?2:n<=6?3:4;
-  const rows=Math.ceil(n/cols);
+  // Count only non-removing tiles to avoid layout jump during exit animation
+  const allTiles=grid.querySelectorAll('.video-tile:not(.removing)');
+  const n=allTiles.length||1;
+  let cols,rows;
+  if(n===1){ cols=1;rows=1; }
+  else if(n===2){ cols=2;rows=1; }
+  else if(n===3){ cols=2;rows=2; } // 2+1 layout — third tile spans
+  else if(n===4){ cols=2;rows=2; }
+  else if(n<=6){ cols=3;rows=2; }
+  else          { cols=4;rows=Math.ceil(n/4); }
   grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
   grid.style.gridTemplateRows=`repeat(${rows},1fr)`;
+  // 3-person special case: make last tile span full width of remaining space
+  allTiles.forEach((t,i)=>{
+    t.style.gridColumn='';t.style.gridRow='';
+  });
+  if(n===3){
+    // tile index 2 (3rd) spans col 1-2 in row 2
+    allTiles[2].style.gridColumn='1 / -1';
+  }
 }
 function updateCount(){
-  const n=(lkRoom?.numParticipants||1);
+  const grid=$('vgrid');
+  const n=grid?grid.querySelectorAll('.video-tile:not(.removing)').length:1;
   $('m-count').textContent=n+' 人';
 }
 
@@ -1634,11 +1677,7 @@ function listenRequests(){
   });
 }
 
-// Host sees raised hands via LiveKit participant metadata / data
-// (Already handled in onMetadataChanged & onDataReceived)
-function listenRaisedHands_firestore(){
-  // No-op: LiveKit handles this natively via metadata/data
-}
+
 
 // Guest: watch if room deleted by host
 function watchRoomDeletion(){
@@ -1717,7 +1756,7 @@ window.addEventListener('online', ()=>notif('✓ 網路已恢復連線',3000,'su
 window.addEventListener('offline',()=>notif('⚠ 網路連線中斷',8000,'warning'));
 window.addEventListener('orientationchange',()=>setTimeout(updateGrid,300));
 window.addEventListener('resize',()=>{updateGrid();if(S.inMeeting)resetCtrlTimer();});
-window.addEventListener('beforeunload',e=>{if(S.inMeeting){e.preventDefault();e.returnValue='';}lkRoom?.disconnect().catch(()=>{});});
+// beforeunload handled below in settings section (SET.guard aware)
 
 // Lobby clock
 setInterval(()=>{const el=$('lobby-time');if(!el)return;const n=new Date();el.textContent=n.toLocaleTimeString('zh-TW',{hour12:false})+'  '+n.toLocaleDateString('zh-TW');},1000);
@@ -1782,11 +1821,10 @@ $('set-speak').onchange  = e=>{ SET.speak=e.target.checked; saveSettings(); };
 $('set-guard').onchange  = e=>{ SET.guard=e.target.checked; saveSettings(); };
 $('set-quality').onchange= e=>{ SET.quality=e.target.value; saveSettings(); applyVideoQuality(); };
 
-// Apply saved mirror on load
-document.addEventListener('DOMContentLoaded',()=>{
-  S.mirrored=SET.mirror;
-  $('set-mirror').checked=SET.mirror;
-});
+// Apply saved mirror immediately (module runs after DOM is ready)
+S.mirrored=SET.mirror;
+$('set-mirror').checked=SET.mirror;
+if(!SET.mirror) $('local-vid').style.transform='scaleX(1)';
 
 async function applyAudioConstraints(){
   if(!lkRoom?.localParticipant) return;
@@ -1886,11 +1924,7 @@ window._beforeUnload=e=>{
 };
 window.addEventListener('beforeunload',window._beforeUnload);
 
-// Init settings from saved values on page load
-(function initSettings(){
-  $('set-mirror').checked=SET.mirror;
-  if(!SET.mirror){ $('local-vid').style.transform='scaleX(1)'; S.mirrored=false; }
-})();
+// Settings initialised above at module load time
 </script>
 </body>
 </html>
