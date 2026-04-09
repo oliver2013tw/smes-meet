@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#000"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
-<title>SMES-MEET</title>
+<title>SMES MEET</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
@@ -19,404 +19,1878 @@
   --bg:    #000; --bg1: #0a0a0a; --bg2: #111; --bg3: #1a1a1a;
   --b:     #1e1e1e; --b2: #2a2a2a;
   --t:     #e2e2e2; --t2: #888; --t3: #444;
-  --blue:  #2979ff; --red:  #ff5252; --green: #00e676;
-  --font:  'JetBrains Mono', monospace;
-  --r:     0px; 
-  --glass: rgba(10,10,10,0.7);
+  --blue:  #2563eb; --blue-d:#1d4ed8;
+  --blue-g:rgba(37,99,235,.12); --blue-b:rgba(37,99,235,.28);
+  --red:   #ef4444; --red-g:rgba(239,68,68,.12);
+  --green: #22c55e; --green-g:rgba(34,197,94,.12);
+  --amber: #f59e0b; --amber-g:rgba(245,158,11,.12);
+  --font:  'JetBrains Mono',monospace;
+  --r:     0px;   /* sharp corners everywhere */
+  --sh:    0 8px 32px rgba(0,0,0,.7);
+  --tf:    .12s ease; --tm: .22s ease;
 }
 html,body{
-  height: 100dvh; width: 100%; overflow: hidden;
-  overscroll-behavior: none; background: var(--bg); color: var(--t);
-  font-family: var(--font); font-size: 13px;
-  -webkit-font-smoothing: antialiased;
+  height:100%;width:100%;overflow:hidden;
+  overscroll-behavior:none;
+  background:var(--bg);color:var(--t);
+  font-family:var(--font);font-size:13px;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
 }
-button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;outline:none;border:none;background:none}
+input,button,select{font-family:var(--font);font-size:inherit;border:none;outline:none;background:none;border-radius:var(--r)!important;}
+button{cursor:pointer}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--b2)}
 
 /* ════════════════════════════════════════════════
-   LAYOUT & GRID SYSTEM
+   ANIMATIONS
 ════════════════════════════════════════════════ */
-.screen{display:none;width:100%;height:100%;flex-direction:column;position:relative}
-.screen.active{display:flex}
-
-.video-area {
-  flex: 1; min-height: 0; display: grid; gap: 2px;
-  background: var(--bg2); padding: 2px;
-  place-content: center; /* 確保少人數時依然置中 */
-}
-.video-tile {
-  position: relative; background: var(--bg1); overflow: hidden;
-  display: flex; align-items: center; justify-content: center;
-}
-.video-tile video { width: 100%; height: 100%; object-fit: cover; background: #000; }
-.video-tile .info {
-  position: absolute; bottom: 8px; left: 8px;
-  background: rgba(0,0,0,0.5); padding: 4px 8px;
-  backdrop-filter: blur(8px); pointer-events: none;
-  font-size: 11px; z-index: 2; border: 1px solid var(--b);
-}
-.video-tile[data-mic-off="true"] .mic-off { display: block; }
-.mic-off { position: absolute; top: 8px; right: 8px; color: var(--red); display: none; z-index: 2; }
+@keyframes fadeIn {from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes blink  {0%,100%{opacity:1}50%{opacity:0}}
+@keyframes bounce {0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes spin   {to{transform:rotate(360deg)}}
+@keyframes tileIn {from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+@keyframes tileOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.95)}}
+@keyframes speakRing{0%,100%{box-shadow:0 0 0 2px var(--green)}50%{box-shadow:0 0 0 4px rgba(34,197,94,.35)}}
+@keyframes hand   {0%,100%{transform:rotate(0deg)}25%{transform:rotate(-10deg)}75%{transform:rotate(10deg)}}
+@keyframes notifIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+.blink{animation:blink 1s step-end infinite}
+.spin {animation:spin .7s linear infinite}
 
 /* ════════════════════════════════════════════════
-   CONTROLS (Glassmorphism)
+   SCREENS
 ════════════════════════════════════════════════ */
-.ctrl-bar {
-  height: 64px; background: var(--glass);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 16px; border-top: 1px solid var(--b); z-index: 100;
-}
-.ctrl-grp { display: flex; align-items: center; gap: 8px; }
-.btn-icon {
-  width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
-  cursor: pointer; position: relative; border: 1px solid transparent;
-  transition: all .2s;
-}
-.btn-icon:hover { background: var(--b); }
-.btn-icon.active { color: var(--blue); border-color: var(--blue); }
-.btn-icon.off { color: var(--red); }
-.btn-icon svg { width: 20px; height: 20px; stroke-width: 1.5; fill: none; stroke: currentColor; }
-
-.leave-btn { 
-  background: var(--red); color: #fff; width: 64px; height: 36px; 
-  display: flex; align-items: center; justify-content: center; 
-  font-weight: 600; cursor: pointer; letter-spacing: 1px;
-}
+.screen{display:none;position:fixed;inset:0;flex-direction:column}
+.screen.active{display:flex;animation:fadeIn .2s ease}
 
 /* ════════════════════════════════════════════════
-   SIDEBARS
+   LOADING
 ════════════════════════════════════════════════ */
-.m-bar {
-  position: absolute; top: 0; right: 0; bottom: 0; width: 320px;
-  background: var(--glass); backdrop-filter: blur(24px);
-  border-left: 1px solid var(--b); transform: translateX(100%);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  display: flex; flex-direction: column; z-index: 200;
-}
-.m-bar.open { transform: translateX(0); }
-.m-head { height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; border-bottom: 1px solid var(--b); }
-.m-body { flex: 1; overflow-y: auto; padding: 16px; }
+#s-loading{align-items:center;justify-content:center;gap:14px}
+.logo{font-size:24px;font-weight:700;letter-spacing:8px;color:#fff}
+.logo-sub{font-size:11px;color:var(--t3);letter-spacing:3px}
 
 /* ════════════════════════════════════════════════
-   UI COMPONENTS
+   MODAL SYSTEM (replaces browser confirm/alert)
 ════════════════════════════════════════════════ */
-.login-box { width: 320px; padding: 32px; background: var(--bg1); border: 1px solid var(--b); text-align: center; }
-.input-field { width: 100%; height: 44px; background: var(--bg2); border: 1px solid var(--b); padding: 0 12px; margin-bottom: 12px; color: var(--t); }
-.input-field:focus { border-color: var(--blue); }
-.btn-main { width: 100%; height: 44px; background: var(--blue); color: #fff; font-weight: 600; cursor: pointer; }
-.btn-main:disabled { opacity: 0.5; }
+#modal-backdrop{
+  display:none;position:fixed;inset:0;z-index:8000;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;
+}
+#modal-backdrop.show{display:flex}
+.modal{
+  background:var(--bg1);border:1px solid var(--b2);
+  width:100%;max-width:340px;margin:20px;
+  animation:slideUp .2s ease;
+}
+.modal-title{
+  font-size:13px;font-weight:600;color:#fff;
+  padding:16px 18px 0;letter-spacing:.5px;
+}
+.modal-body{
+  font-size:11px;color:var(--t2);
+  padding:10px 18px 16px;line-height:1.7;
+}
+.modal-input{
+  width:100%;background:var(--bg);border:1px solid var(--b);
+  color:#fff;padding:10px 12px;font-size:13px;
+  letter-spacing:2px;text-transform:uppercase;
+  margin:0 18px 16px;width:calc(100% - 36px);
+  transition:border-color var(--tf);
+}
+.modal-input:focus{border-color:var(--blue)}
+.modal-actions{
+  display:flex;border-top:1px solid var(--b);
+}
+.modal-btn{
+  flex:1;padding:13px;font-size:11px;letter-spacing:.5px;
+  color:var(--t2);transition:background var(--tf),color var(--tf);
+  font-family:var(--font);
+}
+.modal-btn:hover{background:var(--bg2);color:var(--t)}
+.modal-btn.primary{color:var(--blue);border-left:1px solid var(--b)}
+.modal-btn.primary:hover{background:var(--blue-g)}
+.modal-btn.danger{color:var(--red);border-left:1px solid var(--b)}
+.modal-btn.danger:hover{background:var(--red-g)}
 
-.dot { width: 6px; height: 6px; background: var(--blue); border-radius: 0px !important; animation: bounce .9s ease-in-out infinite; }
-@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+/* ════════════════════════════════════════════════
+   LOGIN
+════════════════════════════════════════════════ */
+#s-login{
+  align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 0%,rgba(37,99,235,.07) 0%,transparent 65%),var(--bg);
+}
+.login-card{width:100%;max-width:360px;padding:0 24px;animation:slideUp .3s ease}
+.login-hdr{text-align:center;margin-bottom:28px}
+.login-eyebrow{font-size:10px;color:var(--t3);letter-spacing:3px;margin-bottom:10px}
+.login-brand{font-size:28px;font-weight:700;letter-spacing:8px;color:#fff}
+.login-sub{font-size:10px;color:var(--t3);margin-top:4px;letter-spacing:3px}
+.login-hr{height:1px;background:linear-gradient(90deg,transparent,var(--b),transparent);margin:20px 0}
+.domain-box{background:var(--bg1);border:1px solid var(--b);padding:10px 14px;margin-bottom:16px}
+.domain-box .lbl{font-size:10px;color:var(--t3);margin-bottom:3px}
+.domain-box .val{font-size:11px;color:var(--t2)}
+.https-warn{display:none;background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.3);color:var(--amber);font-size:11px;padding:10px 14px;margin-bottom:12px;line-height:1.6}
+.https-warn.show{display:block}
+#login-toast{font-size:11px;padding:9px 12px;display:none;margin-bottom:10px;background:var(--red-g);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+#login-toast.show{display:block;animation:fadeIn .15s ease}
+.btn-google{
+  width:100%;background:var(--bg1);border:1px solid var(--b);
+  color:var(--t);padding:13px 16px;font-size:12px;letter-spacing:1px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:background var(--tf),border-color var(--tf),transform var(--tf);
+}
+.btn-google:hover:not(:disabled){background:var(--bg2);border-color:var(--b2);transform:translateY(-1px)}
+.btn-google:active{transform:none}
+.btn-google:disabled{opacity:.4;cursor:not-allowed}
+.dev-panel{display:none;margin-top:12px;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);padding:14px}
+.dev-panel.open{display:block;animation:fadeIn .15s ease}
+.dev-label{font-size:10px;color:var(--amber);margin-bottom:10px;letter-spacing:1px}
+.dev-inp{width:100%;background:var(--bg);border:1px solid var(--b);color:var(--t);padding:8px 10px;font-size:11px;margin-bottom:8px;transition:border-color var(--tf)}
+.dev-inp:focus{border-color:var(--amber)}
+.btn-dev{width:100%;border:1px solid rgba(245,158,11,.4);color:var(--amber);padding:8px;font-size:11px;letter-spacing:.5px;transition:background var(--tf)}
+.btn-dev:hover{background:var(--amber-g)}
+.ver-text{margin-top:16px;text-align:center;font-size:10px;color:var(--b2);cursor:default;user-select:none;letter-spacing:1px}
 
-/* Chat Bubbles */
-.chat-msg { margin-bottom: 12px; max-width: 90%; }
-.chat-msg .name { font-size: 11px; color: var(--t2); margin-bottom: 2px; }
-.chat-msg .text { background: var(--bg3); padding: 8px 12px; line-height: 1.4; word-break: break-all; border-left: 2px solid var(--b2); }
-.chat-msg.me { align-self: flex-end; margin-left: auto; }
-.chat-msg.me .text { background: var(--blue); color: #fff; border-left: none; border-right: 2px solid rgba(255,255,255,0.3); }
+/* ════════════════════════════════════════════════
+   LOBBY
+════════════════════════════════════════════════ */
+#s-lobby{
+  align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 50% 100%,rgba(37,99,235,.05) 0%,transparent 65%),var(--bg);
+}
+.lobby-card{width:100%;max-width:380px;padding:0 20px;animation:slideUp .25s ease}
+.profile-row{
+  background:var(--bg1);border:1px solid var(--b);padding:12px 14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-bottom:14px;transition:border-color var(--tm);
+}
+.profile-row.teacher{border-color:rgba(37,99,235,.35);background:rgba(37,99,235,.04)}
+.p-name{font-size:13px;color:#fff;font-weight:500}
+.p-meta{display:flex;align-items:center;gap:6px;margin-top:4px}
+.role-badge{font-size:9px;letter-spacing:1.5px;padding:2px 7px;font-weight:600}
+.role-badge.teacher{background:var(--blue-g);color:#60a5fa;border:1px solid var(--blue-b)}
+.role-badge.student{background:rgba(136,136,136,.1);color:var(--t2);border:1px solid rgba(136,136,136,.2)}
+.btn-logout{border:1px solid var(--b);color:var(--t3);padding:6px 12px;font-size:10px;letter-spacing:.5px;flex-shrink:0;transition:all var(--tf)}
+.btn-logout:hover{color:var(--red);border-color:rgba(239,68,68,.4);background:var(--red-g)}
+.room-panel{background:var(--bg1);border:1px solid var(--b);padding:16px;margin-bottom:10px}
+.room-lbl{font-size:10px;color:var(--t3);margin-bottom:10px;letter-spacing:1px}
+.room-row{display:flex;gap:8px}
+.room-inp{
+  flex:1;min-width:0;background:var(--bg);border:1px solid var(--b);color:#fff;
+  padding:11px 12px;font-size:16px;letter-spacing:5px;text-transform:uppercase;
+  transition:border-color var(--tf),box-shadow var(--tf);
+}
+.room-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-g)}
+.room-inp::placeholder{color:var(--b2);letter-spacing:2px}
+.btn-enter{
+  background:var(--blue);color:#fff;padding:0 18px;
+  font-size:12px;font-weight:600;letter-spacing:.5px;flex-shrink:0;
+  transition:background var(--tf),transform var(--tf);min-width:64px;
+}
+.btn-enter:hover{background:var(--blue-d)}
+.btn-enter:active{transform:scale(.97)}
+#lobby-toast{font-size:11px;padding:9px 12px;display:none;margin-bottom:10px}
+#lobby-toast.show{display:block;animation:fadeIn .15s ease}
+.btn-gen{
+  width:100%;margin-top:8px;padding:8px;font-size:10px;letter-spacing:.5px;
+  border:1px solid var(--b);color:var(--t3);transition:all var(--tf);display:none;
+}
+.btn-gen:hover{color:var(--t);border-color:var(--b2);background:var(--bg2)}
+.lobby-footer{text-align:center;font-size:10px;color:var(--t3);margin-top:14px;letter-spacing:.5px}
+.lobby-time{text-align:center;font-size:10px;color:var(--b2);margin-top:4px}
 
+/* ════════════════════════════════════════════════
+   WAITING
+════════════════════════════════════════════════ */
+#s-waiting{align-items:center;justify-content:center;gap:14px}
+.wait-badge{background:var(--blue-g);border:1px solid var(--blue-b);padding:4px 14px;font-size:10px;color:#60a5fa;letter-spacing:2px}
+.wait-code{font-size:22px;font-weight:700;color:#fff;letter-spacing:8px}
+.wait-sub{font-size:11px;color:var(--t2);text-align:center;padding:0 20px}
+.dots{display:flex;gap:6px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:bounce .9s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+.wait-prog{width:200px;height:2px;background:var(--b);overflow:hidden}
+.wait-bar{height:100%;background:var(--blue);transform-origin:left;animation:waitProg 120s linear forwards}
+@keyframes waitProg{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+.btn-cancel-w{border:1px solid var(--b);color:var(--t3);padding:8px 22px;font-size:11px;transition:all var(--tf)}
+.btn-cancel-w:hover{color:var(--red);border-color:rgba(239,68,68,.4);background:var(--red-g)}
+
+/* ════════════════════════════════════════════════
+   MEETING
+════════════════════════════════════════════════ */
+#s-meeting{background:var(--bg)}
+
+/* Top bar */
+.m-bar{
+  flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;height:48px;background:rgba(10,10,10,.92);
+  border-bottom:1px solid var(--b);gap:8px;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.m-bar-l{display:flex;align-items:center;gap:10px;min-width:0;overflow:hidden}
+.m-bar-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.m-brand{font-size:13px;font-weight:700;color:#fff;letter-spacing:4px;white-space:nowrap}
+.m-code{
+  font-size:10px;color:var(--t3);
+  background:var(--bg2);border:1px solid var(--b);
+  padding:3px 9px;cursor:pointer;
+  transition:color var(--tf),border-color var(--tf);white-space:nowrap;user-select:none;
+}
+.m-code:hover{color:var(--blue);border-color:var(--blue-b)}
+.m-count,.m-timer{font-size:10px;color:var(--t3);white-space:nowrap;font-variant-numeric:tabular-nums}
+.host-badge{font-size:9px;letter-spacing:1.5px;padding:2px 8px;background:var(--blue-g);border:1px solid var(--blue-b);color:#60a5fa;font-weight:600}
+.role-tag{font-size:10px}
+
+/* SFU status indicator */
+.sfu-status{
+  font-size:9px;letter-spacing:1px;padding:2px 7px;
+  border:1px solid var(--b);color:var(--t3);display:flex;align-items:center;gap:4px;
+}
+.sfu-dot{width:5px;height:5px;border-radius:50%;background:var(--t3)}
+.sfu-status.connected .sfu-dot{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,.6)}
+.sfu-status.connected{color:var(--green);border-color:rgba(34,197,94,.3)}
+.sfu-status.connecting .sfu-dot{background:var(--amber)}
+
+/* Video grid */
+.video-area{flex:1;min-height:0;display:grid;gap:2px;background:var(--bg2);padding:2px}
+.video-tile{
+  position:relative;background:var(--bg1);
+  overflow:hidden;min-width:0;min-height:0;
+  animation:tileIn .22s ease;
+}
+.video-tile video{width:100%;height:100%;object-fit:cover;display:block;background:var(--bg1)}
+.video-tile.speaking{box-shadow:inset 0 0 0 2px var(--green);animation:speakRing 1s ease-in-out infinite}
+.video-tile.fullscreen{position:fixed!important;inset:0!important;z-index:600;animation:none}
+.video-tile.removing{animation:tileOut .2s ease forwards}
+
+/* Tile overlays */
+.tile-name{
+  position:absolute;bottom:0;left:0;right:0;
+  padding:20px 10px 8px;
+  background:linear-gradient(transparent,rgba(0,0,0,.85));
+  font-size:11px;color:#fff;
+  display:flex;align-items:center;gap:6px;
+}
+.tile-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tile-icons{display:flex;gap:4px;margin-left:auto;flex-shrink:0}
+.tile-icon{
+  font-size:12px;line-height:1;
+  background:rgba(0,0,0,.6);padding:2px 4px;
+}
+.tile-camoff{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;background:var(--bg1);
+}
+.tile-camoff.hidden{display:none}
+.tile-avatar{
+  width:52px;height:52px;background:var(--bg3);border:1px solid var(--b);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:700;color:var(--t2);
+}
+.tile-avatar-name{font-size:10px;color:var(--t3)}
+.tile-hand{
+  position:absolute;top:8px;left:8px;font-size:20px;display:none;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.8));
+  animation:hand 1s ease-in-out infinite;
+}
+.tile-hand.show{display:block}
+.tile-quality{position:absolute;top:7px;right:7px;display:flex;gap:2px;align-items:flex-end;height:11px}
+.tile-quality span{width:3px;background:var(--b2)}
+.tile-quality span:nth-child(1){height:4px}
+.tile-quality span:nth-child(2){height:7px}
+.tile-quality span:nth-child(3){height:11px}
+.tile-quality.good span{background:var(--green)}
+.tile-quality.ok span:nth-child(1),.tile-quality.ok span:nth-child(2){background:var(--amber)}
+.tile-quality.poor span:nth-child(1){background:var(--red)}
+
+/* Pending bar */
+.pending-bar{
+  flex-shrink:0;display:none;flex-wrap:wrap;gap:6px;align-items:center;
+  padding:8px 14px;background:rgba(37,99,235,.06);
+  border-bottom:1px solid rgba(37,99,235,.15);overflow-x:auto;
+}
+.pending-bar.show{display:flex}
+.pending-bar::-webkit-scrollbar{height:2px}
+.pending-bar::-webkit-scrollbar-thumb{background:var(--blue-b)}
+.req-card{
+  border:1px solid var(--blue-b);padding:5px 10px;
+  font-size:10px;color:#60a5fa;
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+  background:var(--blue-g);
+}
+.btn-ok{background:var(--blue);color:#fff;padding:3px 10px;font-size:10px;font-family:var(--font);transition:background var(--tf)}
+.btn-ok:hover{background:var(--blue-d)}
+.btn-no{border:1px solid rgba(239,68,68,.35);color:var(--red);padding:3px 9px;font-size:10px;font-family:var(--font);transition:background var(--tf)}
+.btn-no:hover{background:var(--red-g)}
+
+/* Control bar */
+.ctrl-bar{
+  flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;min-height:60px;
+  background:rgba(10,10,10,.85);border-top:1px solid var(--b);gap:8px;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+}
+.ctrl-g{display:flex;align-items:center;gap:6px}
+.cb{
+  display:flex;align-items:center;gap:6px;
+  border:1px solid var(--b);background:rgba(26,26,26,.8);color:var(--t2);
+  padding:8px 13px;font-size:11px;letter-spacing:.3px;
+  font-family:var(--font);white-space:nowrap;flex-shrink:0;
+  transition:all var(--tf);
+}
+.cb:hover{background:rgba(42,42,42,.9);border-color:var(--b2);color:var(--t)}
+.cb:active{transform:scale(.96)}
+.cb.off   {background:var(--red-g);border-color:rgba(239,68,68,.4);color:var(--red)}
+.cb.active{background:var(--green-g);border-color:rgba(34,197,94,.4);color:var(--green)}
+.cb.amber {background:var(--amber-g);border-color:rgba(245,158,11,.4);color:var(--amber)}
+.cb.blue  {background:var(--blue-g);border-color:var(--blue-b);color:#60a5fa}
+.cb.danger{background:var(--red-g);border-color:rgba(239,68,68,.5);color:var(--red)}
+.cb.danger:hover{background:rgba(239,68,68,.18)}
+.cb-txt{font-size:10px}
+.cb svg{flex-shrink:0}
+
+/* Share banner */
+.share-banner{
+  position:fixed;top:48px;left:0;right:0;z-index:500;
+  background:rgba(34,197,94,.1);border-bottom:1px solid rgba(34,197,94,.25);
+  color:var(--green);font-size:11px;text-align:center;padding:5px;
+  display:none;letter-spacing:.5px;
+  backdrop-filter:blur(4px);
+}
+.share-banner.show{display:block;animation:fadeIn .2s ease}
+
+/* Mute warning */
+.mute-warn{
+  position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.9);border:1px solid rgba(239,68,68,.5);
+  color:var(--red);padding:8px 18px;font-size:11px;z-index:600;
+  display:none;pointer-events:none;white-space:nowrap;
+  box-shadow:0 4px 20px rgba(0,0,0,.6);letter-spacing:.5px;
+}
+.mute-warn.show{display:block;animation:fadeIn .2s ease}
+
+/* Notification stack */
+#notif-stack{
+  position:fixed;top:56px;right:12px;z-index:1000;
+  display:flex;flex-direction:column;gap:6px;pointer-events:none;max-width:280px;
+}
+.notif-item{
+  padding:10px 14px;font-size:11px;
+  background:rgba(10,10,10,.95);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:var(--sh);animation:notifIn .2s ease;letter-spacing:.3px;
+  border-left:3px solid var(--blue);border-top:1px solid var(--b);
+  border-right:1px solid var(--b);border-bottom:1px solid var(--b);
+  color:var(--t2);
+}
+.notif-item.success{border-left-color:var(--green);color:#86efac}
+.notif-item.error  {border-left-color:var(--red);color:#fca5a5}
+.notif-item.warning{border-left-color:var(--amber);color:#fde68a}
+
+/* Debug */
+#debug-panel{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:9000;
+  background:rgba(0,0,0,.96);border-top:1px solid #333;
+  padding:10px;font-size:10px;color:#0f0;font-family:monospace;
+  max-height:40vh;overflow-y:auto;line-height:1.7;
+}
+#dbg-hdr{color:#444;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.dbg-clr{background:#111;border:1px solid #333;color:#0f0;padding:1px 8px;font-size:9px;cursor:pointer;font-family:monospace}
+
+/* RWD */
+@media(max-width:640px){
+  .ctrl-bar{padding:8px 10px;min-height:auto;flex-wrap:wrap;gap:6px}
+  .ctrl-g:last-child{margin-left:auto}
+  .cb{padding:8px 10px}
+  .pending-bar{padding:6px 10px}
+  .m-bar{padding:0 10px;height:42px}
+}
+@media(max-width:400px){
+  .cb-txt{display:none}
+  .cb{padding:9px 11px}
+  .m-brand{letter-spacing:2px;font-size:12px}
+}
+@media(orientation:landscape) and (max-height:500px){
+  .m-bar{height:34px}
+  .ctrl-bar{min-height:44px;padding:4px 10px}
+  .cb{padding:5px 9px}
+}
+#local-vid{transform:scaleX(-1)}
+
+/* ── Settings Panel ────────────────────────────────────────── */
+.settings-panel{
+  display:none;position:fixed;inset:0;z-index:7000;
+  background:rgba(0,0,0,.88);backdrop-filter:blur(6px);
+  align-items:flex-end;justify-content:center;
+}
+.settings-panel.show{display:flex;animation:fadeIn .2s ease}
+.settings-card{
+  width:100%;max-width:480px;
+  background:var(--bg1);border:1px solid var(--b2);
+  border-bottom:none;
+  animation:slideUp .22s ease;
+  max-height:85vh;overflow-y:auto;
+}
+.settings-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 18px;border-bottom:1px solid var(--b);
+  position:sticky;top:0;background:var(--bg1);z-index:1;
+}
+.settings-title{font-size:13px;font-weight:600;color:#fff;letter-spacing:1px}
+.settings-close{color:var(--t3);font-size:18px;padding:4px 8px;transition:color var(--tf)}
+.settings-close:hover{color:var(--t)}
+.settings-section{padding:14px 18px;border-bottom:1px solid var(--b)}
+.settings-section:last-child{border-bottom:none}
+.settings-sec-title{font-size:10px;color:var(--t3);letter-spacing:2px;margin-bottom:12px}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:6px 0;
+}
+.settings-label{font-size:11px;color:var(--t2)}
+.settings-desc{font-size:10px;color:var(--t3);margin-top:2px}
+/* Toggle switch */
+.toggle{
+  position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer;
+}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{
+  position:absolute;inset:0;background:var(--b2);
+  transition:background var(--tf);
+}
+.toggle input:checked+.toggle-track{background:var(--blue)}
+.toggle-thumb{
+  position:absolute;top:3px;left:3px;
+  width:14px;height:14px;background:#fff;
+  transition:transform var(--tf);
+}
+.toggle input:checked~.toggle-thumb{transform:translateX(16px)}
+/* Select */
+.settings-select{
+  background:var(--bg);border:1px solid var(--b);color:var(--t);
+  padding:6px 10px;font-size:11px;font-family:var(--font);
+  min-width:140px;cursor:pointer;transition:border-color var(--tf);
+}
+.settings-select:focus{border-color:var(--blue)}
+/* Range slider */
+.settings-range{
+  -webkit-appearance:none;appearance:none;
+  width:120px;height:3px;background:var(--b2);outline:none;cursor:pointer;
+}
+.settings-range::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:var(--blue);cursor:pointer}
+.settings-range::-moz-range-thumb{width:14px;height:14px;background:var(--blue);border:none;cursor:pointer}
+.settings-val{font-size:10px;color:var(--t3);min-width:28px;text-align:right}
+.settings-device-btn{
+  border:1px solid var(--b);color:var(--t2);padding:5px 12px;
+  font-size:10px;font-family:var(--font);letter-spacing:.5px;
+  transition:all var(--tf);width:100%;text-align:left;margin-top:4px;
+}
+.settings-device-btn:hover{background:var(--bg2);color:var(--t)}
+.settings-device-btn.active{border-color:var(--blue-b);color:#60a5fa;background:var(--blue-g)}
 </style>
 </head>
 <body>
 
-<div id="s-loading" class="screen active" style="align-items:center;justify-content:center">
-  <div style="display:flex;gap:6px">
-    <div class="dot"></div>
-    <div class="dot" style="animation-delay:0.2s"></div>
-    <div class="dot" style="animation-delay:0.4s"></div>
-  </div>
+<!-- LOADING -->
+<div id="s-loading" class="screen active">
+  <div class="logo">SMES_MEET</div>
+  <div class="logo-sub">初始化中<span class="blink">█</span></div>
 </div>
 
-<div id="s-login" class="screen" style="align-items:center;justify-content:center">
-  <div class="login-box">
-    <h2 style="margin-bottom:24px;letter-spacing:4px">SMES-MEET</h2>
-    <input type="text" id="i-name" class="input-field" placeholder="您的姓名" maxlength="20"/>
-    <button id="btn-login" class="btn-main">登入</button>
-  </div>
-</div>
-
-<div id="s-lobby" class="screen" style="padding:40px">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start">
-    <div>
-      <h1 id="lobby-time" style="font-size:32px;margin-bottom:4px;font-weight:300">00:00:00</h1>
-      <div id="user-info" style="color:var(--t2)">載入中...</div>
+<!-- LOGIN -->
+<div id="s-login" class="screen">
+  <div class="login-card">
+    <div class="login-hdr">
+      <div class="login-eyebrow">[ SYSTEM INIT ]</div>
+      <div class="login-brand">SMES_MEET</div>
+      <div class="login-sub">校園視訊會議系統 // SFU</div>
+      <div class="login-hr"></div>
     </div>
-    <button onclick="signOut()" style="color:var(--t2);text-decoration:underline">登出</button>
-  </div>
-  <div style="flex:1;display:flex;align-items:center;justify-content:center">
-    <div style="width:320px;text-align:center">
-      <input type="text" id="i-code" class="input-field" placeholder="房間代碼" maxlength="10" style="text-align:center;font-size:20px;text-transform:uppercase;letter-spacing:2px"/>
-      <button id="btn-join" class="btn-main">進入會議</button>
+    <div class="domain-box"><div class="lbl">// 存取限制</div><div class="val">@mail2.smes.tyc.edu.tw</div></div>
+    <div class="https-warn" id="https-warn">⚠ 請使用 HTTPS 存取。<br/>HTTP 環境下相機與螢幕分享無法使用。</div>
+    <div id="login-toast"></div>
+    <button class="btn-google" id="btn-google">
+      <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      <span id="g-txt">使用 Google 帳號登入</span>
+    </button>
+    <div class="dev-panel" id="dev-panel">
+      <div class="dev-label">// DEV — 測試帳號登入</div>
+      <input class="dev-inp" id="dev-email" type="email" placeholder="test@mail2.smes.tyc.edu.tw" autocomplete="username"/>
+      <input class="dev-inp" id="dev-pw" type="password" placeholder="密碼" autocomplete="current-password"/>
+      <button class="btn-dev" id="btn-dev">測試登入</button>
     </div>
+    <div class="ver-text" id="ver-txt">v4.0 // LiveKit SFU // No Recording</div>
   </div>
 </div>
 
+<!-- LOBBY -->
+<div id="s-lobby" class="screen">
+  <div class="lobby-card">
+    <div class="profile-row" id="profile-row">
+      <div style="min-width:0">
+        <div class="p-name" id="p-name">—</div>
+        <div class="p-meta">
+          <span class="role-badge" id="p-role">—</span>
+        </div>
+      </div>
+      <button class="btn-logout" id="btn-logout">登出</button>
+    </div>
+    <div class="room-panel">
+      <div class="room-lbl">// 輸入或產生會議代碼</div>
+      <div class="room-row">
+        <input class="room-inp" id="room-inp" type="text" maxlength="12"
+               placeholder="XXXXXXXX" autocomplete="off" spellcheck="false" inputmode="text"/>
+        <button class="btn-enter" id="btn-enter">進入</button>
+      </div>
+    </div>
+    <div id="lobby-toast"></div>
+    <button class="btn-gen" id="btn-gen">✦ 產生隨機代碼</button>
+    <div class="lobby-footer">LiveKit SFU // 無伺服器錄影 // 無時間限制</div>
+    <div class="lobby-time" id="lobby-time"></div>
+  </div>
+</div>
+
+<!-- WAITING -->
+<div id="s-waiting" class="screen" style="align-items:center;justify-content:center;gap:14px">
+  <div class="wait-badge">PENDING APPROVAL</div>
+  <div class="wait-code" id="wait-code">——</div>
+  <div class="wait-sub">正在等待主持人核准加入請求...</div>
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  <div class="wait-prog"><div class="wait-bar" id="wait-bar"></div></div>
+  <button class="btn-cancel-w" id="btn-cancel">取消請求</button>
+</div>
+
+<!-- MEETING -->
 <div id="s-meeting" class="screen">
-  <div id="vgrid" class="video-area"></div>
-  
+  <div class="m-bar">
+    <div class="m-bar-l">
+      <span class="m-brand">SMES_MEET</span>
+      <span class="m-code" id="m-code" title="點擊複製">—</span>
+      <span class="m-count" id="m-count">1 人</span>
+      <span class="m-timer" id="m-timer">00:00</span>
+      <span class="sfu-status" id="sfu-status">
+        <span class="sfu-dot"></span>SFU
+      </span>
+    </div>
+    <div class="m-bar-r">
+      <span class="host-badge" id="tag-host" style="display:none">HOST</span>
+      <span class="role-tag" id="tag-role"></span>
+    </div>
+  </div>
+
+  <div class="video-area" id="vgrid">
+    <div class="video-tile" id="tile-local">
+      <video id="local-vid" autoplay muted playsinline></video>
+      <div class="tile-camoff hidden" id="local-camoff">
+        <div class="tile-avatar" id="local-av">?</div>
+        <div class="tile-avatar-name" id="local-av-name"></div>
+      </div>
+      <div class="tile-hand" id="local-hand"></div>
+      <div class="tile-name">
+        <span class="tile-name-text" id="local-lbl">나</span>
+        <span class="tile-icons" id="local-icons"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending bar (host only, for Firestore-based approval) -->
+  <div class="pending-bar" id="pending-bar"></div>
+
+  <div class="share-banner" id="share-banner">🖥 螢幕分享進行中 — 按 S 停止</div>
+
   <div class="ctrl-bar">
-    <div class="ctrl-grp">
-      <div id="btn-cam" class="btn-icon"><svg viewBox="0 0 24 24"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14"/></svg></div>
-      <div id="btn-mic" class="btn-icon"><svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></div>
+    <div class="ctrl-g">
+      <button class="cb" id="cb-mic" aria-label="麥克風">
+        <svg id="ic-mic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <span class="cb-txt">麥克風</span>
+      </button>
+      <button class="cb" id="cb-cam" aria-label="相機">
+        <svg id="ic-cam" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <span class="cb-txt">相機</span>
+      </button>
+      <button class="cb" id="cb-share" aria-label="分享螢幕">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span class="cb-txt">分享螢幕</span>
+      </button>
+      <button class="cb" id="cb-mirror">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        <span class="cb-txt">翻轉</span>
+      </button>
+      <button class="cb" id="cb-hand">
+        <span style="font-size:14px;line-height:1">✋</span>
+        <span class="cb-txt">舉手</span>
+      </button>
     </div>
-    
-    <div class="ctrl-grp">
-      <div id="btn-chat-toggle" class="btn-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-      <div id="btn-set-toggle" class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
-      <div onclick="leaveRoom()" class="leave-btn">LEAVE</div>
+    <div class="ctrl-g">
+      <button class="cb" id="cb-settings" aria-label="設定" title="設定 (快捷鍵: ,)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span class="cb-txt">設定</span>
+      </button>
+      <button class="cb danger" id="cb-leave" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="cb-txt">離開</span>
+      </button>
+      <button class="cb danger" id="cb-end" style="display:none">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        <span class="cb-txt">結束會議</span>
+      </button>
     </div>
   </div>
+</div>
 
-  <div id="m-chat" class="m-bar">
-    <div class="m-head"><span>聊天室</span><button onclick="toggleBar('chat')" style="cursor:pointer">✕</button></div>
-    <div id="chat-list" class="m-body" style="display:flex;flex-direction:column"></div>
-    <div style="padding:12px;border-top:1px solid var(--b)">
-      <input type="text" id="i-chat" class="input-field" style="margin:0" placeholder="輸入訊息..." autocomplete="off"/>
-    </div>
+<!-- Mute warning -->
+<div class="mute-warn" id="mute-warn">🔇 您已靜音，對方聽不到您說話</div>
+
+<!-- Notification stack -->
+<div id="notif-stack"></div>
+
+<!-- Modal (replaces browser confirm/alert/prompt) -->
+<div id="modal-backdrop">
+  <div class="modal" id="modal-box">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-body" id="modal-body"></div>
+    <input class="modal-input" id="modal-input" type="text" style="display:none"/>
+    <div class="modal-actions" id="modal-actions"></div>
   </div>
+</div>
 
-  <div id="m-set" class="m-bar">
-    <div class="m-head"><span>設定</span><button onclick="toggleBar('set')" style="cursor:pointer">✕</button></div>
-    <div class="m-body">
-      <div style="margin-bottom:24px">
-        <label style="display:block;margin-bottom:8px;color:var(--t2)">視訊品質</label>
-        <select id="sel-quality" class="input-field">
-          <option value="qvga">320x180 (Low)</option>
-          <option value="vga">640x360 (Standard)</option>
-          <option value="hd" selected>1280x720 (HD)</option>
+<!-- Settings Panel -->
+<div class="settings-panel" id="settings-panel">
+  <div class="settings-card">
+    <div class="settings-header">
+      <span class="settings-title">// 會議設定</span>
+      <button class="settings-close" id="settings-close">✕</button>
+    </div>
+
+    <!-- 音訊設定 -->
+    <div class="settings-section">
+      <div class="settings-sec-title">音訊</div>
+      <div class="settings-row">
+        <div><div class="settings-label">麥克風裝置</div></div>
+      </div>
+      <div id="mic-devices"></div>
+      <div class="settings-row" style="margin-top:10px">
+        <div><div class="settings-label">回音消除</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-echo" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">降噪</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-noise" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- 視訊設定 -->
+    <div class="settings-section">
+      <div class="settings-sec-title">視訊</div>
+      <div class="settings-row">
+        <div><div class="settings-label">相機裝置</div></div>
+      </div>
+      <div id="cam-devices"></div>
+      <div class="settings-row" style="margin-top:10px">
+        <div>
+          <div class="settings-label">視訊品質</div>
+          <div class="settings-desc">較低畫質可節省頻寬</div>
+        </div>
+        <select class="settings-select" id="set-quality">
+          <option value="high">高畫質 (720p)</option>
+          <option value="medium">中畫質 (480p)</option>
+          <option value="low">低畫質 (240p)</option>
         </select>
       </div>
-      <div id="conn-info" style="font-size:11px;color:var(--t3);line-height:1.8"></div>
+      <div class="settings-row">
+        <div><div class="settings-label">鏡像顯示</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-mirror" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- 介面設定 -->
+    <div class="settings-section">
+      <div class="settings-sec-title">介面</div>
+      <div class="settings-row">
+        <div><div class="settings-label">加入/離開音效</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-sound" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">說話指示器</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-speak" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">防止誤觸關閉</div></div>
+        <label class="toggle">
+          <input type="checkbox" id="set-guard" checked/>
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
+      </div>
+    </div>
+
+    <!-- 連線資訊 -->
+    <div class="settings-section">
+      <div class="settings-sec-title">連線資訊</div>
+      <div id="conn-info" style="font-size:10px;color:var(--t3);line-height:2"></div>
     </div>
   </div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://unpkg.com/livekit-client@1.13.0/dist/livekit-client.umd.min.js"></script>
+<!-- Debug panel -->
+<div id="debug-panel">
+  <div id="dbg-hdr">
+    <span id="dbg-title">// 診斷記錄</span>
+    <button class="dbg-clr" id="dbg-clr">CLR</button>
+  </div>
+  <div id="debug-log"></div>
+</div>
 
-<script>
-/**
- * SMES-MEET CONFIG & CORE
- */
-const { Room, RoomEvent, Track, VideoPresets } = LiveKitClient;
+<!-- ═══════════════════════════════════════════════════════════
+     APP LOGIC
+═══════════════════════════════════════════════════════════ -->
+<script type="module">
+// ── LiveKit SDK (ESM from CDN) ─────────────────────────────────
+import {
+  Room, RoomEvent, Track, TrackEvent,
+  createLocalTracks, createLocalScreenTracks,
+  LocalParticipant, RemoteParticipant,
+  ConnectionState, DisconnectReason,
+  DataPacket_Kind,
+} from 'https://cdn.jsdelivr.net/npm/livekit-client@2.5.8/+esm';
 
-// 已恢復你原始檔案中的 Firebase 設定
-const firebaseConfig = {
-  apiKey: "AIzaSyCX8BInVq5iN93vLpC0-j26f_M3F4f4-5U",
-  authDomain: "smes-meet.firebaseapp.com",
-  projectId: "smes-meet",
-  storageBucket: "smes-meet.appspot.com",
-  messagingSenderId: "596162391696",
-  appId: "1:596162391696:web:6f45c26b6f008f36611388"
+// ── Firebase (for auth + Firestore room management only) ───────
+import { initializeApp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import {
+  getAuth, GoogleAuthProvider,
+  signInWithPopup, signInWithRedirect, getRedirectResult,
+  signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+  getFirestore, doc, getDoc, setDoc,
+  collection, addDoc, updateDoc, deleteDoc,
+  onSnapshot, query, where, serverTimestamp, getDocs
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── Config ────────────────────────────────────────────────────
+const FIREBASE_CFG = {
+  apiKey:            'AIzaSyC_j0PxmMBNAtGtFotdFe8WjHQj0K8pwO8',
+  authDomain:        'smes-meet.firebaseapp.com',
+  projectId:         'smes-meet',
+  storageBucket:     'smes-meet.firebasestorage.app',
+  messagingSenderId: '897771756747',
+  appId:             '1:897771756747:web:4a227140a386cef3860f4e',
 };
+// !! Replace with your Vercel deployment URL !!
+const TOKEN_API_URL = 'https://smes-meet-vercel.vercel.app/api/get-token';
+const LIVEKIT_URL   = 'wss://smes-meet-l23tvgv2.livekit.cloud';
+const DOMAIN        = 'mail2.smes.tyc.edu.tw';
+const STU_RE        = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
+const MAX_PART      = 8;
 
-// 已恢復你原始檔案中的 LiveKit 設定
-const LIVEKIT_URL = "wss://smes-meet-656363w1.livekit.cloud";
-const TOKEN_URL = "https://smes-meet-token-generator.zeabur.app/get-token";
+// ── Firebase init ─────────────────────────────────────────────
+const fbApp = initializeApp(FIREBASE_CFG);
+const auth  = getAuth(fbApp);
+const db    = getFirestore(fbApp);
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-const $ = id => document.getElementById(id);
-const esc = t => String(t).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-let S = { user: null, inMeeting: false, roomCode: '', _unread: 0 };
+// ── LiveKit room ──────────────────────────────────────────────
 let lkRoom = null;
 
-// Auth
-auth.onAuthStateChanged(user => {
-  if(user){
-    S.user = user;
-    $('user-info').textContent = `${user.displayName || '使用者'} (${user.email})`;
-    showScreen('lobby');
+// ── App state ─────────────────────────────────────────────────
+const S = {
+  user:null, profile:null,
+  roomCode:'', isHost:false, inMeeting:false,
+  localStream:null, screenTracks:null,
+  micOn:true, camOn:true, sharing:false, mirrored:true, handRaised:false,
+  unsubReqs:null, waitUnsub:null, roomWatchUnsub:null, myReqId:null,
+  wakeLock:null,
+};
+
+// Hand-raise state for all participants (identity → bool)
+const handRaised = {};
+
+// ── Helpers ───────────────────────────────────────────────────
+const $   = id => document.getElementById(id);
+const esc = s  => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function detectRole(email) { const m=email.match(STU_RE); return(m&&parseInt(m[2],10)<=180)?'student':'teacher'; }
+function initials(name) { return (name||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+function pad(n) { return String(n).padStart(2,'0'); }
+function genCode() { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); }
+function isSecure() { return window.isSecureContext||location.protocol==='https:'||['localhost','127.0.0.1'].includes(location.hostname); }
+function isSafari() { const ua=navigator.userAgent; return /^((?!chrome|android).)*safari/i.test(ua)||/iPad|iPhone|iPod/.test(ua); }
+
+// ── Screen ────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('s-'+id).classList.add('active');
+  const titles={login:'SMES MEET',lobby:'SMES MEET',waiting:'SMES MEET — 等待核准',loading:'SMES MEET'};
+  document.title = id==='meeting' ? `SMES MEET — ${S.roomCode}` : (titles[id]||'SMES MEET');
+}
+
+// ── Modal system (no browser confirm/alert) ───────────────────
+let _modalResolve = null;
+function modal({title, body, input=false, inputPlaceholder='', inputValue='', buttons=[{label:'確認',type:'primary',value:true}]}) {
+  return new Promise(resolve => {
+    _modalResolve = resolve;
+    $('modal-title').textContent = title||'';
+    $('modal-body').textContent  = body||'';
+    const inp = $('modal-input');
+    if (input) {
+      inp.style.display='block'; inp.placeholder=inputPlaceholder;
+      inp.value=inputValue; setTimeout(()=>inp.focus(),100);
+    } else { inp.style.display='none'; }
+    const actions = $('modal-actions'); actions.innerHTML='';
+    buttons.forEach(btn => {
+      const b = document.createElement('button');
+      b.className = `modal-btn ${btn.type||''}`;
+      b.textContent = btn.label;
+      b.onclick = () => {
+        $('modal-backdrop').classList.remove('show');
+        resolve(input ? inp.value : btn.value);
+      };
+      actions.appendChild(b);
+    });
+    $('modal-backdrop').classList.add('show');
+  });
+}
+// Close on backdrop click
+$('modal-backdrop').onclick = e => {
+  if (e.target === $('modal-backdrop')) {
+    $('modal-backdrop').classList.remove('show');
+    if (_modalResolve) _modalResolve(false);
+  }
+};
+// Keyboard enter for input modals
+$('modal-input').onkeydown = e => {
+  if (e.key==='Enter') {
+    $('modal-backdrop').classList.remove('show');
+    if (_modalResolve) _modalResolve($('modal-input').value);
+  }
+};
+
+// ── Notifications ─────────────────────────────────────────────
+function notif(msg, ms=4000, type='info') {
+  const stack=$('notif-stack');
+  const item=document.createElement('div');
+  item.className=`notif-item ${type}`;
+  item.textContent=msg;
+  stack.appendChild(item);
+  while(stack.children.length>4) stack.removeChild(stack.firstChild);
+  setTimeout(()=>{item.style.transition='opacity .3s';item.style.opacity='0';setTimeout(()=>item.remove(),300);},ms);
+}
+function toast(elId,msg,type='error') {
+  const el=$(elId); if(!el)return;
+  el.textContent=msg;
+  el.className=`show`;
+  el.style.background=type==='error'?'var(--red-g)':type==='success'?'var(--green-g)':'var(--blue-g)';
+  el.style.border=`1px solid ${type==='error'?'rgba(239,68,68,.3)':type==='success'?'rgba(34,197,94,.3)':'rgba(37,99,235,.3)'}`;
+  el.style.color=type==='error'?'#fca5a5':type==='success'?'#86efac':'#93c5fd';
+  el.style.padding='9px 12px';el.style.fontSize='11px';
+  if(type!=='info') setTimeout(()=>el.classList.remove('show'),6000);
+}
+function clearToast(id){const el=$(id);if(el)el.className='';}
+
+// ── Debug ─────────────────────────────────────────────────────
+let _taps=0,_tapT=null;
+document.addEventListener('click',e=>{
+  if(e.clientX<60&&e.clientY<60){
+    if(++_taps>=3){_taps=0;const p=$('debug-panel');p.style.display=p.style.display==='none'?'block':'none';}
+    clearTimeout(_tapT);_tapT=setTimeout(()=>_taps=0,800);
+  }
+});
+$('dbg-clr').onclick=()=>$('debug-log').innerHTML='';
+function dbg(msg) {
+  const t=new Date().toLocaleTimeString('zh-TW',{hour12:false});
+  const el=$('debug-log');if(!el)return;
+  const d=document.createElement('div');d.textContent=`[${t}] ${msg}`;el.appendChild(d);
+  while(el.children.length>200)el.removeChild(el.firstChild);
+  el.scrollTop=el.scrollHeight;console.log('[DBG]',msg);
+  const h=$('dbg-title');if(h&&lkRoom)h.textContent=`// 診斷 — ${lkRoom.numParticipants}人 連線中`;
+}
+
+// ── HTTPS ─────────────────────────────────────────────────────
+if(!isSecure()) $('https-warn').classList.add('show');
+
+// ── AUTH ──────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  if (user) {
+    if (!user.email.endsWith('@'+DOMAIN)) { await signOut(auth); toast('login-toast','僅允許 @'+DOMAIN+' 帳號'); showScreen('login'); return; }
+    S.user=user; S.profile=await ensureProfile(user);
+    dbg('登入：'+user.email+' ['+S.profile.role+']');
+    renderLobby(); showScreen('lobby');
   } else {
-    showScreen('login');
+    S.user=null; S.profile=null; showScreen('login');
   }
 });
 
-$('btn-login').onclick = () => {
-  const name = $('i-name').value.trim();
-  if(!name) return alert('請輸入姓名');
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).then(res => {
-    res.user.updateProfile({ displayName: name });
-  }).catch(e => alert(e.message));
+$('btn-google').onclick = async () => {
+  const provider=new GoogleAuthProvider();
+  provider.setCustomParameters({hd:DOMAIN,login_hint:'@'+DOMAIN,prompt:'select_account'});
+  const btn=$('btn-google'),txt=$('g-txt');
+  if (isSafari()) {
+    txt.textContent='跳轉至 Google...';btn.disabled=true;
+    try{await signInWithRedirect(auth,provider);}
+    catch(e){txt.textContent='使用 Google 帳號登入';btn.disabled=false;toast('login-toast',e.message);}
+  } else {
+    txt.textContent='登入中...';btn.disabled=true;
+    try{
+      const r=await signInWithPopup(auth,provider);
+      if(!r.user.email.endsWith('@'+DOMAIN)){await signOut(auth);toast('login-toast','存取被拒：僅允許 @'+DOMAIN);}
+    }catch(e){
+      txt.textContent='使用 Google 帳號登入';btn.disabled=false;
+      if(e.code==='auth/popup-blocked'){toast('login-toast','彈窗被封鎖，改用跳轉...','info');setTimeout(async()=>{try{await signInWithRedirect(auth,provider);}catch(e2){toast('login-toast',e2.message);}},1500);}
+      else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request') toast('login-toast','登入失敗：'+e.message);
+    }
+  }
 };
+getRedirectResult(auth).then(async r=>{if(!r?.user)return;if(!r.user.email.endsWith('@'+DOMAIN)){await signOut(auth);toast('login-toast','存取被拒');}}).catch(e=>toast('login-toast',e.message));
 
-function signOut(){ auth.signOut(); }
+let _vc=0;
+$('ver-txt').onclick=()=>{if(++_vc>=5){_vc=0;$('dev-panel').classList.toggle('open');}};
+$('btn-dev').onclick=devLogin;
+$('dev-pw').onkeydown=e=>{if(e.key==='Enter')devLogin();};
+async function devLogin(){
+  const email=$('dev-email').value.trim(),pw=$('dev-pw').value;
+  if(!email||!pw){toast('login-toast','請輸入 Email 和密碼');return;}
+  if(!email.endsWith('@'+DOMAIN)){toast('login-toast','測試帳號也必須使用 @'+DOMAIN);return;}
+  try{await signInWithEmailAndPassword(auth,email,pw);}
+  catch(e){toast('login-toast',e.code==='auth/invalid-credential'?'帳號或密碼錯誤':e.code==='auth/user-not-found'?'帳號不存在':e.message);}
+}
+$('btn-logout').onclick=async()=>{await cleanup();await signOut(auth);};
 
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  $(`s-${id}`).classList.add('active');
-  const titles = { login:'SMES-MEET', lobby:'SMES-MEET', meeting: `SMES-MEET — ${S.roomCode}` };
-  document.title = titles[id] || 'SMES-MEET';
+async function ensureProfile(user){
+  const ref2=doc(db,'profiles',user.uid),snap=await getDoc(ref2);
+  if(snap.exists())return snap.data();
+  const safe=(user.displayName||user.email.split('@')[0]).replace(/[<>&"]/g,'').slice(0,30)||'User';
+  const p={uid:user.uid,email:user.email,full_name:safe,role:detectRole(user.email)};
+  await setDoc(ref2,p);return p;
 }
 
-// Room Logic
-$('btn-join').onclick = () => enterRoom();
-$('i-code').onkeyup = e => { if(e.key==='Enter') enterRoom(); };
-
-async function enterRoom() {
-  const code = $('i-code').value.trim().toUpperCase();
-  if(!code) return;
-  S.roomCode = code;
-  showScreen('meeting');
-  await initLiveKit(code);
+// ── LOBBY ─────────────────────────────────────────────────────
+function renderLobby(){
+  const p=S.profile;
+  $('p-name').textContent=p.full_name||p.email;
+  const rb=$('p-role');
+  rb.textContent=p.role==='teacher'?'TEACHER':'STUDENT';
+  rb.className=`role-badge ${p.role}`;
+  const row=$('profile-row');
+  row.className=`profile-row${p.role==='teacher'?' teacher':''}`;
+  $('btn-gen').style.display=p.role==='teacher'?'block':'none';
+  const last=sessionStorage.getItem('smes_last_room');
+  if(last)$('room-inp').value=last;
 }
+// Lobby clock
+setInterval(()=>{const el=$('lobby-time');if(!el)return;const n=new Date();el.textContent=n.toLocaleTimeString('zh-TW',{hour12:false})+'  '+n.toLocaleDateString('zh-TW');},1000);
+$('btn-gen').onclick=()=>{const inp=$('room-inp');inp.value=genCode();inp.dispatchEvent(new Event('input'));};
+$('room-inp').oninput=function(){this.value=this.value.toUpperCase();if(this.value.length>=4)sessionStorage.setItem('smes_last_room',this.value);};
+$('room-inp').onkeydown=e=>{if(e.key==='Enter')enterRoom();};
+$('room-inp').addEventListener('paste',e=>{e.preventDefault();const t=(e.clipboardData||window.clipboardData).getData('text');$('room-inp').value=t.replace(/[\s\t\n]/g,'').toUpperCase().slice(0,12);$('room-inp').dispatchEvent(new Event('input'));});
+$('btn-enter').onclick=enterRoom;
 
-async function initLiveKit(roomName) {
-  try {
-    const res = await fetch(`${TOKEN_URL}?room=${roomName}&identity=${encodeURIComponent(S.user.displayName)}`);
-    const { token } = await res.json();
+async function enterRoom(){
+  const btn=$('btn-enter');if(btn.dataset.loading)return;
+  btn.dataset.loading='1';btn.textContent='查詢中...';
+  const restore=()=>{delete btn.dataset.loading;btn.textContent='進入';};
+  clearToast('lobby-toast');
+  const code=$('room-inp').value.trim().toUpperCase();
+  if(!code){toast('lobby-toast','請輸入會議代碼');restore();return;}
 
-    lkRoom = new Room({ adaptiveStream: true, dynacast: true });
-    
-    lkRoom.on(RoomEvent.TrackSubscribed, (track, pub, p) => {
-      if (track.kind === Track.Kind.Video) appendVideo(p, track);
-    });
+  let snap;
+  try{snap=await getDoc(doc(db,'rooms',code));}
+  catch(e){toast('lobby-toast','查詢失敗：'+e.message);restore();return;}
 
-    lkRoom.on(RoomEvent.TrackUnsubscribed, (track, pub, p) => {
-      if (track.kind === Track.Kind.Video) {
-        $(`v-${p.sid}`)?.remove();
-        updateGrid();
-      }
-    });
-
-    lkRoom.on(RoomEvent.ParticipantConnected, () => updateGrid());
-    lkRoom.on(RoomEvent.ParticipantDisconnected, () => updateGrid());
-    lkRoom.on(RoomEvent.DataReceived, (payload, p) => {
-      const txt = new TextDecoder().decode(payload);
-      appendChat(p ? p.identity : '系統', txt, false);
-    });
-
-    await lkRoom.connect(LIVEKIT_URL, token);
-    S.inMeeting = true;
-    
-    const videoTrack = await LiveKitClient.createLocalVideoTrack({ resolution: VideoPresets.h720 });
-    const audioTrack = await LiveKitClient.createLocalAudioTrack();
-    await lkRoom.localParticipant.publishTrack(videoTrack);
-    await lkRoom.localParticipant.publishTrack(audioTrack);
-    
-    appendVideo(lkRoom.localParticipant);
-    updateGrid();
-  } catch (e) {
-    alert('連線失敗: ' + e.message);
-    leaveRoom();
+  if(!snap.exists()){
+    if(S.profile.role!=='teacher'){toast('lobby-toast','會議室不存在。僅有教師具備建立新會議的權限。');restore();return;}
+    const ok=await modal({title:'建立會議室',body:`會議室「${code}」尚未建立，是否建立新會議？`,buttons:[{label:'取消',value:false},{label:'建立',type:'primary',value:true}]});
+    if(!ok){restore();return;}
+    try{await setDoc(doc(db,'rooms',code),{code,host_id:S.user.uid,created_at:serverTimestamp()});}
+    catch(e){toast('lobby-toast','建立失敗：'+e.message);restore();return;}
+    S.roomCode=code;S.isHost=true;restore();await goMeeting();return;
   }
-}
 
-function appendVideo(p, track) {
-  let container = $(`v-${p.sid}`);
-  if (!container) {
-    container = document.createElement('div');
-    container.id = `v-${p.sid}`;
-    container.className = 'video-tile';
-    container.innerHTML = `
-      <div class="info">${p.identity === lkRoom.localParticipant.identity ? '我' : p.identity}</div>
-      <div class="mic-off"><svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M1 1l22 22M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg></div>
-    `;
-    $('vgrid').appendChild(container);
-  }
-  const videoEl = (track || p.getTrackPublication(Track.Source.Camera)?.videoTrack)?.attach();
-  if (videoEl) {
-    container.querySelectorAll('video').forEach(v=>v.remove());
-    container.appendChild(videoEl);
-  }
-  updateGrid();
-}
+  const rd=snap.data();
+  if(rd.host_id===S.user.uid){S.roomCode=code;S.isHost=true;restore();await goMeeting();return;}
 
-/**
- * Optimized Grid Algorithm
- * 解決 3 人、5 人時的排版問題
- */
-function updateGrid() {
-  const grid = $('vgrid'); if(!grid) return;
-  const tiles = Array.from(grid.querySelectorAll('.video-tile'));
-  const n = tiles.length;
-  if(n === 0) return;
+  const ok=await modal({title:'加入會議室',body:`會議室「${code}」已開啟，是否送出加入要求？`,buttons:[{label:'取消',value:false},{label:'送出',type:'primary',value:true}]});
+  if(!ok){restore();return;}
 
-  let cols = 1, rows = 1;
-  if (n === 2) { cols = 2; rows = 1; }
-  else if (n <= 4) { cols = 2; rows = 2; }
-  else if (n <= 6) { cols = 3; rows = 2; }
-  else if (n <= 9) { cols = 3; rows = 3; }
-  else { cols = 4; rows = Math.ceil(n / 4); }
+  let reqRef;
+  try{
+    reqRef=await addDoc(collection(db,'room_requests'),{
+      room_code:code,user_id:S.user.uid,
+      user_name:S.profile.full_name,user_role:S.profile.role,
+      user_email:S.profile.email,status:'pending',created_at:serverTimestamp()
+    });
+  }catch(e){toast('lobby-toast','送出請求失敗：'+e.message);restore();return;}
 
-  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-  grid.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+  S.myReqId=reqRef.id;S.roomCode=code;restore();
+  $('wait-code').textContent=code;
+  // Reset progress bar
+  const bar=$('wait-bar');if(bar){bar.style.animation='none';bar.offsetHeight;bar.style.animation='';}
+  showScreen('waiting');startWaitTimeout();
 
-  // 特別優化：奇數人數時，最後一人置中
-  tiles.forEach((tile, i) => {
-    tile.style.gridColumn = '';
-    if (n === 3 && i === 2) {
-      tile.style.gridColumn = `1 / span 2`;
-    } else if (n === 5 && i === 4) {
-      tile.style.gridColumn = `1 / span 3`;
+  S.waitUnsub=onSnapshot(doc(db,'room_requests',reqRef.id),snap2=>{
+    if(!snap2.exists())return;
+    const d=snap2.data();
+    if(d.status==='approved'){
+      S.waitUnsub?.();S.waitUnsub=null;S.myReqId=null;S.isHost=false;
+      clearWaitTimeout();goMeeting();
+    } else if(d.status==='rejected'){
+      S.waitUnsub?.();S.waitUnsub=null;S.myReqId=null;S.roomCode='';
+      clearWaitTimeout();
+      toast('lobby-toast','主持人已拒絕您的加入請求。');showScreen('lobby');
     }
   });
 }
 
-function leaveRoom() {
-  if(lkRoom) { lkRoom.disconnect(); lkRoom = null; }
-  S.inMeeting = false;
-  $('vgrid').innerHTML = '';
-  showScreen('lobby');
+$('btn-cancel').onclick=async()=>{
+  S.waitUnsub?.();S.waitUnsub=null;clearWaitTimeout();
+  if(S.myReqId){await deleteDoc(doc(db,'room_requests',S.myReqId)).catch(()=>{});S.myReqId=null;}
+  S.roomCode='';showScreen('lobby');
+};
+let _waitTO=null;
+function startWaitTimeout(){clearTimeout(_waitTO);_waitTO=setTimeout(()=>{if(!$('s-waiting').classList.contains('active'))return;notif('等待逾時（2分鐘），已自動取消',5000,'warning');$('btn-cancel').click();},120000);}
+function clearWaitTimeout(){clearTimeout(_waitTO);_waitTO=null;}
+
+// ── ENTER MEETING (LiveKit) ────────────────────────────────────
+async function goMeeting(){
+  if(S.inMeeting)return;
+  S.inMeeting=true;
+
+  // 1. Get LiveKit token from Vercel API
+  let token;
+  try{
+    dbg('[TOKEN] 向 API 請求 token: '+TOKEN_API_URL);
+    const r = await fetch(TOKEN_API_URL, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        roomName: S.roomCode,
+        username: S.profile.full_name,
+        email:    S.profile.email,
+        role:     S.profile.role,
+      }),
+    });
+    dbg('[TOKEN] HTTP status: '+r.status);
+    if (!r.ok) {
+      let errMsg = 'Token 獲取失敗 (HTTP '+r.status+')';
+      try { const e = await r.json(); errMsg = e.error || errMsg; } catch(_){}
+      throw new Error(errMsg);
+    }
+    const data = await r.json();
+    if (!data.token) throw new Error('API 未回傳 token');
+    token = data.token;
+    dbg('[TOKEN] 成功，identity: '+data.identity);
+  } catch(e) {
+    const isCORS = e.message==='Failed to fetch';
+    const hint   = isCORS
+      ? '可能是 CORS 錯誤或 Vercel API 未部署。請確認 TOKEN_API_URL 設定正確。'
+      : e.message;
+    dbg('[TOKEN] 錯誤: '+e.message);
+    notif('無法取得會議憑證：'+hint, 10000, 'error');
+    S.inMeeting=false; S.roomCode=''; S.isHost=false;
+    showScreen('lobby'); return;
+  }
+
+  // 2. Create LiveKit room
+  lkRoom = new Room({
+    adaptiveStream: true,
+    dynacast:       true,
+    audioCaptureDefaults:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true },
+    videoCaptureDefaults:{ resolution:{ width:1280, height:720, frameRate:24 } },
+    publishDefaults:{
+      simulcast:        true,
+      videoSimulcastLayers: [
+        { width:640, height:360, encoding:{ maxBitrate:350_000, maxFramerate:15 } },
+        { width:1280,height:720, encoding:{ maxBitrate:1_200_000,maxFramerate:24} },
+      ],
+    },
+  });
+
+  // 3. Bind room events
+  lkRoom
+    .on(RoomEvent.Connected,        onRoomConnected)
+    .on(RoomEvent.Disconnected,     onRoomDisconnected)
+    .on(RoomEvent.ConnectionStateChanged, onConnStateChange)
+    .on(RoomEvent.ParticipantConnected,    p => { addTile(p); playTone(880,.1,.06); bumpUnread(); })
+    .on(RoomEvent.ParticipantDisconnected, p => { removeTile(p.identity); playTone(440,.1,.04); })
+    .on(RoomEvent.TrackSubscribed,  (track, pub, participant) => onTrackSubscribed(track, pub, participant))
+    .on(RoomEvent.TrackUnsubscribed,(track, pub, participant) => onTrackUnsubscribed(track, pub, participant))
+    .on(RoomEvent.TrackMuted,       (pub, participant)        => updateTileIcons(participant))
+    .on(RoomEvent.TrackUnmuted,     (pub, participant)        => updateTileIcons(participant))
+    .on(RoomEvent.ActiveSpeakersChanged, onSpeakerChange)
+    .on(RoomEvent.DataReceived,     onDataReceived)
+    .on(RoomEvent.ParticipantMetadataChanged, onMetadataChanged);
+
+  // 4. Connect
+  setSFUStatus('connecting');
+  try{
+    await lkRoom.connect(LIVEKIT_URL, token);
+  }catch(e){
+    notif('連線失敗：'+e.message,8000,'error');
+    lkRoom=null;S.inMeeting=false;S.roomCode='';S.isHost=false;
+    showScreen('lobby');return;
+  }
+
+  // 5. Publish local tracks
+  try{
+    await lkRoom.localParticipant.enableCameraAndMicrophone();
+    S.camOn=true;S.micOn=true;
+  }catch(e){
+    try{await lkRoom.localParticipant.setMicrophoneEnabled(true);S.camOn=false;S.micOn=true;}
+    catch(e2){S.camOn=false;S.micOn=false;}
+    dbg('媒體取得失敗：'+e.message);
+  }
+
+  // 6. Setup UI
+  $('m-code').textContent=S.roomCode;
+  $('tag-host').style.display=S.isHost?'inline':'none';
+  $('cb-end').style.display  =S.isHost?'inline-flex':'none';
+  $('cb-leave').style.display=S.isHost?'none':'inline-flex';
+  $('cb-share').style.display=!!navigator.mediaDevices?.getDisplayMedia?'inline-flex':'none';
+  const rEl=$('tag-role');
+  rEl.textContent=S.profile.role==='teacher'?'[T]':'[S]';
+  rEl.className=`role-tag role-badge ${S.profile.role}`;
+  $('local-lbl').textContent=lkRoom.localParticipant.identity;
+  $('local-av').textContent=initials(lkRoom.localParticipant.identity);
+  $('local-av-name').textContent=lkRoom.localParticipant.identity;
+  updateCtrl();updateCamOff();updateGrid();
+  showScreen('meeting');
+
+  // 7. Attach local camera preview
+  attachLocalVideo();
+
+  // 8. Start subsystems
+  startTimer();requestWakeLock();
+  if(S.isHost){listenRequests();listenRaisedHands_firestore();}
+  else{watchRoomDeletion();}
+  resetCtrlTimer();
+
+  // 9. Render existing remote participants
+  lkRoom.remoteParticipants.forEach(p=>addTile(p));
 }
 
-// Sidebars
-function toggleBar(type) {
-  const chat = $('m-chat'), set = $('m-set');
-  if(type === 'chat') {
-    chat.classList.toggle('open');
-    set.classList.remove('open');
+// ── LiveKit event handlers ────────────────────────────────────
+function onRoomConnected(){
+  setSFUStatus('connected');
+  dbg('[LK] Connected to room: '+lkRoom.name+' participants: '+lkRoom.numParticipants);
+  updateCount();
+}
+function onRoomDisconnected(reason){
+  setSFUStatus('');
+  dbg('[LK] Disconnected: '+reason);
+  if(S.inMeeting&&reason!==DisconnectReason.CLIENT_INITIATED){
+    notif('與會議伺服器中斷連線',6000,'error');
+    leaveMeeting(false);
+  }
+}
+function onConnStateChange(state){
+  dbg('[LK] ConnectionState: '+state);
+  if(state===ConnectionState.Reconnecting) notif('正在重新連線...',4000,'warning');
+  else if(state===ConnectionState.Connected) notif('已重新連線',3000,'success');
+  setSFUStatus(state===ConnectionState.Connected?'connected':state===ConnectionState.Connecting||state===ConnectionState.Reconnecting?'connecting':'');
+}
+function setSFUStatus(state){
+  const el=$('sfu-status');
+  if(!el)return;
+  el.className='sfu-status'+( state==='connected'?' connected':state==='connecting'?' connecting':'');
+}
+function onTrackSubscribed(track,pub,participant){
+  const tile=$(`tile-${CSS.escape(participant.identity)}`);
+  if(!tile){
+    // Tile might not exist yet — add it now
+    addTile(participant); return;
+  }
+  if(track.kind===Track.Kind.Video){
+    const vid=tile.querySelector('video');
+    if(vid){track.attach(vid);vid.play().catch(()=>{});}
+    tile.querySelector('.tile-camoff')?.classList.add('hidden');
+  }
+  // Audio: attach to DOM so browser plays it
+  if(track.kind===Track.Kind.Audio){
+    const el=track.attach();
+    el.style.display='none';
+    document.body.appendChild(el);
+  }
+  updateTileIcons(participant);
+  dbg(`[LK] Track subscribed: ${participant.identity} ${pub.source||track.kind}`);
+}
+function onTrackUnsubscribed(track,pub,participant){
+  track.detach();
+  if(track.kind===Track.Kind.Video){
+    const tile=$(`tile-${CSS.escape(participant.identity)}`);
+    if(tile) tile.querySelector('.tile-camoff')?.classList.remove('hidden');
+  }
+  updateTileIcons(participant);
+}
+function onSpeakerChange(speakers){
+  // Clear all speaking classes first
+  document.querySelectorAll('.video-tile.speaking').forEach(t=>t.classList.remove('speaking'));
+  // Respect settings toggle
+  if(typeof SET!=='undefined'&&!SET.speak) return;
+  // Add to current speakers
+  speakers.forEach(p=>{
+    const id=p.identity;
+    const tileId=id===lkRoom?.localParticipant?.identity?'tile-local':`tile-${CSS.escape(id)}`;
+    $(tileId)?.classList.add('speaking');
+  });
+}
+function onMetadataChanged(metadata, participant){
+  // Metadata changes (e.g. hand raise from other participants)
+  try{
+    const m=JSON.parse(metadata||'{}');
+    if(typeof m.handRaised==='boolean'){
+      handRaised[participant.identity]=m.handRaised;
+      updateHandIcon(participant.identity,m.handRaised);
+      if(m.handRaised&&S.isHost){
+        notif(`✋ ${participant.identity} 舉手了`,5000,'info');
+        playTone(880,.08,.05);
+      }
+    }
+  }catch(e){}
+}
+function onDataReceived(payload, participant){
+  // Data channel messages (backup hand-raise broadcast)
+  try{
+    const msg=JSON.parse(new TextDecoder().decode(payload));
+    if(msg.type==='hand'){
+      const id=participant?.identity||msg.identity;
+      handRaised[id]=msg.raised;
+      updateHandIcon(id,msg.raised);
+      if(msg.raised&&S.isHost) notif(`✋ ${id} 舉手了`,5000,'info');
+    }
+  }catch(e){}
+}
+
+// ── Attach local video ────────────────────────────────────────
+function attachLocalVideo(){
+  if(S.sharing) return; // don't override screen share preview
+  const camPub = lkRoom?.localParticipant?.getTrackPublication(Track.Source.Camera);
+  const vid = $('local-vid');
+  if(!vid) return;
+  if(camPub?.track?.mediaStreamTrack){
+    // Build a proper MediaStream — track.attach() sometimes fails on local video
+    vid.srcObject = new MediaStream([camPub.track.mediaStreamTrack]);
+    vid.play().catch(()=>{});
   } else {
-    set.classList.toggle('open');
-    chat.classList.remove('open');
+    vid.srcObject = null;
+  }
+  updateCamOff();
+}
+
+// ── Tile management ───────────────────────────────────────────
+function addTile(participant){
+  const id=participant.identity;
+  if($(`tile-${CSS.escape(id)}`)) return; // already exists
+  const grid=$('vgrid');
+  const tile=document.createElement('div');
+  tile.className='video-tile'; tile.id=`tile-${id}`;
+  tile.innerHTML=`
+    <video autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block;background:var(--bg1)"></video>
+    <div class="tile-camoff">
+      <div class="tile-avatar">${esc(initials(id))}</div>
+      <div class="tile-avatar-name">${esc(id)}</div>
+    </div>
+    <div class="tile-hand ${handRaised[id]?' show':''}">✋</div>
+    <div class="tile-name">
+      <span class="tile-name-text">${esc(id)}</span>
+      <span class="tile-icons" id="icons-${CSS.escape(id)}"></span>
+    </div>`;
+  grid.appendChild(tile);
+
+  // Attach existing tracks — trackPublications is a Map, must use .values()
+  for(const pub of participant.trackPublications.values()){
+    if(pub.isSubscribed && pub.track){
+      if(pub.source===Track.Source.Camera || pub.kind===Track.Kind.Video){
+        pub.track.attach(tile.querySelector('video'));
+        tile.querySelector('.tile-camoff')?.classList.add('hidden');
+      } else if(pub.source===Track.Source.Microphone || pub.kind===Track.Kind.Audio){
+        pub.track.attach();
+      }
+    }
+  }
+
+  // Flash brand
+  const brand=document.querySelector('.m-brand');
+  if(brand){brand.style.animation='none';brand.offsetHeight;brand.style.animation='titleBlink .5s ease 4';}
+
+  updateTileIcons(participant);
+  updateGrid();updateCount();
+}
+
+function removeTile(identity){
+  const tile=$(`tile-${CSS.escape(identity)}`);
+  if(tile){tile.classList.add('removing');setTimeout(()=>{tile.remove();updateGrid();updateCount();},220);}
+  else{updateGrid();updateCount();}
+  delete handRaised[identity];
+}
+
+function updateTileIcons(participant){
+  const id=participant.identity;
+  const iconEl=$(`icons-${CSS.escape(id)}`);
+  if(!iconEl)return;
+  const micPub=participant.getTrackPublication(Track.Source.Microphone);
+  const camPub=participant.getTrackPublication(Track.Source.Camera);
+  const micMuted=!micPub||micPub.isMuted;
+  const camMuted=!camPub||camPub.isMuted;
+  iconEl.innerHTML=
+    (micMuted?'<span class="tile-icon" title="靜音">🔇</span>':'')+
+    (camMuted?'<span class="tile-icon" title="相機關閉">📷</span>':'');
+  // Show/hide camoff overlay
+  const tile=$(`tile-${CSS.escape(id)}`);
+  if(tile) tile.querySelector('.tile-camoff')?.classList.toggle('hidden',!camMuted);
+}
+
+function updateHandIcon(identity,raised){
+  const tileId=identity===lkRoom?.localParticipant?.identity?'tile-local':`tile-${CSS.escape(identity)}`;
+  const tile=$(tileId);
+  if(!tile)return;
+  const h=tile.querySelector('.tile-hand');
+  if(h){h.classList.toggle('show',raised);}
+}
+
+function updateGrid(){
+  const grid=$('vgrid');if(!grid)return;
+  const n=(lkRoom?.remoteParticipants?.size||0)+1;
+  const cols=n<=1?1:n<=2?2:n<=4?2:n<=6?3:4;
+  const rows=Math.ceil(n/cols);
+  grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  grid.style.gridTemplateRows=`repeat(${rows},1fr)`;
+}
+function updateCount(){
+  const n=(lkRoom?.numParticipants||1);
+  $('m-count').textContent=n+' 人';
+}
+
+// ── Media controls ────────────────────────────────────────────
+const IC={
+  micOn: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+  micOff:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+  camOn: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`,
+  camOff:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>`,
+};
+
+$('cb-mic').onclick=async()=>{
+  S.micOn=!S.micOn;
+  await lkRoom?.localParticipant?.setMicrophoneEnabled(S.micOn);
+  updateCtrl();
+  updateLocalIcons();
+};
+$('cb-cam').onclick=async()=>{
+  S.camOn=!S.camOn;
+  await lkRoom?.localParticipant?.setCameraEnabled(S.camOn);
+  updateCamOff();updateCtrl();
+  attachLocalVideo();
+  updateLocalIcons();
+};
+$('cb-share').onclick=toggleShare;
+$('cb-mirror').onclick=()=>{
+  S.mirrored=!S.mirrored;
+  $('local-vid').style.transform=S.mirrored?'scaleX(-1)':'scaleX(1)';
+  $('cb-mirror').className='cb'+(S.mirrored?'':' blue');
+};
+$('cb-hand').onclick=toggleHand;
+
+function updateCtrl(){
+  const mic=$('cb-mic'),cam=$('cb-cam');
+  mic.className='cb'+(S.micOn?'':' off');
+  mic.innerHTML=(S.micOn?IC.micOn:IC.micOff)+`<span class="cb-txt">${S.micOn?'麥克風':'靜音中'}</span>`;
+  cam.className='cb'+(S.camOn?'':' off');
+  cam.innerHTML=(S.camOn?IC.camOn:IC.camOff)+`<span class="cb-txt">${S.camOn?'相機':'相機關閉'}</span>`;
+  const sh=$('cb-share');
+  sh.className='cb'+(S.sharing?' active':'');
+  sh.querySelector('.cb-txt').textContent=S.sharing?'停止分享':'分享螢幕';
+}
+function updateCamOff(){
+  const off=$('local-camoff');if(off)off.classList.toggle('hidden',S.camOn);
+}
+function updateLocalIcons(){
+  const el=$('local-icons');if(!el)return;
+  el.innerHTML=(S.micOn?'':'<span class="tile-icon">🔇</span>')+(S.camOn?'':'<span class="tile-icon">📷</span>');
+}
+
+// ── Mute detection (local speaking while muted) ───────────────
+let _muteAudioCtx=null,_muteWarnT=null;
+function setupMuteDetect(stream){
+  if(!stream?.getAudioTracks().length||!window.AudioContext)return;
+  try{
+    _muteAudioCtx=new AudioContext();
+    const src=_muteAudioCtx.createMediaStreamSource(stream);
+    const anal=_muteAudioCtx.createAnalyser();anal.fftSize=256;src.connect(anal);
+    const buf=new Uint8Array(anal.frequencyBinCount);
+    setInterval(()=>{if(!S.micOn){anal.getByteFrequencyData(buf);const avg=buf.reduce((a,b)=>a+b,0)/buf.length;if(avg>8){const w=$('mute-warn');if(w){w.classList.add('show');clearTimeout(_muteWarnT);_muteWarnT=setTimeout(()=>w.classList.remove('show'),3000);}}}},500);
+  }catch(e){}
+}
+
+// ── Screen share ──────────────────────────────────────────────
+async function toggleShare(){
+  if(S.sharing){
+    // Stop all screen share tracks
+    for(const source of [Track.Source.ScreenShare, Track.Source.ScreenShareAudio]){
+      const pub = lkRoom?.localParticipant?.getTrackPublication(source);
+      if(pub?.track){
+        pub.track.stop(); // stop the browser mediaStreamTrack
+        await lkRoom.localParticipant.unpublishTrack(pub.track).catch(()=>{});
+      }
+    }
+    S.sharing = false;
+    $('share-banner').classList.remove('show');
+    $('tile-local').classList.remove('is-sharing');
+    // Restore camera preview properly
+    const camPub = lkRoom?.localParticipant?.getTrackPublication(Track.Source.Camera);
+    const vid = $('local-vid');
+    if(camPub?.track?.mediaStreamTrack){
+      vid.srcObject = new MediaStream([camPub.track.mediaStreamTrack]);
+      vid.play().catch(()=>{});
+    } else {
+      vid.srcObject = null;
+    }
+    updateCamOff();
+    updateCtrl();
+    return;
+  }
+  if(!isSecure()){notif('⚠ 螢幕分享需要 HTTPS 環境',5000,'warning');return;}
+  if(!navigator.mediaDevices?.getDisplayMedia){notif('⚠ 此瀏覽器不支援螢幕分享',5000,'warning');return;}
+  try{
+    // createLocalScreenTracks returns LocalTrack[] (video + optional audio)
+    const tracks = await createLocalScreenTracks({ audio: true });
+    // Publish all screen tracks to LiveKit
+    for(const t of tracks){
+      await lkRoom.localParticipant.publishTrack(t, { simulcast: false });
+    }
+    S.sharing = true;
+    $('share-banner').classList.add('show');
+    $('tile-local').classList.add('is-sharing');
+
+    // Local preview: build a MediaStream from the raw mediaStreamTrack
+    const videoTrack = tracks.find(t => t.kind === Track.Kind.Video);
+    if(videoTrack?.mediaStreamTrack){
+      const ms = new MediaStream([videoTrack.mediaStreamTrack]);
+      // Also add audio if present
+      const audioTrack = tracks.find(t => t.kind === Track.Kind.Audio);
+      if(audioTrack?.mediaStreamTrack) ms.addTrack(audioTrack.mediaStreamTrack);
+      const vid = $('local-vid');
+      vid.srcObject = ms;
+      vid.play().catch(()=>{});
+    }
+
+    // Auto-stop when user clicks browser "Stop sharing" button
+    const videoMST = tracks.find(t=>t.kind===Track.Kind.Video)?.mediaStreamTrack;
+    if(videoMST) videoMST.addEventListener('ended', ()=>{ if(S.sharing) toggleShare(); });
+
+    updateCtrl();
+  }catch(e){
+    S.sharing = false;
+    if(e.name !== 'NotAllowedError') notif('螢幕分享失敗：'+e.name+' '+e.message, 6000, 'error');
   }
 }
 
-// Chat
-$('i-chat').onkeyup = e => {
-  if(e.key === 'Enter') {
-    const txt = $('i-chat').value.trim();
-    if(!txt || !lkRoom) return;
-    lkRoom.localParticipant.publishData(new TextEncoder().encode(txt), { reliable: true });
-    appendChat('我', txt, true);
-    $('i-chat').value = '';
-  }
-};
+// ── Hand raise ────────────────────────────────────────────────
+async function toggleHand(){
+  S.handRaised=!S.handRaised;
+  const btn=$('cb-hand');
+  btn.className='cb'+(S.handRaised?' amber':'');
+  btn.querySelector('.cb-txt').textContent=S.handRaised?'放下手':'舉手';
 
-function appendChat(name, text, me) {
-  const el = document.createElement('div');
-  el.className = `chat-msg ${me ? 'me' : ''}`;
-  el.innerHTML = `<div class="name">${esc(name)}</div><div class="text">${esc(text)}</div>`;
-  $('chat-list').appendChild(el);
-  $('chat-list').scrollTop = $('chat-list').scrollHeight;
+  // Update local tile
+  const h=$('local-hand');
+  if(h){h.textContent='✋';h.classList.toggle('show',S.handRaised);}
+
+  // ── PRIMARY: setMetadata (persisted, seen by ALL including late joiners) ──
+  const meta=JSON.stringify({
+    role:S.profile.role,
+    handRaised:S.handRaised,
+    // timestamp helps differentiate stale vs fresh state
+    ts:Date.now(),
+  });
+  try{ await lkRoom?.localParticipant?.setMetadata(meta); }
+  catch(e){ dbg('[HAND] setMetadata failed: '+e.message); }
+
+  // ── SECONDARY: publishData broadcast (immediate delivery to current participants) ──
+  // This fixes the "other side still shows hand raised" bug:
+  // metadata update may be delayed; data message is instant.
+  try{
+    const payload=new TextEncoder().encode(JSON.stringify({
+      type:'hand',
+      raised:S.handRaised,
+      identity:lkRoom?.localParticipant?.identity,
+    }));
+    await lkRoom?.localParticipant?.publishData(payload, {reliable:true});
+  }catch(e){ dbg('[HAND] publishData failed: '+e.message); }
+
+  if(S.handRaised) notif('✋ 已舉手，等待主持人注意',3000,'info');
 }
 
-// Clock
-setInterval(() => {
-  const el = $('lobby-time');
-  if(el && $('s-lobby').classList.contains('active')) {
-    const n = new Date();
-    el.textContent = n.toLocaleTimeString('zh-TW', { hour12: false });
-  }
-}, 1000);
+// ── Leave / End ───────────────────────────────────────────────
+$('cb-leave').onclick=async()=>{
+  const ok=await modal({title:'離開會議',body:'確定要離開會議嗎？',buttons:[{label:'取消',value:false},{label:'離開',type:'danger',value:true}]});
+  if(ok) leaveMeeting(false);
+};
+$('cb-end').onclick=async()=>{
+  const ok=await modal({title:'結束會議',body:'確定要結束會議？所有參與者都將被中斷連線。',buttons:[{label:'取消',value:false},{label:'結束',type:'danger',value:true}]});
+  if(ok) leaveMeeting(true);
+};
 
-// Buttons
-$('btn-cam').onclick = async () => {
-  const enabled = !lkRoom.localParticipant.isCameraEnabled;
-  await lkRoom.localParticipant.setCameraEnabled(enabled);
-  $('btn-cam').classList.toggle('off', !enabled);
+async function leaveMeeting(endAll){
+  await cleanup(endAll);
+  const grid=$('vgrid');
+  [...grid.children].forEach(c=>{if(c.id!=='tile-local')c.remove();});
+  $('local-vid').srcObject=null;$('local-camoff').classList.add('hidden');
+  const pb=$('pending-bar');if(pb){pb.innerHTML='';pb.classList.remove('show');}
+  $('share-banner').classList.remove('show');
+  updateGrid();renderLobby();showScreen('lobby');
+}
+
+async function cleanup(endAll=false){
+  stopTimer();releaseWakeLock();
+  S.roomWatchUnsub?.();S.roomWatchUnsub=null;
+  S.unsubReqs?.();S.unsubReqs=null;
+  S.waitUnsub?.();S.waitUnsub=null;
+  if(_muteAudioCtx){_muteAudioCtx.close().catch(()=>{});_muteAudioCtx=null;}
+  $('mute-warn')?.classList.remove('show');
+  $('share-banner')?.classList.remove('show');
+  const ctrlBar=document.querySelector('.ctrl-bar');
+  if(ctrlBar){ctrlBar.style.opacity='1';ctrlBar.style.pointerEvents='auto';}
+
+  // Lower hand before disconnecting
+  if(S.handRaised&&lkRoom?.localParticipant){
+    try{
+      await lkRoom.localParticipant.setMetadata(JSON.stringify({role:S.profile?.role,handRaised:false,ts:Date.now()}));
+      const payload=new TextEncoder().encode(JSON.stringify({type:'hand',raised:false,identity:lkRoom.localParticipant.identity}));
+      await lkRoom.localParticipant.publishData(payload,{reliable:true});
+    }catch(e){}
+    S.handRaised=false;
+  }
+
+  // Disconnect LiveKit
+  if(lkRoom){
+    try{await lkRoom.disconnect();}catch(e){}
+    lkRoom=null;
+  }
+
+  S.sharing=false;S.camOn=true;S.micOn=true;S.mirrored=true;
+  if(endAll&&S.isHost){
+    const q=query(collection(db,'room_requests'),where('room_code','==',S.roomCode),where('status','==','pending'));
+    const sn=await getDocs(q).catch(()=>({docs:[]}));
+    sn.docs.forEach(d=>updateDoc(d.ref,{status:'rejected'}).catch(()=>{}));
+    await deleteDoc(doc(db,'rooms',S.roomCode)).catch(()=>{});
+  }
+  if(S.myReqId){deleteDoc(doc(db,'room_requests',S.myReqId)).catch(()=>{});S.myReqId=null;}
+  S.roomCode='';S.isHost=false;S.inMeeting=false;
+}
+
+// ── Host: Firestore approval flow ─────────────────────────────
+function listenRequests(){
+  const q=query(collection(db,'room_requests'),where('room_code','==',S.roomCode),where('status','==','pending'));
+  S.unsubReqs=onSnapshot(q,snap=>{
+    const bar=$('pending-bar');bar.innerHTML='';
+    snap.docs.forEach(d=>{
+      const r=d.data();
+      const card=document.createElement('div');card.className='req-card';
+      card.innerHTML=`<span>[${r.user_role==='teacher'?'T':'S'}] ${esc(r.user_name||r.user_email)}</span>
+        <button class="btn-ok" data-id="${d.id}">核准</button>
+        <button class="btn-no" data-id="${d.id}">拒絕</button>`;
+      bar.appendChild(card);
+    });
+    if(snap.docs.length>0)bar.classList.add('show');else bar.classList.remove('show');
+    bar.querySelectorAll('.btn-ok').forEach(b=>b.onclick=()=>{
+      if(b.dataset.processing)return;
+      b.dataset.processing='1';b.disabled=true;b.textContent='處理中';
+      if((lkRoom?.remoteParticipants?.size||0)+1>=MAX_PART){
+        updateDoc(doc(db,'room_requests',b.dataset.id),{status:'rejected'});
+        notif(`人數已達上限（${MAX_PART}人）`,4000,'warning');return;
+      }
+      updateDoc(doc(db,'room_requests',b.dataset.id),{status:'approved'});
+      notif('已核准加入',2000,'success');
+    });
+    bar.querySelectorAll('.btn-no').forEach(b=>b.onclick=()=>updateDoc(doc(db,'room_requests',b.dataset.id),{status:'rejected'}));
+    snap.docChanges().filter(c=>c.type==='added').forEach(c=>{
+      const r=c.doc.data();
+      notif(`[${r.user_role==='teacher'?'TEACHER':'STUDENT'}] ${r.user_name} 申請加入`,5000,'info');
+      playTone(880,.1,.06);
+    });
+  });
+}
+
+// Host sees raised hands via LiveKit participant metadata / data
+// (Already handled in onMetadataChanged & onDataReceived)
+function listenRaisedHands_firestore(){
+  // No-op: LiveKit handles this natively via metadata/data
+}
+
+// Guest: watch if room deleted by host
+function watchRoomDeletion(){
+  S.roomWatchUnsub=onSnapshot(doc(db,'rooms',S.roomCode),snap=>{
+    if(!snap.exists()&&S.inMeeting){
+      S.roomWatchUnsub?.();
+      notif('主持人已結束會議',4000,'error');
+      setTimeout(()=>leaveMeeting(false),2000);
+    }
+  });
+}
+
+// ── Timer ─────────────────────────────────────────────────────
+let _timerIv=null;
+function startTimer(){
+  const start=Date.now();
+  _timerIv=setInterval(()=>{
+    const el=$('m-timer');if(!el)return;
+    const s=Math.floor((Date.now()-start)/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+    el.textContent=h>0?`${pad(h)}:${pad(m%60)}:${pad(s%60)}`:`${pad(m)}:${pad(s%60)}`;
+  },1000);
+}
+function stopTimer(){clearInterval(_timerIv);_timerIv=null;const el=$('m-timer');if(el)el.textContent='00:00';}
+
+// ── Wake lock ─────────────────────────────────────────────────
+async function requestWakeLock(){try{if('wakeLock'in navigator)S.wakeLock=await navigator.wakeLock.request('screen');}catch(e){}}
+async function releaseWakeLock(){try{await S.wakeLock?.release();S.wakeLock=null;}catch(e){}}
+
+// ── Sound cues ────────────────────────────────────────────────
+function playTone(freq=440,dur=.12,vol=.07){
+  if(typeof SET!=='undefined'&&!SET.sound) return;
+  try{const ctx=new AudioContext(),o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=freq;g.gain.setValueAtTime(vol,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+dur);o.start();o.stop(ctx.currentTime+dur);setTimeout(()=>ctx.close(),(dur+.2)*1000);}catch(e){}
+}
+
+// ── Copy room code ────────────────────────────────────────────
+$('m-code').addEventListener('click',()=>{
+  const code=$('m-code').textContent;if(!code||code==='—')return;
+  navigator.clipboard?.writeText(code).then(()=>notif('✓ 已複製房間代碼：'+code,2000,'success')).catch(()=>notif('房間代碼：'+code,3000,'info'));
+});
+
+// ── Fullscreen on dblclick ────────────────────────────────────
+let _fullTile=null;
+document.addEventListener('dblclick',e=>{
+  const tile=e.target.closest('.video-tile');
+  if(!tile||!$('s-meeting').classList.contains('active'))return;
+  if(_fullTile===tile){tile.classList.remove('fullscreen');_fullTile=null;}
+  else{if(_fullTile)_fullTile.classList.remove('fullscreen');tile.classList.add('fullscreen');_fullTile=tile;}
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&_fullTile){_fullTile.classList.remove('fullscreen');_fullTile=null;}
+  if(!$('s-meeting').classList.contains('active')||e.target.tagName==='INPUT')return;
+  if(e.key==='m'||e.key==='M')$('cb-mic')?.click();
+  if(e.key==='v'||e.key==='V')$('cb-cam')?.click();
+  if(e.key==='s'||e.key==='S')$('cb-share')?.click();
+  if(e.key==='h'||e.key==='H')$('cb-hand')?.click();
+});
+
+// ── Mobile controls auto-hide ─────────────────────────────────
+let _ctrlT=null;
+function resetCtrlTimer(){
+  const bar=document.querySelector('.ctrl-bar');if(!bar)return;
+  bar.style.opacity='1';bar.style.pointerEvents='auto';
+  clearTimeout(_ctrlT);
+  if(window.innerWidth<=640){_ctrlT=setTimeout(()=>{if(!$('s-meeting').classList.contains('active'))return;bar.style.opacity='.15';bar.style.pointerEvents='none';},4000);}
+}
+document.addEventListener('touchstart',resetCtrlTimer,{passive:true});
+document.addEventListener('mousemove',resetCtrlTimer,{passive:true});
+
+// ── Unread tab count ──────────────────────────────────────────
+let _unread=0;
+function bumpUnread(){if(document.hidden){_unread++;document.title=`(${_unread}) SMES MEET — ${S.roomCode}`;}}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){_unread=0;document.title=S.inMeeting?`SMES MEET — ${S.roomCode}`:'SMES MEET';}});
+
+// ── Network / device events ───────────────────────────────────
+window.addEventListener('online', ()=>notif('✓ 網路已恢復連線',3000,'success'));
+window.addEventListener('offline',()=>notif('⚠ 網路連線中斷',8000,'warning'));
+window.addEventListener('orientationchange',()=>setTimeout(updateGrid,300));
+window.addEventListener('resize',()=>{updateGrid();if(S.inMeeting)resetCtrlTimer();});
+window.addEventListener('beforeunload',e=>{if(S.inMeeting){e.preventDefault();e.returnValue='';}lkRoom?.disconnect().catch(()=>{});});
+
+// Lobby clock
+setInterval(()=>{const el=$('lobby-time');if(!el)return;const n=new Date();el.textContent=n.toLocaleTimeString('zh-TW',{hour12:false})+'  '+n.toLocaleDateString('zh-TW');},1000);
+
+// title blink CSS
+const s=document.createElement('style');
+s.textContent='@keyframes titleBlink{0%,100%{color:#fff}50%{color:var(--blue)}}.m-brand.blink-peer{animation:titleBlink .5s ease 4}';
+document.head.appendChild(s);
+
+// ════════════════════════════════════════════════
+// SETTINGS PANEL
+// ════════════════════════════════════════════════
+const SET = {
+  sound:  true,
+  speak:  true,
+  guard:  true,
+  echo:   true,
+  noise:  true,
+  mirror: true,
+  quality:'high',
+  micId:  '',
+  camId:  '',
 };
-$('btn-mic').onclick = async () => {
-  const enabled = !lkRoom.localParticipant.isMicrophoneEnabled;
-  await lkRoom.localParticipant.setMicrophoneEnabled(enabled);
-  $('btn-mic').classList.toggle('off', !enabled);
+
+// Load from localStorage
+try{ Object.assign(SET, JSON.parse(localStorage.getItem('smes_settings')||'{}')); }catch(e){}
+function saveSettings(){ try{ localStorage.setItem('smes_settings', JSON.stringify(SET)); }catch(e){} }
+
+// Open / close
+$('cb-settings').onclick = openSettings;
+$('settings-close').onclick = closeSettings;
+$('settings-panel').addEventListener('click', e=>{ if(e.target===$('settings-panel')) closeSettings(); });
+
+function openSettings(){
+  $('settings-panel').classList.add('show');
+  // Sync toggles to current state
+  $('set-echo').checked   = SET.echo;
+  $('set-noise').checked  = SET.noise;
+  $('set-mirror').checked = SET.mirror;
+  $('set-sound').checked  = SET.sound;
+  $('set-speak').checked  = SET.speak;
+  $('set-guard').checked  = SET.guard;
+  $('set-quality').value  = SET.quality;
+  loadDevices();
+  updateConnInfo();
+}
+function closeSettings(){ $('settings-panel').classList.remove('show'); }
+
+// Keyboard shortcut
+document.addEventListener('keydown', e=>{
+  if((e.key===','||e.key==='，')&&$('s-meeting').classList.contains('active')&&e.target.tagName!=='INPUT'){
+    $('settings-panel').classList.contains('show') ? closeSettings() : openSettings();
+  }
+});
+
+// Toggle handlers
+$('set-echo').onchange   = e=>{ SET.echo=e.target.checked; saveSettings(); applyAudioConstraints(); };
+$('set-noise').onchange  = e=>{ SET.noise=e.target.checked; saveSettings(); applyAudioConstraints(); };
+$('set-mirror').onchange = e=>{ SET.mirror=e.target.checked; saveSettings(); $('local-vid').style.transform=SET.mirror?'scaleX(-1)':'scaleX(1)'; S.mirrored=SET.mirror; };
+$('set-sound').onchange  = e=>{ SET.sound=e.target.checked; saveSettings(); };
+$('set-speak').onchange  = e=>{ SET.speak=e.target.checked; saveSettings(); };
+$('set-guard').onchange  = e=>{ SET.guard=e.target.checked; saveSettings(); };
+$('set-quality').onchange= e=>{ SET.quality=e.target.value; saveSettings(); applyVideoQuality(); };
+
+// Apply saved mirror on load
+document.addEventListener('DOMContentLoaded',()=>{
+  S.mirrored=SET.mirror;
+  $('set-mirror').checked=SET.mirror;
+});
+
+async function applyAudioConstraints(){
+  if(!lkRoom?.localParticipant) return;
+  try{
+    const pub=lkRoom.localParticipant.getTrackPublication(Track.Source.Microphone);
+    if(pub?.track){
+      await pub.track.restartTrack({
+        deviceId: SET.micId||undefined,
+        echoCancellation: SET.echo,
+        noiseSuppression: SET.noise,
+        autoGainControl: true,
+      });
+    }
+  }catch(e){ dbg('[SET] audio constraints: '+e.message); }
+}
+
+async function applyVideoQuality(){
+  if(!lkRoom?.localParticipant) return;
+  const resMap={ high:{width:1280,height:720,frameRate:24}, medium:{width:854,height:480,frameRate:20}, low:{width:426,height:240,frameRate:15} };
+  const res = resMap[SET.quality]||resMap.high;
+  try{
+    const pub=lkRoom.localParticipant.getTrackPublication(Track.Source.Camera);
+    if(pub?.track) await pub.track.restartTrack({ ...res, deviceId: SET.camId||undefined });
+  }catch(e){ dbg('[SET] video quality: '+e.message); }
+}
+
+// Device enumeration
+async function loadDevices(){
+  try{
+    await navigator.mediaDevices.getUserMedia({audio:true,video:true}).catch(()=>{});
+    const devices=await navigator.mediaDevices.enumerateDevices();
+
+    const mics=devices.filter(d=>d.kind==='audioinput');
+    const cams=devices.filter(d=>d.kind==='videoinput');
+
+    const micEl=$('mic-devices'); micEl.innerHTML='';
+    mics.forEach(d=>{
+      const btn=document.createElement('button');
+      btn.className='settings-device-btn'+(d.deviceId===SET.micId?' active':'');
+      btn.textContent=(d.label||'麥克風 '+d.deviceId.slice(0,6));
+      btn.onclick=async()=>{
+        SET.micId=d.deviceId; saveSettings();
+        micEl.querySelectorAll('.settings-device-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        await applyAudioConstraints();
+      };
+      micEl.appendChild(btn);
+    });
+
+    const camEl=$('cam-devices'); camEl.innerHTML='';
+    cams.forEach(d=>{
+      const btn=document.createElement('button');
+      btn.className='settings-device-btn'+(d.deviceId===SET.camId?' active':'');
+      btn.textContent=(d.label||'相機 '+d.deviceId.slice(0,6));
+      btn.onclick=async()=>{
+        SET.camId=d.deviceId; saveSettings();
+        camEl.querySelectorAll('.settings-device-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        await applyVideoQuality();
+      };
+      camEl.appendChild(btn);
+    });
+  }catch(e){ dbg('[SET] enumerate devices: '+e.message); }
+}
+
+// Connection info
+async function updateConnInfo(){
+  const el=$('conn-info'); if(!el||!lkRoom) return;
+  const local=lkRoom.localParticipant;
+  const lines=[
+    `身分：${local?.identity||'—'}`,
+    `房間：${lkRoom.name||S.roomCode}`,
+    `參與者：${lkRoom.numParticipants} 人`,
+    `SFU：${LIVEKIT_URL.replace('wss://','').split('.')[0]}`,
+    `視訊品質：${SET.quality}`,
+  ];
+  // Try get connection stats
+  try{
+    for(const [,p] of lkRoom.remoteParticipants){
+      const pub=p.getTrackPublication(Track.Source.Camera);
+      if(pub?.track){
+        // no direct stats API, skip
+      }
+    }
+  }catch(e){}
+  el.innerHTML=lines.map(l=>`<div>${esc(l)}</div>`).join('');
+}
+
+// Sound and speaker settings are checked inside the original functions.
+// No re-declaration needed — SET.sound and SET.speak are read at call time.
+
+// Patch beforeunload to respect guard setting
+window.removeEventListener('beforeunload',window._beforeUnload);
+window._beforeUnload=e=>{
+  if(S.inMeeting&&SET.guard){e.preventDefault();e.returnValue='';}
+  lkRoom?.disconnect().catch(()=>{});
 };
+window.addEventListener('beforeunload',window._beforeUnload);
+
+// Init settings from saved values on page load
+(function initSettings(){
+  $('set-mirror').checked=SET.mirror;
+  if(!SET.mirror){ $('local-vid').style.transform='scaleX(1)'; S.mirrored=false; }
+})();
 </script>
 </body>
 </html>
