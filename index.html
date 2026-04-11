@@ -920,8 +920,7 @@ const db    = getFirestore(fbApp);
 
 // ── LiveKit room ──────────────────────────────────────────────
 let lkRoom = null;
-// Set of participant identities for which a tile has been created this session
-const _tiledParticipants = new Set();
+// DOM is the single source of truth for tile existence — no separate tracking Set needed
 
 // ── App state ─────────────────────────────────────────────────
 const S = {
@@ -1245,7 +1244,7 @@ async function goMeeting(){
     .on(RoomEvent.Connected,        onRoomConnected)
     .on(RoomEvent.Disconnected,     onRoomDisconnected)
     .on(RoomEvent.ConnectionStateChanged, onConnStateChange)
-    .on(RoomEvent.ParticipantConnected,    p => { if(!_tiledParticipants.has(p.identity)){ addTile(p); playTone(880,.1,.06); bumpUnread(); } })
+    .on(RoomEvent.ParticipantConnected,    p => { addTile(p); playTone(880,.1,.06); bumpUnread(); })
     .on(RoomEvent.ParticipantDisconnected, p => { removeTile(p.identity); playTone(440,.1,.04); })
     .on(RoomEvent.TrackSubscribed,  (track, pub, participant) => onTrackSubscribed(track, pub, participant))
     .on(RoomEvent.TrackUnsubscribed,(track, pub, participant) => onTrackUnsubscribed(track, pub, participant))
@@ -1307,11 +1306,8 @@ async function goMeeting(){
 function onRoomConnected(){
   setSFUStatus('connected');
   dbg('[LK] Connected. remote='+lkRoom.remoteParticipants.size);
-  // Add tiles for participants already in room who weren't yet tiled
-  // (ParticipantConnected may have fired for some during connect)
-  lkRoom.remoteParticipants.forEach(p => {
-    if(!_tiledParticipants.has(p.identity)) addTile(p);
-  });
+  // Add tiles for all participants already in room
+  lkRoom.remoteParticipants.forEach(p => { addTile(p); });
   updateCount();
 }
 function onRoomDisconnected(reason){
@@ -1334,19 +1330,17 @@ function setSFUStatus(state){
   el.className='sfu-status'+( state==='connected'?' connected':state==='connecting'?' connecting':'');
 }
 function onTrackSubscribed(track,pub,participant){
-  // Ensure tile exists. If we're still in initial connection phase,
-  // onRoomConnected will handle bulk creation — but if a participant
-  // joined after us, ParticipantConnected fires addTile first, so tile exists.
-  // Only create tile here as a safety fallback.
+  // Tile should already exist (created by ParticipantConnected or onRoomConnected).
+  // If not found, create it now as last-resort fallback.
   let tile=$(`tile-${CSS.escape(participant.identity)}`);
   if(!tile){
+    dbg(`[WARN] TrackSubscribed: tile missing for ${participant.identity}, creating now`);
     addTile(participant);
     tile=$(`tile-${CSS.escape(participant.identity)}`);
     if(!tile) return;
   }
 
   if(track.kind===Track.Kind.Video){
-    // Only attach camera track to the tile's video element (not screen share)
     if(pub.source===Track.Source.Camera || pub.source===Track.Source.ScreenShare){
       const vid=tile.querySelector('video');
       if(vid){ track.attach(vid); vid.play().catch(()=>{}); }
@@ -1356,7 +1350,6 @@ function onTrackSubscribed(track,pub,participant){
     }
   }
   if(track.kind===Track.Kind.Audio){
-    // Avoid duplicate audio elements for the same participant
     document.querySelectorAll(`audio[data-lk="${CSS.escape(participant.identity)}"]`).forEach(a=>a.remove());
     const el=track.attach();
     el.dataset.lk=participant.identity;
@@ -1364,7 +1357,7 @@ function onTrackSubscribed(track,pub,participant){
     document.body.appendChild(el);
   }
   updateTileIcons(participant);
-  dbg(`[LK] Track subscribed: ${participant.identity} src=${pub.source} kind=${track.kind}`);
+  dbg(`[LK] TrackSubscribed: ${participant.identity} src=${pub.source} kind=${track.kind}`);
 }
 function onTrackUnsubscribed(track,pub,participant){
   track.detach();
@@ -1427,12 +1420,16 @@ function attachLocalVideo(){
 // ── Tile management ───────────────────────────────────────────
 function addTile(participant){
   const id=participant.identity;
-  // Register in tiled set immediately to prevent race conditions
-  _tiledParticipants.add(id);
   // Cancel any pending remove animation for this identity
   if(_removeTimers[id]){ clearTimeout(_removeTimers[id]); delete _removeTimers[id]; }
-  // Remove any stale tile (including ones in .removing animation)
-  $(`tile-${CSS.escape(id)}`)?.remove();
+  // If tile already exists and is NOT in removing state, skip (idempotent)
+  const existing=$(`tile-${CSS.escape(id)}`);
+  if(existing && !existing.classList.contains('removing')){
+    dbg(`[addTile] tile already exists for ${id}, skipping`);
+    return;
+  }
+  // Remove any stale/removing tile before creating fresh one
+  existing?.remove();
 
   const grid=$('vgrid');
   const tile=document.createElement('div');
@@ -1494,8 +1491,6 @@ function addTile(participant){
 const _removeTimers={};
 
 function removeTile(identity){
-  // Unregister from tiled set immediately so re-join can re-add tile
-  _tiledParticipants.delete(identity);
   // Clean up audio elements immediately
   document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>a.remove());
   delete handRaised[identity];
@@ -1939,8 +1934,6 @@ async function cleanup(endAll=false){
 
   // Cancel all pending remove timers
   Object.keys(_removeTimers).forEach(k=>{ clearTimeout(_removeTimers[k]); delete _removeTimers[k]; });
-  // Clear participant tile registry
-  _tiledParticipants.clear();
 
   // Reset state — set inMeeting=false FIRST so goMeeting guard clears
   S.inMeeting=false;
