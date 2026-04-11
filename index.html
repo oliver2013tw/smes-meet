@@ -920,6 +920,8 @@ const db    = getFirestore(fbApp);
 
 // ── LiveKit room ──────────────────────────────────────────────
 let lkRoom = null;
+// Set of participant identities for which a tile has been created this session
+const _tiledParticipants = new Set();
 
 // ── App state ─────────────────────────────────────────────────
 const S = {
@@ -1243,7 +1245,7 @@ async function goMeeting(){
     .on(RoomEvent.Connected,        onRoomConnected)
     .on(RoomEvent.Disconnected,     onRoomDisconnected)
     .on(RoomEvent.ConnectionStateChanged, onConnStateChange)
-    .on(RoomEvent.ParticipantConnected,    p => { addTile(p); playTone(880,.1,.06); bumpUnread(); })
+    .on(RoomEvent.ParticipantConnected,    p => { if(!_tiledParticipants.has(p.identity)){ addTile(p); playTone(880,.1,.06); bumpUnread(); } })
     .on(RoomEvent.ParticipantDisconnected, p => { removeTile(p.identity); playTone(440,.1,.04); })
     .on(RoomEvent.TrackSubscribed,  (track, pub, participant) => onTrackSubscribed(track, pub, participant))
     .on(RoomEvent.TrackUnsubscribed,(track, pub, participant) => onTrackUnsubscribed(track, pub, participant))
@@ -1304,11 +1306,11 @@ async function goMeeting(){
 // ── LiveKit event handlers ────────────────────────────────────
 function onRoomConnected(){
   setSFUStatus('connected');
-  dbg('[LK] Connected to room: '+lkRoom.name+' remote: '+lkRoom.remoteParticipants.size);
-  // Render any participants who were already in the room before we joined.
-  // This is the ONLY place we do bulk tile creation — avoids race with TrackSubscribed.
+  dbg('[LK] Connected. remote='+lkRoom.remoteParticipants.size);
+  // Add tiles for participants already in room who weren't yet tiled
+  // (ParticipantConnected may have fired for some during connect)
   lkRoom.remoteParticipants.forEach(p => {
-    if(!$(`tile-${CSS.escape(p.identity)}`)) addTile(p);
+    if(!_tiledParticipants.has(p.identity)) addTile(p);
   });
   updateCount();
 }
@@ -1425,6 +1427,8 @@ function attachLocalVideo(){
 // ── Tile management ───────────────────────────────────────────
 function addTile(participant){
   const id=participant.identity;
+  // Register in tiled set immediately to prevent race conditions
+  _tiledParticipants.add(id);
   // Cancel any pending remove animation for this identity
   if(_removeTimers[id]){ clearTimeout(_removeTimers[id]); delete _removeTimers[id]; }
   // Remove any stale tile (including ones in .removing animation)
@@ -1490,6 +1494,8 @@ function addTile(participant){
 const _removeTimers={};
 
 function removeTile(identity){
+  // Unregister from tiled set immediately so re-join can re-add tile
+  _tiledParticipants.delete(identity);
   // Clean up audio elements immediately
   document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>a.remove());
   delete handRaised[identity];
@@ -1498,19 +1504,22 @@ function removeTile(identity){
   const tile=$(`tile-${CSS.escape(identity)}`);
   if(!tile){ updateGrid(); updateCount(); return; }
 
-  // Detach video/audio tracks from tile before removing
-  tile.querySelectorAll('video').forEach(v=>{ v.srcObject=null; });
+  // Immediately null out video srcObjects to free camera/mic
+  tile.querySelectorAll('video').forEach(v=>{ try{ v.srcObject=null; }catch(_){} });
 
+  // Animate out, then remove — store timer so addTile/resetMeetingUI can cancel
   tile.classList.add('removing');
-  updateCount();
-  // Store timer so addTile can cancel it if same user re-joins quickly
-  _removeTimers[identity]=setTimeout(()=>{
+  updateCount(); // update count immediately (tile marked .removing so excluded)
+
+  _removeTimers[identity] = setTimeout(()=>{
     delete _removeTimers[identity];
-    // Only remove if tile still exists and is still .removing
-    // (it might have been replaced by a new addTile call)
-    const t=$(`tile-${CSS.escape(identity)}`);
-    if(t && t.classList.contains('removing')){ t.remove(); updateGrid(); }
-  }, 250);
+    const t = $(`tile-${CSS.escape(identity)}`);
+    // Only remove if still marked .removing (addTile may have replaced it)
+    if(t && t.classList.contains('removing')){
+      t.remove();
+      updateGrid();
+    }
+  }, 280);
 }
 
 function updateTileIcons(participant){
@@ -1553,75 +1562,83 @@ function updateHandIcon(identity,raised){
 }
 
 function updateGrid(){
-  const grid=$('vgrid');if(!grid)return;
-  const tiles=[...grid.querySelectorAll('.video-tile:not(.removing)')];
+  const grid=$('vgrid');
+  if(!grid) return;
+
+  // All tiles in both grid and sidebar (sidebar may contain tiles in spotlight mode)
+  const sidebar=$('spotlight-sidebar');
+  const allTiles=[
+    ...grid.querySelectorAll('.video-tile:not(.removing)'),
+    ...(sidebar ? [...sidebar.querySelectorAll('.video-tile:not(.removing)')] : [])
+  ];
+  // Unique by id
+  const seen=new Set();
+  const tiles=allTiles.filter(t=>{ if(seen.has(t.id))return false; seen.add(t.id); return true; });
   const n=tiles.length||1;
 
-  // Reset manual grid placements
-  tiles.forEach(t=>{ t.style.gridColumn=''; t.style.gridRow=''; });
+  // ── SPEAKER layout: pinned large left col, others stacked right ──
+  if(_layout==='speaker' && _pinnedId){
+    // Ensure all tiles are in grid (not sidebar)
+    if(sidebar){ [...sidebar.querySelectorAll('.video-tile')].forEach(t=>grid.appendChild(t)); }
 
-  // Spotlight layout: pinned stays in grid, others move to sidebar
-  if(_layout==='spotlight'){
-    const sidebar=$('spotlight-sidebar');
-    if(sidebar){
-      // Move non-pinned tiles into sidebar, pinned stays in grid
-      tiles.forEach(t=>{
-        if(_pinnedId && t.id===`tile-${CSS.escape(_pinnedId)}`){
-          if(t.parentElement!==grid) grid.insertBefore(t, sidebar);
-        } else {
-          if(t.parentElement!==sidebar) sidebar.appendChild(t);
-        }
-      });
-      // If no pinned tile, put first tile as "pinned"
-      if(!_pinnedId && tiles.length>0){
-        const first=tiles[0];
-        if(first.parentElement!==grid) grid.insertBefore(first,sidebar);
-      }
+    const pinTile=$(`tile-${CSS.escape(_pinnedId)}`);
+    if(pinTile && n>1){
+      // Inline grid: 2-column, pinned spans all rows on left
+      const others=tiles.filter(t=>t.id!==`tile-${CSS.escape(_pinnedId)}`);
+      const sideRows=Math.max(others.length,1);
+      grid.style.display='grid';
+      grid.style.gridTemplateColumns='1fr 180px';
+      grid.style.gridTemplateRows=`repeat(${sideRows},1fr)`;
+      // Reset all tiles first
+      tiles.forEach(t=>{ t.style.gridColumn=''; t.style.gridRow=''; });
+      pinTile.style.gridColumn='1';
+      pinTile.style.gridRow=`1 / ${sideRows+1}`;
+      others.forEach((t,i)=>{ t.style.gridColumn='2'; t.style.gridRow=`${i+1}`; });
+      return;
     }
+    // No pinned tile or only 1 tile: fall through to auto
+  }
+
+  // ── SPOTLIGHT layout: pinned fills area, others in sidebar ──
+  if(_layout==='spotlight' && sidebar){
+    const pinId=_pinnedId || (tiles[0]?.id.replace('tile-',''))||null;
+    tiles.forEach(t=>{
+      // Reset inline styles before moving
+      t.style.gridColumn=''; t.style.gridRow='';
+      if(t.id===`tile-${pinId}`){
+        if(t.parentElement!==grid) grid.insertBefore(t, sidebar);
+      } else {
+        if(t.parentElement!==sidebar) sidebar.appendChild(t);
+      }
+    });
+    // Spotlight uses flex (CSS class handles it), clear grid inline styles
+    grid.style.display='';
     grid.style.gridTemplateColumns='';
     grid.style.gridTemplateRows='';
     return;
   }
 
-  // Speaker layout: pinned large left, others column right
-  if(_layout==='speaker'){
-    // Return sidebar tiles to grid first
-    const sb=$('spotlight-sidebar');
-    if(sb){ [...sb.querySelectorAll('.video-tile')].forEach(t=>grid.appendChild(t)); }
-
-    if(_pinnedId && n>1){
-      const pt=$(`tile-${CSS.escape(_pinnedId)}`);
-      if(pt && grid.firstChild!==pt) grid.prepend(pt);
-      const nonPinned=tiles.filter(t=>t.id!==`tile-${CSS.escape(_pinnedId)}`);
-      const sideRows=Math.max(nonPinned.length,1);
-      grid.style.gridTemplateColumns='1fr 180px';
-      grid.style.gridTemplateRows=`repeat(${sideRows},1fr)`;
-      if(pt){ pt.style.gridColumn='1'; pt.style.gridRow=`1/${sideRows+1}`; }
-      nonPinned.forEach((t,i)=>{ t.style.gridColumn='2'; t.style.gridRow=`${i+1}`; });
-      return;
-    }
-    // No pinned — fall through to auto
-  }
-
-  // Auto layout: return any sidebar tiles to grid
-  {const sb=$('spotlight-sidebar');if(sb){[...sb.querySelectorAll('.video-tile')].forEach(t=>grid.appendChild(t));}}
+  // ── AUTO layout ──
+  // Ensure all tiles are in grid (return any from sidebar)
+  if(sidebar){ [...sidebar.querySelectorAll('.video-tile')].forEach(t=>grid.appendChild(t)); }
+  // Reset all inline placements
+  tiles.forEach(t=>{ t.style.gridColumn=''; t.style.gridRow=''; });
 
   let cols;
-  if(n===1) cols=1;
+  if(n===1)      cols=1;
   else if(n===2) cols=2;
-  else if(n<=4) cols=2;
-  else if(n<=6) cols=3;
-  else cols=4;
+  else if(n<=4)  cols=2;
+  else if(n<=6)  cols=3;
+  else           cols=4;
 
   const rows=Math.ceil(n/cols);
+  grid.style.display='grid';
   grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
   grid.style.gridTemplateRows=`repeat(${rows},1fr)`;
 
   // Center lone tile in last row
-  const remainder=n%cols;
-  if(remainder===1 && cols>1){
-    const offset=Math.floor(cols/2)+1;
-    tiles[n-1].style.gridColumn=`${offset} / span 1`;
+  if(n%cols===1 && cols>1){
+    tiles[n-1].style.gridColumn=`${Math.ceil(cols/2)} / span 1`;
   }
 }
 function updateCount(){
@@ -1813,28 +1830,43 @@ function resetMeetingUI(){
   // 1. Cancel ALL pending remove-animation timers first
   Object.keys(_removeTimers).forEach(k=>{ clearTimeout(_removeTimers[k]); delete _removeTimers[k]; });
 
-  // 2. Force-synchronously remove every remote tile (no animation)
-  const grid=$('vgrid');
-  [...(grid?.querySelectorAll('.video-tile')||[])].forEach(t=>{
-    if(t.id!=='tile-local'){
-      // Stop video streams before removing
-      t.querySelectorAll('video').forEach(v=>{ v.srcObject=null; v.load(); });
+  // 2. Remove tiles from sidebar first (spotlight may have moved them there)
+  const sidebar=$('spotlight-sidebar');
+  if(sidebar){
+    [...sidebar.querySelectorAll('.video-tile')].forEach(t=>{
+      t.querySelectorAll('video').forEach(v=>{ try{v.srcObject=null;}catch(_){} });
       t.remove();
-    }
-  });
+    });
+  }
 
-  // 3. Remove all injected audio elements
+  // 3. Force-synchronously remove every remote tile from grid
+  const grid=$('vgrid');
+  if(grid){
+    [...grid.querySelectorAll('.video-tile')].forEach(t=>{
+      if(t.id!=='tile-local'){
+        t.querySelectorAll('video').forEach(v=>{ try{v.srcObject=null;}catch(_){} });
+        t.remove();
+      }
+    });
+    // Clear all inline grid styles
+    grid.style.display='';
+    grid.style.gridTemplateColumns='';
+    grid.style.gridTemplateRows='';
+    grid.classList.remove('layout-speaker','layout-spotlight');
+  }
+
+  // 4. Remove all injected audio elements
   document.querySelectorAll('audio[data-lk]').forEach(a=>a.remove());
 
-  // 4. Reset local tile to default state
+  // 5. Reset local tile to default state
   const lv=$('local-vid');
-  if(lv){ lv.srcObject=null; lv.load(); }
+  if(lv){ try{lv.srcObject=null;lv.load();}catch(_){} }
   $('local-camoff')?.classList.remove('hidden');
   $('local-hand')?.classList.remove('show');
   const lhl=$('local-hand-lbl'); if(lhl) lhl.textContent='';
   $('local-icons').innerHTML='';
 
-  // 5. Reset UI elements
+  // 6. Reset UI elements
   const pb=$('pending-bar'); if(pb){ pb.innerHTML=''; pb.classList.remove('show'); }
   $('share-banner')?.classList.remove('show');
   $('mute-warn')?.classList.remove('show');
@@ -1843,20 +1875,24 @@ function resetMeetingUI(){
   const ctrlBar=document.querySelector('.ctrl-bar');
   if(ctrlBar){ ctrlBar.style.opacity='1'; ctrlBar.style.pointerEvents='auto'; }
 
-  // 6. Reset layout/fullscreen/pin state
+  // 7. Reset layout/fullscreen/pin state
   if(_fullTile){ _fullTile.classList.remove('fullscreen'); _fullTile=null; }
   _pinnedId=null;
-  setLayout('auto');
+  _layout='auto'; // reset directly, don't call setLayout (avoids updateGrid with stale tiles)
+  document.querySelectorAll('.layout-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.layout==='auto');
+  });
 
-  // 7. Recalculate grid (should be just local tile now)
-  updateGrid();
-
-  // 8. Restore any speaker settings
-  $('cb-hand').className='cb';
-  $('cb-hand').querySelector('.cb-txt').textContent='舉手';
-  $('cb-mirror').className='cb';
+  // 8. Reset control buttons
+  const handBtn=$('cb-hand');
+  if(handBtn){ handBtn.className='cb'; handBtn.querySelector('.cb-txt').textContent='舉手'; }
+  const mirrorBtn=$('cb-mirror');
+  if(mirrorBtn){ mirrorBtn.className='cb'; }
   $('local-vid').style.transform=SET.mirror?'scaleX(-1)':'scaleX(1)';
   S.mirrored=SET.mirror;
+
+  // 9. Recalculate grid (only local tile should remain now)
+  updateGrid();
 }
 
 async function cleanup(endAll=false){
@@ -1903,6 +1939,8 @@ async function cleanup(endAll=false){
 
   // Cancel all pending remove timers
   Object.keys(_removeTimers).forEach(k=>{ clearTimeout(_removeTimers[k]); delete _removeTimers[k]; });
+  // Clear participant tile registry
+  _tiledParticipants.clear();
 
   // Reset state — set inMeeting=false FIRST so goMeeting guard clears
   S.inMeeting=false;
@@ -1990,50 +2028,69 @@ let _pinnedId=null;
 let _layout='auto'; // 'auto' | 'speaker' | 'spotlight'
 
 function setLayout(mode){
-  const prev=_layout;
   _layout=mode;
   const grid=$('vgrid');
   if(!grid) return;
 
-  // If leaving spotlight, return sidebar tiles to grid first
-  if(prev==='spotlight' && mode!=='spotlight'){
-    const sb=$('spotlight-sidebar');
-    if(sb){ [...sb.querySelectorAll('.video-tile')].forEach(t=>grid.appendChild(t)); }
-  }
+  // Always return sidebar tiles to grid before switching
+  // (updateGrid will move them again if needed)
+  const sb=$('spotlight-sidebar');
+  if(sb){ [...sb.querySelectorAll('.video-tile')].forEach(t=>grid.appendChild(t)); }
 
+  // Clear all inline grid styles — updateGrid sets them fresh
+  grid.style.gridTemplateColumns='';
+  grid.style.gridTemplateRows='';
+  grid.style.display='';
+  // Clear all tile inline placements
+  grid.querySelectorAll('.video-tile').forEach(t=>{
+    t.style.gridColumn=''; t.style.gridRow='';
+  });
+
+  // Apply CSS class (only spotlight uses CSS class; speaker/auto use inline)
   grid.classList.remove('layout-speaker','layout-spotlight');
-  if(mode!=='auto') grid.classList.add('layout-'+mode);
+  if(mode==='spotlight') grid.classList.add('layout-spotlight');
 
+  // Update layout bar button states
   document.querySelectorAll('.layout-btn').forEach(b=>{
     b.classList.toggle('active', b.dataset.layout===mode);
   });
+
+  // Update topbar layout button icon to reflect active mode
+  const icMap={
+    auto:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+    speaker: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="14" height="18"/><rect x="18" y="3" width="4" height="5"/><rect x="18" y="10" width="4" height="5"/></svg>',
+    spotlight:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="15" height="20"/><rect x="19" y="2" width="3" height="6"/><rect x="19" y="10" width="3" height="6"/></svg>',
+  };
+  const cbLayout=$('cb-layout');
+  if(cbLayout && icMap[mode]) cbLayout.innerHTML=icMap[mode];
+
   updateGrid();
-  SET.layout=mode; saveSettings();
 }
 
 function togglePin(identity){
-  const wasAlreadyPinned = _pinnedId===identity;
-  // Unpin previous
-  if(_pinnedId){
-    const prev=$(`tile-${CSS.escape(_pinnedId)}`);
-    if(prev){
-      prev.classList.remove('pinned');
-      const btn=prev.querySelector('.tile-pin-btn');
-      if(btn) btn.textContent='◈ 固定';
-    }
-    _pinnedId=null;
-  }
+  const wasAlreadyPinned=(_pinnedId===identity);
+
+  // Unpin all tiles visually first
+  document.querySelectorAll('.video-tile.pinned').forEach(t=>{
+    t.classList.remove('pinned');
+    const b=t.querySelector('.tile-pin-btn');
+    if(b){ b.textContent='◈ 固定'; }
+  });
+  _pinnedId=null;
+
   if(!wasAlreadyPinned){
-    const tile=$(`tile-${CSS.escape(identity)}`);
+    // Find tile in grid OR sidebar
+    const tile=$(`tile-${CSS.escape(identity)}`)||
+      $('spotlight-sidebar')?.querySelector(`#tile-${CSS.escape(identity)}`);
     if(tile){
       tile.classList.add('pinned');
-      const btn=tile.querySelector('.tile-pin-btn');
-      if(btn) btn.textContent='◈ 取消固定';
+      const b=tile.querySelector('.tile-pin-btn');
+      if(b){ b.textContent='◈ 取消固定'; }
       _pinnedId=identity;
     }
   }
   updateGrid();
-  notif(_pinnedId ? `◈ 已固定 ${_pinnedId}` : '已取消固定', 2000, 'info');
+  notif(_pinnedId?`◈ 已固定 ${_pinnedId}`:'已取消固定',2000,'info');
 }
 
 document.addEventListener('dblclick',e=>{
