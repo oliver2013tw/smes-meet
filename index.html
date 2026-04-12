@@ -1226,7 +1226,9 @@ async function goMeeting(){
 
   // 2. Create LiveKit room
   lkRoom = new Room({
-    adaptiveStream: true,
+    // adaptiveStream managed via MediaStream direct assignment — keep false
+    // to prevent LiveKit from controlling video element srcObject
+    adaptiveStream: false,
     dynacast:       true,
     audioCaptureDefaults:{ echoCancellation:true, noiseSuppression:true, autoGainControl:true },
     videoCaptureDefaults:{ resolution:{ width:1280, height:720, frameRate:24 } },
@@ -1248,8 +1250,22 @@ async function goMeeting(){
     .on(RoomEvent.ParticipantDisconnected, p => { removeTile(p.identity); playTone(440,.1,.04); })
     .on(RoomEvent.TrackSubscribed,  (track, pub, participant) => onTrackSubscribed(track, pub, participant))
     .on(RoomEvent.TrackUnsubscribed,(track, pub, participant) => onTrackUnsubscribed(track, pub, participant))
-    .on(RoomEvent.TrackMuted,       (pub, participant)        => updateTileIcons(participant))
-    .on(RoomEvent.TrackUnmuted,     (pub, participant)        => updateTileIcons(participant))
+    .on(RoomEvent.TrackMuted,       (pub, participant) => {
+      updateTileIcons(participant);
+      // Show avatar overlay when camera is muted
+      if(pub.source===Track.Source.Camera){
+        const tile=$(`tile-${CSS.escape(participant.identity)}`);
+        tile?.querySelector('.tile-camoff')?.classList.remove('hidden');
+      }
+    })
+    .on(RoomEvent.TrackUnmuted,     (pub, participant) => {
+      updateTileIcons(participant);
+      // Hide avatar overlay when camera unmutes
+      if(pub.source===Track.Source.Camera){
+        const tile=$(`tile-${CSS.escape(participant.identity)}`);
+        tile?.querySelector('.tile-camoff')?.classList.add('hidden');
+      }
+    })
     .on(RoomEvent.ActiveSpeakersChanged, onSpeakerChange)
     .on(RoomEvent.DataReceived,     onDataReceived)
     .on(RoomEvent.ParticipantMetadataChanged, onMetadataChanged);
@@ -1343,14 +1359,20 @@ function onTrackSubscribed(track,pub,participant){
   if(track.kind===Track.Kind.Video){
     if(pub.source===Track.Source.Camera || pub.source===Track.Source.ScreenShare){
       const vid=tile.querySelector('video');
-      if(vid){ track.attach(vid); vid.play().catch(()=>{}); }
+      if(vid && track.mediaStreamTrack){
+        // Use MediaStream directly — most reliable cross-browser approach
+        vid.srcObject=new MediaStream([track.mediaStreamTrack]);
+        vid.play().catch(e=>dbg('[VIDEO] play failed: '+e.message));
+      }
     }
     if(pub.source===Track.Source.Camera){
       tile.querySelector('.tile-camoff')?.classList.add('hidden');
     }
   }
   if(track.kind===Track.Kind.Audio){
+    // Remove any stale audio element for this participant
     document.querySelectorAll(`audio[data-lk="${CSS.escape(participant.identity)}"]`).forEach(a=>a.remove());
+    // Use track.attach() for audio — creates <audio> element with correct srcObject
     const el=track.attach();
     el.dataset.lk=participant.identity;
     el.style.cssText='position:absolute;width:0;height:0;pointer-events:none';
@@ -1360,10 +1382,18 @@ function onTrackSubscribed(track,pub,participant){
   dbg(`[LK] TrackSubscribed: ${participant.identity} src=${pub.source} kind=${track.kind}`);
 }
 function onTrackUnsubscribed(track,pub,participant){
+  // Detach from all attached elements
   track.detach();
   if(track.kind===Track.Kind.Video){
     const tile=$(`tile-${CSS.escape(participant.identity)}`);
-    if(tile) tile.querySelector('.tile-camoff')?.classList.remove('hidden');
+    if(tile){
+      const vid=tile.querySelector('video');
+      if(vid) vid.srcObject=null;
+      tile.querySelector('.tile-camoff')?.classList.remove('hidden');
+    }
+  }
+  if(track.kind===Track.Kind.Audio){
+    document.querySelectorAll(`audio[data-lk="${CSS.escape(participant.identity)}"]`).forEach(a=>a.remove());
   }
   updateTileIcons(participant);
 }
@@ -1458,13 +1488,20 @@ function addTile(participant){
 
   grid.appendChild(tile);
 
-  // Attach existing subscribed tracks
+  // Attach already-subscribed tracks (covers the case where we join a room that
+  // already has participants with active tracks, e.g. teacher rejoining)
   for(const pub of participant.trackPublications.values()){
-    if(!pub.isSubscribed || !pub.track) continue;
+    if(!pub.isSubscribed || !pub.track || !pub.track.mediaStreamTrack) continue;
     if(pub.source===Track.Source.Camera){
-      pub.track.attach(tile.querySelector('video'));
-      tile.querySelector('.tile-camoff')?.classList.add('hidden');
+      const vid=tile.querySelector('video');
+      if(vid){
+        vid.srcObject=new MediaStream([pub.track.mediaStreamTrack]);
+        vid.play().catch(()=>{});
+        tile.querySelector('.tile-camoff')?.classList.add('hidden');
+      }
     } else if(pub.source===Track.Source.Microphone){
+      // Remove any existing audio for this participant first
+      document.querySelectorAll(`audio[data-lk="${CSS.escape(id)}"]`).forEach(a=>a.remove());
       const el=pub.track.attach();
       el.dataset.lk=id;
       el.style.cssText='position:absolute;width:0;height:0;pointer-events:none';
