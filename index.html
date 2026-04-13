@@ -1252,7 +1252,12 @@ async function goMeeting(){
     .on(RoomEvent.Connected,        onRoomConnected)
     .on(RoomEvent.Disconnected,     onRoomDisconnected)
     .on(RoomEvent.ConnectionStateChanged, onConnStateChange)
-    .on(RoomEvent.ParticipantConnected,    p => { addTile(p); playTone(880,.1,.06); bumpUnread(); })
+    .on(RoomEvent.ParticipantConnected,    p => {
+      dbg('[LK] ParticipantConnected: '+p.identity+' tracks='+p.trackPublications.size);
+      addTile(p);
+      playTone(880,.1,.06);
+      bumpUnread();
+    })
     .on(RoomEvent.ParticipantDisconnected, p => { removeTile(p.identity); playTone(440,.1,.04); })
     .on(RoomEvent.TrackSubscribed,  (track, pub, participant) => onTrackSubscribed(track, pub, participant))
     .on(RoomEvent.TrackUnsubscribed,(track, pub, participant) => onTrackUnsubscribed(track, pub, participant))
@@ -1331,9 +1336,12 @@ async function goMeeting(){
 // ── LiveKit event handlers ────────────────────────────────────
 function onRoomConnected(){
   setSFUStatus('connected');
-  dbg('[LK] Connected. remote='+lkRoom.remoteParticipants.size);
-  // Add tiles for all participants already in room
-  lkRoom.remoteParticipants.forEach(p => { addTile(p); });
+  dbg('[LK] Connected. remote='+lkRoom.remoteParticipants.size+' localId='+lkRoom.localParticipant?.identity);
+  // Render participants already in the room
+  lkRoom.remoteParticipants.forEach(p => {
+    dbg('[LK] existing participant: '+p.identity+' tracks='+p.trackPublications.size);
+    addTile(p);
+  });
   updateCount();
 }
 function onRoomDisconnected(reason){
@@ -1355,75 +1363,103 @@ function setSFUStatus(state){
   if(!el)return;
   el.className='sfu-status'+( state==='connected'?' connected':state==='connecting'?' connecting':'');
 }
-// ── Central remote track attachment function ─────────────────
-// Called from both addTile (existing tracks) and onTrackSubscribed (new tracks)
+// ── Central remote track attachment ──────────────────────────
 function attachRemoteTrack(track, pub, identity, tile){
   if(!track || !tile) return;
-  const src = pub.source;
-  dbg(`[ATTACH] ${identity} src=${src} kind=${track.kind}`);
+  const source = pub.source;
+  dbg(`[ATTACH] ${identity} source=${source} kind=${track.kind}`);
 
-  if(track.kind===Track.Kind.Video){
-    if(src===Track.Source.Camera || src===Track.Source.ScreenShare){
-      const vid=tile.querySelector('video');
-      if(vid){
-        // Detach first (safe even if not attached)
-        try{ track.detach(vid); }catch(_){}
-        // Attach: LiveKit SDK sets srcObject on vid
-        track.attach(vid);
-        // Attempt play; on failure show click-to-play button
-        const playPromise = vid.play();
-        if(playPromise !== undefined){
-          playPromise.catch(e=>{
-            dbg('[VIDEO] autoplay blocked for '+identity+': '+e.message);
-            // Add click-to-play overlay if not already present
-            if(!tile.querySelector('.tile-play-btn')){
-              const btn=document.createElement('div');
-              btn.className='tile-play-btn show';
-              btn.textContent='▶';
-              btn.title='點擊播放';
-              btn.onclick=()=>{
-                vid.play().catch(()=>{});
-                btn.classList.remove('show');
-              };
-              tile.appendChild(btn);
-            }
+  // ── VIDEO ──
+  if(track.kind === Track.Kind.Video){
+    if(source === Track.Source.Camera || source === Track.Source.ScreenShare){
+      // Strategy: use track.attach() to get an element with srcObject already set,
+      // then set that srcObject on our existing video element.
+      // This is more reliable than track.attach(existingElement) in SDK v2.
+      try{
+        // Detach from existing video element if already attached
+        const oldVid = tile.querySelector('video');
+        if(oldVid) try{ track.detach(oldVid); }catch(_){}
+
+        // Let SDK create element → get the configured stream
+        const tmpEl = track.attach();
+        const stream = tmpEl.srcObject;
+        track.detach(tmpEl); // immediately detach temp element
+
+        const vid = tile.querySelector('video');
+        if(vid && stream){
+          vid.srcObject = stream;
+          vid.play().catch(e=>{
+            dbg('[VIDEO] play blocked: '+e.message);
+            addPlayBtn(tile, vid);
           });
+        } else if(vid){
+          // srcObject not ready on tmp — fall back to direct attach
+          track.attach(vid);
+          setTimeout(()=>{ vid.play().catch(e=>addPlayBtn(tile,vid)); }, 100);
         }
+      }catch(e){
+        dbg('[ATTACH] video error: '+e.message);
+        // Final fallback: direct attach
+        const vid = tile.querySelector('video');
+        if(vid){ track.attach(vid); vid.play().catch(()=>{}); }
       }
-    }
-    if(src===Track.Source.Camera){
-      tile.querySelector('.tile-camoff')?.classList.add('hidden');
+
+      if(source === Track.Source.Camera){
+        tile.querySelector('.tile-camoff')?.classList.add('hidden');
+      }
     }
   }
 
-  if(track.kind===Track.Kind.Audio){
-    // Remove stale audio elements
+  // ── AUDIO ──
+  if(track.kind === Track.Kind.Audio){
+    // Remove any existing audio elements for this participant
     document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>{
       try{ track.detach(a); }catch(_){}
       a.remove();
     });
-    // Create new audio element via track.attach()
+    // track.attach() creates a new <audio> with srcObject already set
     const el = track.attach();
     el.dataset.lk = identity;
-    el.style.cssText='position:absolute;width:0;height:0;pointer-events:none;opacity:0';
+    el.style.cssText = 'position:absolute;width:0;height:0;pointer-events:none';
     document.body.appendChild(el);
-    el.play().catch(()=>{});
+    // Audio play must be triggered (autoplay policy)
+    el.play().catch(()=>{
+      // Will play on next user interaction (browser policy)
+      document.addEventListener('click', ()=>el.play().catch(()=>{}), {once:true});
+    });
   }
 }
 
-function onTrackSubscribed(track,pub,participant){
-  dbg(`[LK] TrackSubscribed: ${participant.identity} src=${pub.source} kind=${track.kind}`);
+function addPlayBtn(tile, vid){
+  if(tile.querySelector('.tile-play-btn')) return;
+  const btn = document.createElement('div');
+  btn.className = 'tile-play-btn show';
+  btn.innerHTML = '▶';
+  btn.title = '點擊播放';
+  btn.onclick = ()=>{ vid.play().catch(()=>{}); btn.remove(); };
+  tile.appendChild(btn);
+}
 
-  // Ensure tile exists
-  let tile=$(`tile-${CSS.escape(participant.identity)}`);
+function onTrackSubscribed(track, pub, participant){
+  const id = participant.identity;
+  const src = pub.source;
+  dbg(`[LK] TrackSubscribed: ${id} src=${src} kind=${track.kind} muted=${pub.isMuted} enabled=${track.isEnabled}`);
+
+  // Ensure tile exists (create if missing)
+  let tile = $(`tile-${CSS.escape(id)}`);
   if(!tile){
-    dbg(`[WARN] tile missing for ${participant.identity}, creating`);
+    dbg(`[WARN] tile missing for ${id}, creating now`);
     addTile(participant);
-    tile=$(`tile-${CSS.escape(participant.identity)}`);
-    if(!tile){ dbg('[ERR] addTile failed'); return; }
+    tile = $(`tile-${CSS.escape(id)}`);
+    if(!tile){ dbg('[ERR] tile creation failed for '+id); return; }
   }
 
-  attachRemoteTrack(track, pub, participant.identity, tile);
+  // Only attach non-muted tracks (muted tracks have no stream)
+  if(track.kind === Track.Kind.Video){
+    dbg(`[LK] Video track muted=${pub.isMuted} enabled=${track.isEnabled} for ${id}`);
+  }
+
+  attachRemoteTrack(track, pub, id, tile);
   updateTileIcons(participant);
 }
 function onTrackUnsubscribed(track,pub,participant){
@@ -1539,8 +1575,15 @@ function addTile(participant){
 
   // Attach already-subscribed tracks for participants already in room
   for(const pub of participant.trackPublications.values()){
-    if(!pub.isSubscribed || !pub.track) continue;
-    attachRemoteTrack(pub.track, pub, participant.identity, tile);
+    dbg(`[addTile] pub source=${pub.source} subscribed=${pub.isSubscribed} track=${!!pub.track}`);
+    if(pub.isSubscribed && pub.track){
+      attachRemoteTrack(pub.track, pub, participant.identity, tile);
+    }
+    // Explicitly subscribe if not yet subscribed (ensures tracks arrive)
+    else if(!pub.isSubscribed && typeof pub.setSubscribed === 'function'){
+      dbg(`[addTile] explicitly subscribing ${pub.source} for ${id}`);
+      pub.setSubscribed(true).catch(e=>dbg('[SUB] '+e.message));
+    }
   }
 
   updateTileIcons(participant);
