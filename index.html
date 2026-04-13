@@ -368,6 +368,12 @@ button{cursor:pointer}
   display:inline-block;
 }
 .tile-quality{position:absolute;top:7px;right:7px;display:flex;gap:2px;align-items:flex-end;height:11px;z-index:2}
+.tile-play-btn{
+  position:absolute;inset:0;display:none;
+  align-items:center;justify-content:center;
+  background:rgba(0,0,0,.5);cursor:pointer;z-index:10;font-size:32px;
+}
+.tile-play-btn.show{display:flex}
 .tile-quality span{width:3px;background:var(--b2)}
 .tile-quality span:nth-child(1){height:4px}
 .tile-quality span:nth-child(2){height:7px}
@@ -1268,7 +1274,11 @@ async function goMeeting(){
     })
     .on(RoomEvent.ActiveSpeakersChanged, onSpeakerChange)
     .on(RoomEvent.DataReceived,     onDataReceived)
-    .on(RoomEvent.ParticipantMetadataChanged, onMetadataChanged);
+    .on(RoomEvent.ParticipantMetadataChanged, onMetadataChanged)
+    .on(RoomEvent.LocalTrackPublished, (pub, participant) => {
+      dbg('[LK] LocalTrackPublished: '+pub.source);
+      if(pub.source===Track.Source.Camera) attachLocalVideo();
+    });
 
   // 4. Connect
   setSFUStatus('connecting');
@@ -1345,51 +1355,90 @@ function setSFUStatus(state){
   if(!el)return;
   el.className='sfu-status'+( state==='connected'?' connected':state==='connecting'?' connecting':'');
 }
-function onTrackSubscribed(track,pub,participant){
-  // Tile should already exist (created by ParticipantConnected or onRoomConnected).
-  // If not found, create it now as last-resort fallback.
-  let tile=$(`tile-${CSS.escape(participant.identity)}`);
-  if(!tile){
-    dbg(`[WARN] TrackSubscribed: tile missing for ${participant.identity}, creating now`);
-    addTile(participant);
-    tile=$(`tile-${CSS.escape(participant.identity)}`);
-    if(!tile) return;
-  }
+// ── Central remote track attachment function ─────────────────
+// Called from both addTile (existing tracks) and onTrackSubscribed (new tracks)
+function attachRemoteTrack(track, pub, identity, tile){
+  if(!track || !tile) return;
+  const src = pub.source;
+  dbg(`[ATTACH] ${identity} src=${src} kind=${track.kind}`);
 
   if(track.kind===Track.Kind.Video){
-    if(pub.source===Track.Source.Camera || pub.source===Track.Source.ScreenShare){
+    if(src===Track.Source.Camera || src===Track.Source.ScreenShare){
       const vid=tile.querySelector('video');
-      if(vid && track.mediaStreamTrack){
-        // Use MediaStream directly — most reliable cross-browser approach
-        vid.srcObject=new MediaStream([track.mediaStreamTrack]);
-        vid.play().catch(e=>dbg('[VIDEO] play failed: '+e.message));
+      if(vid){
+        // Detach first (safe even if not attached)
+        try{ track.detach(vid); }catch(_){}
+        // Attach: LiveKit SDK sets srcObject on vid
+        track.attach(vid);
+        // Attempt play; on failure show click-to-play button
+        const playPromise = vid.play();
+        if(playPromise !== undefined){
+          playPromise.catch(e=>{
+            dbg('[VIDEO] autoplay blocked for '+identity+': '+e.message);
+            // Add click-to-play overlay if not already present
+            if(!tile.querySelector('.tile-play-btn')){
+              const btn=document.createElement('div');
+              btn.className='tile-play-btn show';
+              btn.textContent='▶';
+              btn.title='點擊播放';
+              btn.onclick=()=>{
+                vid.play().catch(()=>{});
+                btn.classList.remove('show');
+              };
+              tile.appendChild(btn);
+            }
+          });
+        }
       }
     }
-    if(pub.source===Track.Source.Camera){
+    if(src===Track.Source.Camera){
       tile.querySelector('.tile-camoff')?.classList.add('hidden');
     }
   }
+
   if(track.kind===Track.Kind.Audio){
-    // Remove any stale audio element for this participant
-    document.querySelectorAll(`audio[data-lk="${CSS.escape(participant.identity)}"]`).forEach(a=>a.remove());
-    // Use track.attach() for audio — creates <audio> element with correct srcObject
-    const el=track.attach();
-    el.dataset.lk=participant.identity;
-    el.style.cssText='position:absolute;width:0;height:0;pointer-events:none';
+    // Remove stale audio elements
+    document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>{
+      try{ track.detach(a); }catch(_){}
+      a.remove();
+    });
+    // Create new audio element via track.attach()
+    const el = track.attach();
+    el.dataset.lk = identity;
+    el.style.cssText='position:absolute;width:0;height:0;pointer-events:none;opacity:0';
     document.body.appendChild(el);
+    el.play().catch(()=>{});
   }
-  updateTileIcons(participant);
+}
+
+function onTrackSubscribed(track,pub,participant){
   dbg(`[LK] TrackSubscribed: ${participant.identity} src=${pub.source} kind=${track.kind}`);
+
+  // Ensure tile exists
+  let tile=$(`tile-${CSS.escape(participant.identity)}`);
+  if(!tile){
+    dbg(`[WARN] tile missing for ${participant.identity}, creating`);
+    addTile(participant);
+    tile=$(`tile-${CSS.escape(participant.identity)}`);
+    if(!tile){ dbg('[ERR] addTile failed'); return; }
+  }
+
+  attachRemoteTrack(track, pub, participant.identity, tile);
+  updateTileIcons(participant);
 }
 function onTrackUnsubscribed(track,pub,participant){
-  // Detach from all attached elements
+  dbg(`[LK] TrackUnsubscribed: ${participant.identity} src=${pub.source}`);
+  // Detach from ALL elements this track was attached to
   track.detach();
   if(track.kind===Track.Kind.Video){
     const tile=$(`tile-${CSS.escape(participant.identity)}`);
     if(tile){
       const vid=tile.querySelector('video');
-      if(vid) vid.srcObject=null;
-      tile.querySelector('.tile-camoff')?.classList.remove('hidden');
+      if(vid){ vid.srcObject=null; }
+      // Show avatar if it was camera (not screen share)
+      if(pub.source===Track.Source.Camera){
+        tile.querySelector('.tile-camoff')?.classList.remove('hidden');
+      }
     }
   }
   if(track.kind===Track.Kind.Audio){
@@ -1433,14 +1482,14 @@ function onDataReceived(payload, participant){
 
 // ── Attach local video ────────────────────────────────────────
 function attachLocalVideo(){
-  if(S.sharing) return; // don't override screen share preview
+  if(S.sharing) return;
   const camPub = lkRoom?.localParticipant?.getTrackPublication(Track.Source.Camera);
   const vid = $('local-vid');
   if(!vid) return;
   if(camPub?.track?.mediaStreamTrack){
-    // Build a proper MediaStream — track.attach() sometimes fails on local video
     vid.srcObject = new MediaStream([camPub.track.mediaStreamTrack]);
     vid.play().catch(()=>{});
+    dbg('[LOCAL] camera attached');
   } else {
     vid.srcObject = null;
   }
@@ -1465,7 +1514,7 @@ function addTile(participant){
   const tile=document.createElement('div');
   tile.className='video-tile'; tile.id=`tile-${id}`;
   tile.innerHTML=`
-    <video autoplay playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:var(--bg1)"></video>
+    <video autoplay playsinline webkit-playsinline x5-playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:var(--bg1)"></video>
     <div class="tile-camoff">
       <div class="tile-avatar">${esc(initials(id))}</div>
       <div class="tile-avatar-name">${esc(id)}</div>
@@ -1488,25 +1537,10 @@ function addTile(participant){
 
   grid.appendChild(tile);
 
-  // Attach already-subscribed tracks (covers the case where we join a room that
-  // already has participants with active tracks, e.g. teacher rejoining)
+  // Attach already-subscribed tracks for participants already in room
   for(const pub of participant.trackPublications.values()){
-    if(!pub.isSubscribed || !pub.track || !pub.track.mediaStreamTrack) continue;
-    if(pub.source===Track.Source.Camera){
-      const vid=tile.querySelector('video');
-      if(vid){
-        vid.srcObject=new MediaStream([pub.track.mediaStreamTrack]);
-        vid.play().catch(()=>{});
-        tile.querySelector('.tile-camoff')?.classList.add('hidden');
-      }
-    } else if(pub.source===Track.Source.Microphone){
-      // Remove any existing audio for this participant first
-      document.querySelectorAll(`audio[data-lk="${CSS.escape(id)}"]`).forEach(a=>a.remove());
-      const el=pub.track.attach();
-      el.dataset.lk=id;
-      el.style.cssText='position:absolute;width:0;height:0;pointer-events:none';
-      document.body.appendChild(el);
-    }
+    if(!pub.isSubscribed || !pub.track) continue;
+    attachRemoteTrack(pub.track, pub, participant.identity, tile);
   }
 
   updateTileIcons(participant);
@@ -1754,16 +1788,7 @@ async function toggleShare(){
     S.sharing = false;
     $('share-banner').classList.remove('show');
     $('tile-local').classList.remove('is-sharing');
-    // Restore camera preview properly
-    const camPub = lkRoom?.localParticipant?.getTrackPublication(Track.Source.Camera);
-    const vid = $('local-vid');
-    if(camPub?.track?.mediaStreamTrack){
-      vid.srcObject = new MediaStream([camPub.track.mediaStreamTrack]);
-      vid.play().catch(()=>{});
-    } else {
-      vid.srcObject = null;
-    }
-    updateCamOff();
+    attachLocalVideo();
     updateCtrl();
     return;
   }
@@ -1780,14 +1805,14 @@ async function toggleShare(){
     $('share-banner').classList.add('show');
     $('tile-local').classList.add('is-sharing');
 
-    // Local preview: build a MediaStream from the raw mediaStreamTrack
+    // Local preview for screen share
     const videoTrack = tracks.find(t => t.kind === Track.Kind.Video);
     if(videoTrack?.mediaStreamTrack){
+      const vid = $('local-vid');
+      // Build MediaStream for preview (local, so no echo concerns)
       const ms = new MediaStream([videoTrack.mediaStreamTrack]);
-      // Also add audio if present
       const audioTrack = tracks.find(t => t.kind === Track.Kind.Audio);
       if(audioTrack?.mediaStreamTrack) ms.addTrack(audioTrack.mediaStreamTrack);
-      const vid = $('local-vid');
       vid.srcObject = ms;
       vid.play().catch(()=>{});
     }
