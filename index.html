@@ -1675,7 +1675,7 @@ async function goMeeting() {
       body: JSON.stringify({ roomName: S.roomCode, username: S.profile.full_name, email: S.profile.email, role: S.profile.role }),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const    const data = await r.json();
+    const data = await r.json();
     dbg('[TOKEN] 回應: ' + JSON.stringify(data));
     if (!data.token) throw new Error('無 Token');
     token = data.token;
@@ -1690,11 +1690,34 @@ async function goMeeting() {
   const res = resMap[SET.quality] || resMap.medium;
 
   lkRoom = new Room({
-    adaptiveStream: false, dynacast: true, stopLocalTrackOnUnpublish: true,
+    adaptiveStream: false,
+    dynacast: true,
+    stopLocalTrackOnUnpublish: true,
     audioCaptureDefaults: { echoCancellation: SET.echo, noiseSuppression: SET.noise, autoGainControl: SET.agc },
     videoCaptureDefaults: { resolution: { width: res.width, height: res.height, frameRate: res.frameRate } },
-    publishDefaults: { simulcast: true, videoSimulcastLayers: [ { width: 640, height: 360, encoding: { maxBitrate: 350_000, maxFramerate: 15 } }, { width: 1280, height: 720, encoding: { maxBitrate: 1_200_000, maxFramerate: 24 } } ] },
-  });
+    publishDefaults: {
+      simulcast: true,
+      videoSimulcastLayers: [
+        { width: 640, height: 360, encoding: { maxBitrate: 350_000, maxFramerate: 15 } },
+        { width: 1280, height: 720, encoding: { maxBitrate: 1_200_000, maxFramerate: 24 } }
+      ]
+    },
+  });  // ← 注意這裡是 }); 結尾
+
+lkRoom = new Room({
+  adaptiveStream: false,
+  dynacast: true,
+  stopLocalTrackOnUnpublish: true,
+  audioCaptureDefaults: { echoCancellation: SET.echo, noiseSuppression: SET.noise, autoGainControl: SET.agc },
+  videoCaptureDefaults: { resolution: { width: res.width, height: res.height, frameRate: res.frameRate } },
+  publishDefaults: { 
+    simulcast: true, 
+    videoSimulcastLayers: [ 
+      { width: 640, height: 360, encoding: { maxBitrate: 350_000, maxFramerate: 15 } }, 
+      { width: 1280, height: 720, encoding: { maxBitrate: 1_200_000, maxFramerate: 24 } } 
+    ] 
+  },
+});
 
   lkRoom
     .on(RoomEvent.Connected, () => {
