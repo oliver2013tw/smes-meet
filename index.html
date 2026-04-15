@@ -1675,10 +1675,11 @@ async function goMeeting() {
       body: JSON.stringify({ roomName: S.roomCode, username: S.profile.full_name, email: S.profile.email, role: S.profile.role }),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = await r.json();
+    const    const data = await r.json();
+    dbg('[TOKEN] 回應: ' + JSON.stringify(data));
     if (!data.token) throw new Error('無 Token');
     token = data.token;
-    dbg('[TOKEN] 成功');
+    dbg('[TOKEN] 成功, token 長度: ' + token.length);
   } catch (e) {
     dbg('[TOKEN] 失敗: ' + e.message);
     notif('無法取得會議憑證：' + e.message, 10000, 'error');
@@ -1729,9 +1730,14 @@ async function goMeeting() {
     .on(RoomEvent.LocalTrackPublished, pub => { if (pub.source === Track.Source.Camera) attachLocalVideo(); });
 
   setSFUStatus('connecting');
+  dbg('[LK] 嘗試連線到: ' + LIVEKIT_URL);
+  dbg('[LK] 房間名稱: ' + S.roomCode);
+  dbg('[LK] 使用者身份: ' + S.profile.full_name);
   try {
     await lkRoom.connect(LIVEKIT_URL, token);
+    dbg('[LK] connect() 成功返回');
   } catch (e) {
+    dbg('[LK] connect() 失敗: ' + e.message);
     notif('連線失敗：' + e.message, 8000, 'error');
     lkRoom = null; S.inMeeting = false; showScreen('lobby'); return;
   }
