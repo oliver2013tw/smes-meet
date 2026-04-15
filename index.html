@@ -1704,7 +1704,7 @@ async function goMeeting() {
       notif('已連線至會議', 3000, 'success');
     })
     .on(RoomEvent.Disconnected, reason => {
-      dbg('[LK] Disconnected: ' + reason);
+      dbg('[LK] Disconnected: ' + (reason || 'unknown'));
       setSFUStatus('disconnected');
       if (S.inMeeting && reason !== DisconnectReason.CLIENT_INITIATED) {
         notif('與伺服器中斷連線，請重新加入', 8000, 'error');
@@ -1958,9 +1958,16 @@ function attachLocalVideo() {
 function setSFUStatus(state) {
   const el = $('sfu-status');
   if (!el) return;
-  el.className = 'sfu-status' + (state ? ' ' + state : '');
+  // 確保 state 有值，若無則設為空字串
+  const validState = state || '';
+  el.className = 'sfu-status' + (validState ? ' ' + validState : '');
   const dot = el.querySelector('.sfu-dot');
-  if (dot) dot.style.background = state === 'connected' ? 'var(--green)' : state === 'connecting' ? 'var(--amber)' : state === 'disconnected' ? 'var(--red)' : 'var(--t3)';
+  if (dot) {
+    if (validState === 'connected') dot.style.background = 'var(--green)';
+    else if (validState === 'connecting') dot.style.background = 'var(--amber)';
+    else if (validState === 'disconnected') dot.style.background = 'var(--red)';
+    else dot.style.background = 'var(--t3)';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
