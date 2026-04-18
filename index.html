@@ -33,7 +33,18 @@ html,body{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;
   background:var(--bg);color:var(--t);font-family:var(--font);font-size:13px;
   -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;}
 /* border-radius 保留各元素自訂設定 */
-button{cursor:pointer;font-family:var(--font);font-size:inherit}
+
+/* ═══ BUTTON BASE IMPROVEMENTS ═══ */
+button{cursor:pointer;font-family:var(--font);font-size:inherit;-webkit-tap-highlight-color:transparent}
+/* Panel close/back button */
+.panel-close{display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--b);
+  color:var(--t3);padding:5px 12px;font-size:10px;letter-spacing:.5px;
+  transition:all var(--tf);flex-shrink:0}
+.panel-close:hover{background:var(--bg2);border-color:var(--b2);color:var(--t)}
+.panel-back{display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--b);
+  color:var(--t3);padding:5px 12px;font-size:10px;letter-spacing:.5px;
+  transition:all var(--tf);flex-shrink:0}
+.panel-back:hover{background:var(--bg2);border-color:var(--b2);color:var(--t)}
 input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outline:none;background:none}
 ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--b3)}::-webkit-scrollbar-track{background:transparent}
 
@@ -298,15 +309,19 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 .ctrl-section.center{flex:1;justify-content:center}
 .ctrl-section.right{margin-left:auto}
 .cb{display:flex;align-items:center;gap:5px;border:1px solid var(--b);background:rgba(18,18,18,.9);
-  color:var(--t2);padding:7px 11px;font-size:11px;letter-spacing:.2px;font-family:var(--font);
-  white-space:nowrap;flex-shrink:0;transition:all var(--tf);position:relative}
-.cb:hover{background:rgba(32,32,32,.95);border-color:var(--b2);color:var(--t)}
-.cb:active{transform:scale(.96)}
-.cb.off{background:var(--red-g);border-color:rgba(239,68,68,.35);color:var(--red)}
-.cb.on{background:var(--green-g);border-color:rgba(34,197,94,.35);color:var(--green)}
-.cb.amber{background:var(--amber-g);border-color:rgba(245,158,11,.35);color:var(--amber)}
+  color:var(--t2);padding:7px 12px;font-size:11px;letter-spacing:.2px;font-family:var(--font);
+  white-space:nowrap;flex-shrink:0;transition:all var(--tf);position:relative;
+  border-radius:3px}
+.cb:hover{background:rgba(36,36,36,.98);border-color:var(--b3);color:var(--t);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.cb:active{transform:scale(.96) translateY(0)}
+.cb.off{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:var(--red)}
+.cb.off:hover{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.6)}
+.cb.on{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:var(--green)}
+.cb.on:hover{background:rgba(34,197,94,.18)}
+.cb.amber{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:var(--amber)}
 .cb.blue{background:var(--blue-g);border-color:var(--blue-b);color:var(--blue-l)}
-.cb.danger{background:var(--red-g);border-color:rgba(239,68,68,.4);color:var(--red)}.cb.danger:hover{background:rgba(239,68,68,.15)}
+.cb.danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35);color:var(--red)}
+.cb.danger:hover{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.6);transform:translateY(-1px)}
 .cb svg{flex-shrink:0}
 .cb-txt{font-size:10px}
 .cb-badge{position:absolute;top:3px;right:3px;width:5px;height:5px;background:var(--red)}
@@ -613,6 +628,7 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
         <button class="sidebar-tab" data-tab="chat">
           聊天 <span class="sidebar-tab-badge" id="chat-count" style="display:none">0</span>
         </button>
+        <button class="sidebar-tab sidebar-close-btn" id="sidebar-close" title="關閉側欄" style="flex:0;padding:10px 12px;font-size:14px;color:var(--t3)">✕</button>
       </div>
 
       <!-- Members tab -->
@@ -702,12 +718,14 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 
 <!-- TIMER OVERLAY -->
 <div class="timer-overlay" id="timer-overlay">
-  <div class="timer-display" id="timer-display">00:00</div>
+  <span style="font-size:9px;color:var(--t3);letter-spacing:1px">⏱</span>
+  <div class="timer-display" id="timer-display">05:00</div>
   <div class="timer-controls">
-    <button class="timer-ctrl" id="timer-start">▶</button>
-    <button class="timer-ctrl" id="timer-pause">⏸</button>
-    <button class="timer-ctrl" id="timer-reset">↺</button>
-    <button class="timer-ctrl" id="timer-close">✕</button>
+    <button class="timer-ctrl" id="timer-start" title="開始">▶ 開始</button>
+    <button class="timer-ctrl" id="timer-pause" title="暫停">⏸ 暫停</button>
+    <button class="timer-ctrl" id="timer-reset" title="重設">↺ 重設</button>
+    <button class="timer-ctrl" id="timer-set" title="設定時間">⚙ 設定</button>
+    <button class="timer-ctrl" id="timer-close" title="關閉計時器" style="border-color:rgba(239,68,68,.3);color:var(--red)">✕</button>
   </div>
 </div>
 
@@ -727,6 +745,7 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 <div class="wb-panel" id="wb-panel">
   <div class="wb-card">
     <div class="wb-header">
+      <button class="panel-back" id="wb-close">← 返回會議</button>
       <span class="wb-title">// 互動白板</span>
       <div class="wb-tools">
         <button class="wb-tool active" data-tool="pen" id="wbt-pen">✏️ 畫筆</button>
@@ -740,7 +759,6 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
         <button class="wb-tool" id="wb-clear">清除</button>
         <button class="wb-tool" id="wb-dl">下載</button>
       </div>
-      <button class="wb-close" id="wb-close">✕</button>
     </div>
     <canvas class="wb-canvas" id="wb-canvas"></canvas>
   </div>
@@ -750,12 +768,12 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 <div class="collab-panel" id="collab-panel">
   <div class="collab-card">
     <div class="collab-header">
+      <button class="panel-back" id="collab-close">← 返回會議</button>
       <span class="collab-title">// 即時協作文字區</span>
       <div class="collab-actions">
         <button class="collab-act" id="collab-copy">複製</button>
         <button class="collab-act" id="collab-dl">下載</button>
       </div>
-      <button class="collab-close" id="collab-close">✕</button>
     </div>
     <textarea class="collab-textarea" id="collab-text" placeholder="在此輸入協作筆記...&#10;&#10;所有參與者均可看到此內容（透過 LiveKit 資料通道同步）"></textarea>
   </div>
@@ -776,7 +794,7 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
   <div class="settings-card">
     <div class="settings-hdr">
       <span class="settings-title">// 會議設定</span>
-      <button class="settings-close" id="settings-close">✕</button>
+      <button class="panel-close" id="settings-close">✕ 關閉</button>
     </div>
 
     <div class="settings-sec">
@@ -1203,10 +1221,17 @@ async function goMeeting(){
   if(S.inMeeting) return;
   S.inMeeting=true;
 
-  // Clear all stale tiles and audio
+  // Fully clear all stale tiles, audio, and state from any previous session
   nukeTiles();
+  // Also reset local tile appearance
+  const lv=$('local-vid'); if(lv){ try{lv.srcObject=null;}catch(_){} }
+  $('local-camoff')?.classList.remove('hidden');
+  $('local-hand')?.classList.remove('show');
+  const _lhl=$('local-hand-lbl'); if(_lhl) _lhl.textContent='';
+  $('local-icons').innerHTML='';
+  for(const k of Object.keys(HR)) delete HR[k];
 
-  // Reset state
+  // Reset layout state
   LAYOUT='auto'; PINNED=null; FULLTILE=null;
   document.querySelectorAll('.layout-opt').forEach(o=>o.classList.toggle('active',o.dataset.layout==='auto'));
   $('layout-label').textContent='自動';
@@ -1331,8 +1356,10 @@ async function goMeeting(){
 function onLKConnected(){
   setSFU('connected');
   dbg('[LK] onConnected remote='+lkRoom.remoteParticipants.size);
-  // Render participants already in room when we joined
-  lkRoom.remoteParticipants.forEach(p => makeTile(p));
+  // Render participants already in room when we joined (skip local participant)
+  lkRoom.remoteParticipants.forEach(p => {
+    if(p.identity !== lkRoom.localParticipant?.identity) makeTile(p);
+  });
   updateCount();
   renderMemberList();
 }
@@ -1355,6 +1382,7 @@ function onLKStateChanged(state){
 }
 
 function onParticipantIn(p){
+  if(p.identity === lkRoom?.localParticipant?.identity) return; // never create tile for self
   dbg('[PC] '+p.identity+' tracks='+p.trackPublications.size);
   makeTile(p);
   playTone(880,.1,.06);
@@ -1374,6 +1402,8 @@ function onParticipantOut(p){
 // ── THE CORE: TrackSubscribed — 這是影片顯示的唯一入口 ──────────
 function onTrackSub(track, pub, participant){
   const id = participant.identity;
+  // Local participant tracks are handled via attachLocalVid(), not here
+  if(id === lkRoom?.localParticipant?.identity) return;
   dbg(`[TS] ${id} src=${pub.source} kind=${track.kind} mst=${!!track.mediaStreamTrack} state=${track.mediaStreamTrack?.readyState}`);
 
   // 確保格子存在
@@ -1536,13 +1566,30 @@ const getTile = id => $(`tile-${CSS.escape(id)}`);
 function makeTile(participant){
   const id=participant.identity;
 
-  // 取消移除計時器
+  // Cancel any pending removal timer for this participant
   if(RMT[id]){ clearTimeout(RMT[id]); delete RMT[id]; }
 
-  // 格子已存在且不是 .removing → 直接返回
+  // If tile already exists and is NOT in removing state → reuse it
   const ex=getTile(id);
-  if(ex && !ex.classList.contains('removing')){ dbg('[TILE] exists: '+id); return ex; }
-  if(ex) ex.remove(); // 清除 .removing 狀態的舊格子
+  if(ex){
+    if(!ex.classList.contains('removing')){
+      dbg('[TILE] reuse existing: '+id);
+      // Still attach any tracks that may have arrived
+      for(const pub of participant.trackPublications.values()){
+        if(!pub.isSubscribed||!pub.track) continue;
+        if(pub.kind===Track.Kind.Video && (pub.source===Track.Source.Camera||pub.source===Track.Source.ScreenShare)){
+          wireVideo(pub.track, ex, id);
+          if(pub.source===Track.Source.Camera) setCamOff(ex,false);
+        }
+        if(pub.kind===Track.Kind.Audio) wireAudio(pub.track,id);
+      }
+      updateTileIcons(participant);
+      return ex;
+    }
+    // Tile is in removing animation — cancel animation and remove immediately
+    ex.style.animation='none';
+    ex.remove();
+  }
 
   const grid=$('vgrid'); if(!grid) return null;
 
@@ -1592,29 +1639,48 @@ function makeTile(participant){
 }
 
 function killTile(identity){
-  document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>a.remove());
-  delete HR[identity]; if(PINNED===identity) PINNED=null;
+  // Remove audio elements for this participant
+  document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>{
+    try{a.srcObject=null;}catch(_){} a.remove();
+  });
+  delete HR[identity];
+  if(PINNED===identity) PINNED=null;
+  if(FULLTILE===getTile(identity)){ FULLTILE.classList.remove('fullscreen'); FULLTILE=null; }
 
   const tile=getTile(identity);
   if(!tile){ renderGrid(); updateCount(); return; }
 
-  tile.querySelectorAll('.tile-video').forEach(v=>{ try{v.srcObject=null;}catch(_){} });
+  // Clear video immediately to release resources
+  tile.querySelectorAll('.tile-video').forEach(v=>{ try{v.srcObject=null; v.load();}catch(_){} });
+
+  // Cancel any existing removal timer
+  if(RMT[identity]){ clearTimeout(RMT[identity]); delete RMT[identity]; }
+
   tile.classList.add('removing');
   updateCount();
   RMT[identity]=setTimeout(()=>{
     delete RMT[identity];
     const t=getTile(identity);
-    if(t&&t.classList.contains('removing')){ t.remove(); renderGrid(); }
-  },280);
+    if(t){ t.style.animation='none'; t.remove(); renderGrid(); }
+  },260);
 }
 
 function nukeTiles(){
+  // Cancel all pending removal timers
   Object.keys(RMT).forEach(k=>{ clearTimeout(RMT[k]); delete RMT[k]; });
   const grid=$('vgrid');
-  if(grid) [...grid.querySelectorAll('.video-tile')].forEach(t=>{
-    if(t.id!=='tile-local'){ t.querySelectorAll('.tile-video').forEach(v=>{ try{v.srcObject=null;}catch(_){} }); t.remove(); }
-  });
-  document.querySelectorAll('audio[data-lk]').forEach(a=>a.remove());
+  if(grid){
+    [...grid.querySelectorAll('.video-tile')].forEach(t=>{
+      // Clear all video srcObjects to release tracks
+      t.querySelectorAll('.tile-video').forEach(v=>{ try{v.srcObject=null; v.load();}catch(_){} });
+      // Remove all remote tiles; keep #tile-local in DOM but clear its state
+      if(t.id!=='tile-local') t.remove();
+    });
+  }
+  // Remove all remote audio elements
+  document.querySelectorAll('audio[data-lk]').forEach(a=>{ try{a.srcObject=null;}catch(_){} a.remove(); });
+  // Clear hand-raise state
+  for(const k of Object.keys(HR)) delete HR[k];
 }
 
 function setCamOff(tile, show){
@@ -1823,8 +1889,15 @@ function toggleSidebar(tab){
   const isOpen=sb.classList.contains('show');
   const curTab=activeSidebarTab();
 
-  if(isOpen&&curTab===tab){ sb.classList.remove('show'); return; }
+  if(isOpen&&curTab===tab){
+    sb.classList.remove('show');
+    $('btn-members').classList.remove('active');
+    $('btn-chat').classList.remove('active');
+    return;
+  }
   sb.classList.add('show');
+  $('btn-members').classList.toggle('active', tab==='members');
+  $('btn-chat').classList.toggle('active', tab==='chat');
   switchSidebarTab(tab);
 }
 
@@ -1842,6 +1915,7 @@ function switchSidebarTab(tab){
 
 $('btn-members').onclick=()=>toggleSidebar('members');
 $('btn-chat').onclick=()=>toggleSidebar('chat');
+$('sidebar-close').onclick=()=>{ $('sidebar').classList.remove('show'); $('btn-members').classList.remove('active'); $('btn-chat').classList.remove('active'); };
 document.querySelectorAll('.sidebar-tab').forEach(t=>t.addEventListener('click',()=>switchSidebarTab(t.dataset.tab)));
 
 // ═══════════════════════════════════════════════════════════════
@@ -1879,8 +1953,9 @@ function spawnEmoji(emoji){
 // ═══════════════════════════════════════════════════════════════
 let WB={ctx:null,tool:'pen',color:'#2563eb',size:3,drawing:false,startX:0,startY:0,snapshot:null};
 
-$('btn-wb').onclick=()=>openWB();
-$('wb-close').onclick=()=>$('wb-panel').classList.remove('show');
+$('btn-wb').onclick=()=>{ openWB(); $('btn-wb').classList.add('active'); };
+$('wb-close').onclick=()=>{ $('wb-panel').classList.remove('show'); $('btn-wb').classList.remove('active'); };
+$('wb-panel').addEventListener('click',e=>{ if(e.target===$('wb-panel')){ $('wb-panel').classList.remove('show'); $('btn-wb').classList.remove('active'); } });
 $('wb-clear').onclick=()=>{ WB.ctx?.clearRect(0,0,$('wb-canvas').width,$('wb-canvas').height); };
 $('wb-dl').onclick=()=>{ const a=document.createElement('a'); a.download='whiteboard.png'; a.href=$('wb-canvas').toDataURL(); a.click(); };
 $('wb-color').oninput=e=>WB.color=e.target.value;
@@ -1928,8 +2003,9 @@ function drawWB(p){
 // COLLAB TEXT
 // ═══════════════════════════════════════════════════════════════
 let _collabSendTO=null;
-$('btn-collab').onclick=()=>$('collab-panel').classList.add('show');
-$('collab-close').onclick=()=>$('collab-panel').classList.remove('show');
+$('btn-collab').onclick=()=>{ $('collab-panel').classList.add('show'); $('btn-collab').classList.add('active'); };
+$('collab-close').onclick=()=>{ $('collab-panel').classList.remove('show'); $('btn-collab').classList.remove('active'); };
+$('collab-panel').addEventListener('click',e=>{ if(e.target===$('collab-panel')){ $('collab-panel').classList.remove('show'); $('btn-collab').classList.remove('active'); } });
 $('collab-copy').onclick=()=>navigator.clipboard?.writeText($('collab-text').value).then(()=>notif('已複製',2000,'success'));
 $('collab-dl').onclick=()=>{ const a=document.createElement('a'); a.download='notes.txt'; a.href='data:text/plain;charset=utf-8,'+encodeURIComponent($('collab-text').value); a.click(); };
 $('collab-text').oninput=()=>{
@@ -1979,26 +2055,36 @@ document.addEventListener('mousemove',e=>{
 let cTimer={secs:300, running:false, iv:null};
 
 $('cb-timer').onclick=()=>{ $('timer-overlay').classList.add('show'); updateTimerDisplay(); };
-$('timer-close').onclick=()=>{ clearInterval(cTimer.iv); cTimer.running=false; $('timer-overlay').classList.remove('show'); };
-$('timer-start').onclick=async()=>{
+$('timer-close').onclick=()=>{
+  clearInterval(cTimer.iv); cTimer.running=false;
+  $('timer-overlay').classList.remove('show');
+};
+$('timer-set').onclick=async()=>{
+  const wasRunning=cTimer.running;
+  clearInterval(cTimer.iv); cTimer.running=false;
+  const v=await modal({title:'設定倒數計時',body:'輸入秒數（例：300 = 5分鐘，60 = 1分鐘）：',input:true,inputPlaceholder:'秒數',inputValue:String(cTimer.secs||300)});
+  if(!v){ if(wasRunning){ cTimer.running=true; cTimer.iv=setInterval(timerTick,1000); } return; }
+  cTimer.secs=Math.max(1,parseInt(v)||300);
+  updateTimerDisplay();
+};
+$('timer-start').onclick=()=>{
   if(cTimer.running) return;
-  if(cTimer.secs<=0){
-    const v=await modal({title:'設定倒數計時',body:'輸入秒數（例：300 = 5分鐘）：',input:true,inputPlaceholder:'秒數',inputValue:'300'});
-    if(!v) return; cTimer.secs=parseInt(v)||300;
-  }
+  if(cTimer.secs<=0){ cTimer.secs=300; updateTimerDisplay(); }
   cTimer.running=true;
-  cTimer.iv=setInterval(()=>{
-    cTimer.secs--;
-    updateTimerDisplay();
-    if(cTimer.secs<=0){ clearInterval(cTimer.iv); cTimer.running=false; notif('⏰ 計時結束！',5000,'warning'); playTone(660,.3,.1); }
-  },1000);
+  cTimer.iv=setInterval(timerTick,1000);
 };
 $('timer-pause').onclick=()=>{ clearInterval(cTimer.iv); cTimer.running=false; };
 $('timer-reset').onclick=()=>{ clearInterval(cTimer.iv); cTimer.running=false; cTimer.secs=300; updateTimerDisplay(); };
+function timerTick(){
+  cTimer.secs--;
+  updateTimerDisplay();
+  if(cTimer.secs<=0){ clearInterval(cTimer.iv); cTimer.running=false; notif('⏰ 計時結束！',5000,'warning'); playTone(660,.3,.1); }
+}
 function updateTimerDisplay(){
   const el=$('timer-display'); if(!el) return;
-  const m=Math.floor(cTimer.secs/60), s=cTimer.secs%60;
-  el.textContent=`${pad(Math.max(m,0))}:${pad(Math.max(s,0))}`;
+  const s=Math.max(cTimer.secs,0);
+  const m=Math.floor(s/60), sec=s%60;
+  el.textContent=`${pad(m)}:${pad(sec)}`;
   el.classList.toggle('expired', cTimer.secs<=0);
 }
 
@@ -2222,10 +2308,12 @@ $('btn-rec').onclick=async()=>{
 // ═══════════════════════════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
-    if(FULLTILE){ FULLTILE.classList.remove('fullscreen'); FULLTILE=null; }
+    if(FULLTILE){ FULLTILE.classList.remove('fullscreen'); FULLTILE=null; return; }
+    if($('settings-panel').classList.contains('show')){ closeSettings(); return; }
+    if($('wb-panel').classList.contains('show')){ $('wb-panel').classList.remove('show'); $('btn-wb').classList.remove('active'); return; }
+    if($('collab-panel').classList.contains('show')){ $('collab-panel').classList.remove('show'); $('btn-collab').classList.remove('active'); return; }
+    if($('sidebar').classList.contains('show')){ $('sidebar').classList.remove('show'); $('btn-members').classList.remove('active'); $('btn-chat').classList.remove('active'); return; }
     $('reaction-popup')?.classList.remove('show');
-    $('wb-panel')?.classList.remove('show');
-    $('collab-panel')?.classList.remove('show');
   }
   if(!$('s-meeting').classList.contains('active')) return;
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
@@ -2273,8 +2361,10 @@ function resetMeetingUI(){
   $('timer-overlay').classList.remove('show');
   $('modal-backdrop').classList.remove('show');
   $('sidebar').classList.remove('show');
-  $('wb-panel').classList.remove('show');
-  $('collab-panel').classList.remove('show');
+  $('btn-members').classList.remove('active');
+  $('btn-chat').classList.remove('active');
+  $('wb-panel').classList.remove('show'); $('btn-wb').classList.remove('active');
+  $('collab-panel').classList.remove('show'); $('btn-collab').classList.remove('active');
   $('host-actions').style.display='none';
 
   const cb=document.querySelector('.ctrl-bar'); if(cb){ cb.style.opacity='1'; cb.style.pointerEvents='auto'; }
@@ -2388,6 +2478,7 @@ $('settings-panel').addEventListener('click',e=>{ if(e.target===$('settings-pane
 
 function openSettings(){
   $('settings-panel').classList.add('show');
+  $('cb-settings').classList.add('active');
   $('set-echo').checked=SET.echo; $('set-noise').checked=SET.noise;
   $('set-mirror').checked=SET.mirror; $('set-sound').checked=SET.sound;
   $('set-speak').checked=SET.speak; $('set-guard').checked=SET.guard;
@@ -2395,7 +2486,7 @@ function openSettings(){
   $('set-blur').checked=SET.blur;
   loadDevices(); updateConnInfo();
 }
-function closeSettings(){ $('settings-panel').classList.remove('show'); }
+function closeSettings(){ $('settings-panel').classList.remove('show'); $('cb-settings').classList.remove('active'); }
 
 $('set-echo').onchange=e=>{ SET.echo=e.target.checked; saveSET(); applyAudioC(); };
 $('set-noise').onchange=e=>{ SET.noise=e.target.checked; saveSET(); applyAudioC(); };
