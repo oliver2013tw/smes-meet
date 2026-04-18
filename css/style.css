@@ -1,0 +1,42 @@
+:root {
+    --p-blue: #0052ff; --p-red: #ff003c; --p-green: #00ff41;
+    --bg-0: #000; --bg-1: #0a0a0a; --border: #222;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0 !important; }
+
+body { 
+    background: var(--bg-0); color: #fff; 
+    font-family: var(--font-mono); overflow: hidden; 
+}
+
+/* 網格系統優化 */
+.grid-stage {
+    flex: 1; display: grid; gap: 2px; padding: 2px;
+    background: #000; contain: strict; /* 隔離重繪提升效能 */
+}
+
+.v-tile {
+    position: relative; background: #050505; border: 1px solid #1a1a1a;
+    width: 100%; height: 100%; will-change: transform;
+}
+
+.v-tile video { width: 100%; height: 100%; object-fit: cover; }
+
+/* 工業風控制項 */
+.d-btn {
+    background: transparent; border: 1px solid var(--border);
+    color: #666; padding: 10px 20px; cursor: pointer;
+    font-size: 11px; font-weight: bold;
+}
+
+.d-btn.active { color: var(--p-blue); border-color: var(--p-blue); }
+.d-btn.danger { color: var(--p-red); }
+
+/* 介面遮罩 */
+.overlay-screen {
+    position: fixed; inset: 0; background: #000;
+    display: none; align-items: center; justify-content: center; z-index: 5000;
+}
+.overlay-screen.active { display: flex; }
