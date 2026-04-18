@@ -18,94 +18,85 @@
   --b:#1c1c1c;--b2:#282828;--b3:#333;
   --t:#e8e8e8;--t2:#999;--t3:#555;--t4:#333;
   --blue:#2563eb;--blue-d:#1d4ed8;--blue-l:#3b82f6;
-  --blue-g:rgba(37,99,235,.1);--blue-b:rgba(37,99,235,.25);
+  --blue-g:rgba(37,99,235,.12);--blue-b:rgba(37,99,235,.3);
   --red:#ef4444;--red-g:rgba(239,68,68,.1);
   --green:#22c55e;--green-g:rgba(34,197,94,.1);
   --amber:#f59e0b;--amber-g:rgba(245,158,11,.1);
-  --purple:#8b5cf6;--purple-g:rgba(139,92,246,.1);
+  --purple:#8b5cf6;
   --cyan:#06b6d4;--cyan-g:rgba(6,182,212,.1);
   --font:"JetBrains Mono",monospace;
   --sh:0 8px 32px rgba(0,0,0,.8);
-  --tf:.1s ease;--tm:.2s ease;
-  --r:0;
+  --tf:.12s ease;--tm:.22s ease;
 }
 html,body{height:100%;width:100%;overflow:hidden;overscroll-behavior:none;
   background:var(--bg);color:var(--t);font-family:var(--font);font-size:13px;
   -webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;}
-/* border-radius 保留各元素自訂設定 */
-
-/* ═══ BUTTON BASE IMPROVEMENTS ═══ */
-button{cursor:pointer;font-family:var(--font);font-size:inherit;-webkit-tap-highlight-color:transparent}
-/* Panel close/back button */
-.panel-close{display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--b);
-  color:var(--t3);padding:5px 12px;font-size:10px;letter-spacing:.5px;
-  transition:all var(--tf);flex-shrink:0}
-.panel-close:hover{background:var(--bg2);border-color:var(--b2);color:var(--t)}
-.panel-back{display:flex;align-items:center;gap:5px;background:none;border:1px solid var(--b);
-  color:var(--t3);padding:5px 12px;font-size:10px;letter-spacing:.5px;
-  transition:all var(--tf);flex-shrink:0}
-.panel-back:hover{background:var(--bg2);border-color:var(--b2);color:var(--t)}
-input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outline:none;background:none}
-::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:var(--b3)}::-webkit-scrollbar-track{background:transparent}
+button{cursor:pointer;font-family:var(--font);font-size:inherit;-webkit-tap-highlight-color:transparent;border:none;background:none;color:inherit}
+input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outline:none;background:none;color:inherit}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--b3)}
+::-webkit-scrollbar-track{background:transparent}
 
 /* ═══ ANIMATIONS ═══ */
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
-@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
-@keyframes tileIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
-@keyframes tileOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.94)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes tileIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+@keyframes tileOut{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.96)}}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes speak{0%,100%{box-shadow:inset 0 0 0 2px var(--green)}50%{box-shadow:inset 0 0 0 2px rgba(34,197,94,.3),0 0 12px rgba(34,197,94,.15)}}
+@keyframes speak{0%,100%{box-shadow:inset 0 0 0 2px var(--green)}50%{box-shadow:inset 0 0 0 2px rgba(34,197,94,.25),0 0 16px rgba(34,197,94,.1)}}
 @keyframes handWave{0%,100%{transform:rotate(0) scale(1)}30%{transform:rotate(-15deg) scale(1.1)}70%{transform:rotate(15deg) scale(1.1)}}
-@keyframes notifIn{from{opacity:0;transform:translateX(16px) scale(.96)}to{opacity:1;transform:none}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-@keyframes emojiFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-120px) scale(1.4)}}
+@keyframes notifIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes emojiFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-110px) scale(1.3)}}
 @keyframes waitBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
-@keyframes scanLine{0%{background-position:0 0}100%{background-position:0 100%}}
-@keyframes levelBeat{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.4)}}
+@keyframes levelBeat{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
 .blink{animation:blink 1s step-end infinite}
 .spin{animation:spin .8s linear infinite}
 .pulse{animation:pulse 2s ease-in-out infinite}
 
 /* ═══ SCREENS ═══ */
 .screen{display:none;position:fixed;inset:0;flex-direction:column}
-.screen.active{display:flex;animation:fadeIn .18s ease}
+.screen.active{display:flex;animation:fadeIn .15s ease}
 
 /* ═══ LOADING ═══ */
-#s-loading{align-items:center;justify-content:center;gap:16px;
-  background:var(--bg)}
-.load-logo{font-size:22px;font-weight:700;letter-spacing:10px;color:#fff}
+#s-loading{align-items:center;justify-content:center;gap:14px;background:var(--bg)}
+.load-logo{font-size:20px;font-weight:700;letter-spacing:10px;color:#fff}
 .load-sub{font-size:10px;color:var(--t3);letter-spacing:4px}
-.load-bar{width:200px;height:1px;background:var(--b2);overflow:hidden;margin-top:8px}
+.load-bar{width:180px;height:1px;background:var(--b2);overflow:hidden;margin-top:6px}
 .load-prog{height:100%;background:var(--blue);width:0;transition:width .3s}
 
 /* ═══ MODAL ═══ */
 #modal-backdrop{display:none;position:fixed;inset:0;z-index:9000;
-  background:rgba(0,0,0,.88);backdrop-filter:blur(4px);align-items:center;justify-content:center}
+  background:rgba(0,0,0,.85);backdrop-filter:blur(6px);align-items:center;justify-content:center}
 #modal-backdrop.show{display:flex}
-.modal{background:var(--bg1);border:1px solid var(--b2);width:100%;max-width:360px;margin:20px;animation:slideUp .18s ease}
-.modal-title{font-size:13px;font-weight:600;color:#fff;padding:18px 20px 0;letter-spacing:.5px}
-.modal-body{font-size:11px;color:var(--t2);padding:10px 20px 18px;line-height:1.7;white-space:pre-wrap}
-.modal-input{width:calc(100% - 40px);background:var(--bg);border:1px solid var(--b);color:#fff;
+.modal{background:var(--bg1);border:1px solid var(--b2);width:100%;max-width:340px;margin:16px;
+  animation:slideUp .18s ease;box-shadow:0 24px 64px rgba(0,0,0,.8)}
+.modal-title{font-size:12px;font-weight:600;color:#fff;padding:20px 20px 0;letter-spacing:.5px}
+.modal-body{font-size:11px;color:var(--t2);padding:8px 20px 16px;line-height:1.75;white-space:pre-wrap}
+.modal-input{width:calc(100% - 40px);background:var(--bg2);border:1px solid var(--b2);color:#fff;
   padding:10px 12px;font-size:13px;letter-spacing:2px;text-transform:uppercase;
-  margin:0 20px 18px;display:block;transition:border-color var(--tf)}
-.modal-input:focus{border-color:var(--blue)}
+  margin:0 20px 16px;display:block;transition:border-color var(--tf)}
+.modal-input:focus{border-color:var(--blue);outline:none}
 .modal-actions{display:flex;border-top:1px solid var(--b)}
-.modal-btn{flex:1;padding:14px;font-size:11px;letter-spacing:.5px;color:var(--t2);
-  transition:background var(--tf),color var(--tf);font-family:var(--font)}
+/* Modal buttons — explicit styling so the global button reset doesn't break them */
+.modal-btn{flex:1;padding:14px 10px;font-size:11px;letter-spacing:.3px;color:var(--t2);
+  background:none;border:none;cursor:pointer;font-family:var(--font);
+  transition:background var(--tf),color var(--tf)}
 .modal-btn:hover{background:var(--bg2);color:var(--t)}
-.modal-btn.primary{color:var(--blue);border-left:1px solid var(--b)}.modal-btn.primary:hover{background:var(--blue-g)}
-.modal-btn.danger{color:var(--red);border-left:1px solid var(--b)}.modal-btn.danger:hover{background:var(--red-g)}
+.modal-btn.primary{color:var(--blue-l);border-left:1px solid var(--b)}
+.modal-btn.primary:hover{background:var(--blue-g);color:var(--blue-l)}
+.modal-btn.danger{color:var(--red);border-left:1px solid var(--b)}
+.modal-btn.danger:hover{background:var(--red-g)}
 
 /* ═══ NOTIFICATIONS ═══ */
-#notif-stack{position:fixed;top:54px;right:10px;z-index:8000;display:flex;flex-direction:column;gap:5px;
-  pointer-events:none;max-width:min(300px,calc(100vw - 20px))}
-.notif{padding:10px 14px;font-size:11px;background:rgba(8,8,8,.97);
-  backdrop-filter:blur(12px);border-left:3px solid var(--blue);
+#notif-stack{position:fixed;top:52px;right:10px;z-index:8000;display:flex;flex-direction:column;gap:4px;
+  pointer-events:none;max-width:min(280px,calc(100vw - 20px))}
+.notif{padding:9px 13px;font-size:11px;background:rgba(6,6,6,.98);
+  backdrop-filter:blur(12px);border-left:2px solid var(--blue);
   border-top:1px solid var(--b2);border-right:1px solid var(--b2);border-bottom:1px solid var(--b2);
-  color:var(--t2);animation:notifIn .2s ease;letter-spacing:.3px;line-height:1.5}
+  color:var(--t2);animation:notifIn .18s ease;letter-spacing:.2px;line-height:1.5}
 .notif.success{border-left-color:var(--green);color:#86efac}
 .notif.error{border-left-color:var(--red);color:#fca5a5}
 .notif.warning{border-left-color:var(--amber);color:#fde68a}
@@ -113,92 +104,99 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 
 /* ═══ LOGIN ═══ */
 #s-login{align-items:center;justify-content:center;
-  background:radial-gradient(ellipse 80% 60% at 50% -10%,rgba(37,99,235,.08) 0%,transparent 70%),var(--bg)}
-.login-card{width:100%;max-width:360px;padding:0 24px;animation:slideUp .3s ease}
-.login-hdr{text-align:center;margin-bottom:32px}
-.login-eyebrow{font-size:9px;color:var(--t3);letter-spacing:4px;margin-bottom:12px;text-transform:uppercase}
-.login-brand{font-size:26px;font-weight:700;letter-spacing:10px;color:#fff}
-.login-ver{font-size:9px;color:var(--t4);margin-top:6px;letter-spacing:3px}
-.login-hr{height:1px;background:linear-gradient(90deg,transparent,var(--b2),transparent);margin:24px 0}
-.domain-badge{background:var(--bg2);border:1px solid var(--b);padding:8px 14px;margin-bottom:18px;display:flex;align-items:center;gap:10px}
-.domain-badge::before{content:"🔒";font-size:11px}
-.domain-text{font-size:10px;color:var(--t3);letter-spacing:.5px}
-.https-warn{display:none;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.25);
-  color:var(--amber);font-size:11px;padding:10px 14px;margin-bottom:14px;line-height:1.6}
+  background:radial-gradient(ellipse 80% 50% at 50% -5%,rgba(37,99,235,.1) 0%,transparent 70%),var(--bg)}
+.login-card{width:100%;max-width:340px;padding:0 24px;animation:slideUp .28s ease}
+.login-hdr{text-align:center;margin-bottom:28px}
+.login-eyebrow{font-size:9px;color:var(--t3);letter-spacing:4px;margin-bottom:10px}
+.login-brand{font-size:24px;font-weight:700;letter-spacing:9px;color:#fff}
+.login-ver{font-size:9px;color:var(--t4);margin-top:4px;letter-spacing:2px}
+.login-hr{height:1px;background:linear-gradient(90deg,transparent,var(--b2),transparent);margin:22px 0}
+.domain-badge{background:var(--bg2);border:1px solid var(--b);padding:8px 14px;margin-bottom:16px;
+  display:flex;align-items:center;gap:8px}
+.domain-badge::before{content:"🔒";font-size:10px}
+.domain-text{font-size:10px;color:var(--t3);letter-spacing:.3px}
+.https-warn{display:none;background:rgba(245,158,11,.05);border:1px solid rgba(245,158,11,.2);
+  color:var(--amber);font-size:10px;padding:8px 12px;margin-bottom:12px;line-height:1.6}
 .https-warn.show{display:block}
 #login-toast{font-size:11px;padding:9px 12px;display:none;margin-bottom:10px;
-  background:var(--red-g);border:1px solid rgba(239,68,68,.25);color:#fca5a5}
+  background:var(--red-g);border:1px solid rgba(239,68,68,.2);color:#fca5a5}
 #login-toast.show{display:block;animation:fadeIn .15s ease}
-.btn-google{width:100%;background:var(--bg1);border:1px solid var(--b);color:var(--t);
-  padding:14px 16px;font-size:12px;letter-spacing:.8px;display:flex;align-items:center;justify-content:center;gap:10px;
-  transition:background var(--tf),border-color var(--tf),transform var(--tf)}
-.btn-google:hover:not(:disabled){background:var(--bg2);border-color:var(--b2);transform:translateY(-1px)}
+.btn-google{width:100%;background:var(--bg2);border:1px solid var(--b2);color:var(--t);
+  padding:13px 16px;font-size:11px;letter-spacing:.6px;display:flex;align-items:center;
+  justify-content:center;gap:10px;transition:background var(--tf),border-color var(--tf),transform var(--tf)}
+.btn-google:hover:not(:disabled){background:var(--bg3);border-color:var(--b3);transform:translateY(-1px)}
+.btn-google:active{transform:scale(.98)}
 .btn-google:disabled{opacity:.4;cursor:not-allowed}
-.dev-panel{display:none;margin-top:14px;background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.18);padding:14px}
-.dev-panel.open{display:block;animation:fadeIn .15s ease}
-.dev-label{font-size:9px;color:var(--amber);margin-bottom:10px;letter-spacing:2px}
-.dev-inp{width:100%;background:var(--bg);border:1px solid var(--b);color:var(--t);padding:8px 10px;font-size:11px;margin-bottom:8px}
+.dev-panel{display:none;margin-top:12px;background:rgba(245,158,11,.03);border:1px solid rgba(245,158,11,.15);padding:14px}
+.dev-panel.open{display:block;animation:fadeIn .12s ease}
+.dev-label{font-size:9px;color:var(--amber);margin-bottom:8px;letter-spacing:2px}
+.dev-inp{width:100%;background:var(--bg);border:1px solid var(--b);color:var(--t);
+  padding:8px 10px;font-size:11px;margin-bottom:8px;transition:border-color var(--tf)}
 .dev-inp:focus{border-color:var(--amber);outline:none}
-.btn-dev{width:100%;border:1px solid rgba(245,158,11,.35);color:var(--amber);padding:8px;font-size:11px;letter-spacing:.5px;background:none;transition:background var(--tf)}.btn-dev:hover{background:var(--amber-g)}
-.ver-text{margin-top:18px;text-align:center;font-size:9px;color:var(--t4);cursor:default;user-select:none;letter-spacing:1px}
+.btn-dev{width:100%;border:1px solid rgba(245,158,11,.3);color:var(--amber);
+  padding:8px;font-size:11px;letter-spacing:.3px;background:none;transition:background var(--tf)}
+.btn-dev:hover{background:var(--amber-g)}
+.ver-text{margin-top:16px;text-align:center;font-size:9px;color:var(--t4);cursor:default;user-select:none;letter-spacing:.5px}
 
 /* ═══ LOBBY ═══ */
 #s-lobby{align-items:center;justify-content:center;
-  background:radial-gradient(ellipse 80% 60% at 50% 110%,rgba(37,99,235,.05) 0%,transparent 70%),var(--bg)}
-.lobby-card{width:100%;max-width:400px;padding:0 20px;animation:slideUp .25s ease}
+  background:radial-gradient(ellipse 80% 50% at 50% 110%,rgba(37,99,235,.05) 0%,transparent 70%),var(--bg)}
+.lobby-card{width:100%;max-width:380px;padding:0 20px;animation:slideUp .22s ease}
 .profile-row{background:var(--bg1);border:1px solid var(--b);padding:14px 16px;
-  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
-.profile-row.teacher{border-color:rgba(37,99,235,.3);background:rgba(37,99,235,.03)}
+  display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.profile-row.teacher{border-color:rgba(37,99,235,.25);background:rgba(37,99,235,.02)}
 .p-name{font-size:13px;color:#fff;font-weight:500}
-.p-meta{display:flex;align-items:center;gap:6px;margin-top:4px}
-.role-badge{font-size:9px;letter-spacing:1.5px;padding:2px 8px;font-weight:700}
+.p-meta{display:flex;align-items:center;gap:6px;margin-top:3px}
+.role-badge{font-size:8px;letter-spacing:1.5px;padding:2px 8px;font-weight:700}
 .role-badge.teacher{background:var(--blue-g);color:#60a5fa;border:1px solid var(--blue-b)}
-.role-badge.student{background:rgba(136,136,136,.08);color:var(--t2);border:1px solid var(--b2)}
-.btn-logout{border:1px solid var(--b);color:var(--t3);padding:6px 12px;font-size:10px;letter-spacing:.5px;
-  flex-shrink:0;background:none;transition:all var(--tf)}.btn-logout:hover{color:var(--red);border-color:rgba(239,68,68,.35);background:var(--red-g)}
-.room-panel{background:var(--bg1);border:1px solid var(--b);padding:18px;margin-bottom:12px}
-.room-lbl{font-size:9px;color:var(--t3);margin-bottom:12px;letter-spacing:2px}
+.role-badge.student{background:rgba(136,136,136,.07);color:var(--t2);border:1px solid var(--b2)}
+.btn-logout{border:1px solid var(--b);color:var(--t3);padding:5px 12px;font-size:10px;letter-spacing:.3px;
+  flex-shrink:0;transition:all var(--tf)}
+.btn-logout:hover{color:var(--red);border-color:rgba(239,68,68,.3);background:var(--red-g)}
+.room-panel{background:var(--bg1);border:1px solid var(--b);padding:16px;margin-bottom:10px}
+.room-lbl{font-size:9px;color:var(--t3);margin-bottom:10px;letter-spacing:2px}
 .room-row{display:flex;gap:8px}
 .room-inp{flex:1;min-width:0;background:var(--bg);border:1px solid var(--b);color:#fff;
   padding:12px 14px;font-size:18px;letter-spacing:6px;text-transform:uppercase;
   transition:border-color var(--tf),box-shadow var(--tf)}
-.room-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-g)}
+.room-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08);outline:none}
 .room-inp::placeholder{color:var(--b3);letter-spacing:2px}
-.btn-enter{background:var(--blue);color:#fff;padding:0 20px;font-size:12px;font-weight:600;
-  letter-spacing:.5px;flex-shrink:0;transition:background var(--tf),transform var(--tf);min-width:72px}
-.btn-enter:hover{background:var(--blue-d)}.btn-enter:active{transform:scale(.97)}
-#lobby-toast{font-size:11px;padding:9px 12px;display:none;margin-bottom:10px;line-height:1.5}
-#lobby-toast.show{display:block;animation:fadeIn .15s ease}
-.btn-gen{width:100%;padding:8px;font-size:10px;letter-spacing:.5px;border:1px solid var(--b);
-  color:var(--t3);background:none;transition:all var(--tf);display:none}
+.btn-enter{background:var(--blue);color:#fff;padding:0 20px;font-size:11px;font-weight:600;
+  letter-spacing:.5px;flex-shrink:0;transition:background var(--tf),transform var(--tf);min-width:68px}
+.btn-enter:hover{background:var(--blue-d)}
+.btn-enter:active{transform:scale(.97)}
+#lobby-toast{font-size:11px;padding:8px 12px;display:none;margin-bottom:8px;line-height:1.5}
+#lobby-toast.show{display:block;animation:fadeIn .12s ease}
+.btn-gen{width:100%;padding:8px;font-size:10px;letter-spacing:.3px;border:1px solid var(--b);
+  color:var(--t3);transition:all var(--tf);display:none}
 .btn-gen:hover{color:var(--t);border-color:var(--b2);background:var(--bg2)}
-.lobby-footer{text-align:center;font-size:9px;color:var(--t4);margin-top:16px;letter-spacing:.5px}
-.lobby-time{text-align:center;font-size:10px;color:var(--t3);margin-top:4px;font-variant-numeric:tabular-nums}
+.lobby-footer{text-align:center;font-size:9px;color:var(--t4);margin-top:14px;letter-spacing:.3px}
+.lobby-time{text-align:center;font-size:10px;color:var(--t3);margin-top:3px;font-variant-numeric:tabular-nums}
 
 /* ═══ WAITING ═══ */
-#s-waiting{align-items:center;justify-content:center;gap:16px}
-.wait-badge{background:var(--blue-g);border:1px solid var(--blue-b);padding:4px 16px;font-size:9px;color:#60a5fa;letter-spacing:3px}
-.wait-code{font-size:24px;font-weight:700;color:#fff;letter-spacing:10px}
+#s-waiting{align-items:center;justify-content:center;gap:14px;background:var(--bg)}
+.wait-badge{background:var(--blue-g);border:1px solid var(--blue-b);padding:3px 14px;font-size:9px;color:#60a5fa;letter-spacing:3px}
+.wait-code{font-size:22px;font-weight:700;color:#fff;letter-spacing:10px}
 .wait-sub{font-size:11px;color:var(--t2);text-align:center}
-.dots{display:flex;gap:8px}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:bounce .9s ease-in-out infinite}
+.dots{display:flex;gap:7px}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--blue);animation:bounce .9s ease-in-out infinite}
 .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
-.wait-prog{width:220px;height:1px;background:var(--b2);overflow:hidden}
+.wait-prog{width:200px;height:1px;background:var(--b2);overflow:hidden}
 .wait-bar{height:100%;background:var(--blue);transform-origin:left;animation:waitBar 120s linear forwards}
-.btn-cancel-w{border:1px solid var(--b);color:var(--t3);padding:8px 24px;font-size:11px;background:none;transition:all var(--tf)}
-.btn-cancel-w:hover{color:var(--red);border-color:rgba(239,68,68,.35);background:var(--red-g)}
+.btn-cancel-w{border:1px solid var(--b);color:var(--t3);padding:8px 22px;font-size:11px;transition:all var(--tf)}
+.btn-cancel-w:hover{color:var(--red);border-color:rgba(239,68,68,.3);background:var(--red-g)}
 
 /* ═══ MEETING SHELL ═══ */
 #s-meeting{background:var(--bg);overflow:hidden}
 
 /* Top bar */
-.m-bar{flex-shrink:0;display:flex;align-items:center;height:46px;
-  background:rgba(6,6,6,.96);border-bottom:1px solid var(--b);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);gap:0}
+.m-bar{flex-shrink:0;display:flex;align-items:center;height:44px;
+  background:rgba(5,5,5,.97);border-bottom:1px solid var(--b);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 .m-bar-l{display:flex;align-items:center;gap:8px;padding:0 12px;min-width:0;flex:1;overflow:hidden}
-.m-bar-r{display:flex;align-items:center;gap:4px;padding:0 8px;flex-shrink:0}
-.m-brand{font-size:12px;font-weight:700;color:#fff;letter-spacing:5px;white-space:nowrap;flex-shrink:0}
-.m-sep{width:1px;height:16px;background:var(--b2);flex-shrink:0}
+.m-bar-r{display:flex;align-items:center;gap:2px;padding:0 8px;flex-shrink:0}
+.m-brand{font-size:11px;font-weight:700;color:#fff;letter-spacing:5px;white-space:nowrap;flex-shrink:0}
+.m-sep{width:1px;height:14px;background:var(--b2);flex-shrink:0}
 .m-code{font-size:10px;color:var(--t3);background:var(--bg2);border:1px solid var(--b);
   padding:3px 8px;cursor:pointer;transition:color var(--tf),border-color var(--tf);
   white-space:nowrap;user-select:none;flex-shrink:0;font-variant-numeric:tabular-nums}
@@ -207,27 +205,27 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 .m-count,.m-timer{font-size:10px;color:var(--t3);white-space:nowrap;font-variant-numeric:tabular-nums;flex-shrink:0}
 .sfu-dot-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0}
 .sfu-dot{width:5px;height:5px;border-radius:50%;background:var(--t3)}
-.sfu-dot.connected{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,.5)}
+.sfu-dot.connected{background:var(--green);box-shadow:0 0 5px rgba(34,197,94,.5)}
 .sfu-dot.connecting{background:var(--amber);animation:pulse 1s ease-in-out infinite}
-.sfu-label{font-size:9px;color:var(--t3);letter-spacing:.5px}
-.m-bar-btn{display:flex;align-items:center;justify-content:center;width:32px;height:32px;
-  background:none;border:1px solid transparent;color:var(--t3);
-  transition:all var(--tf);flex-shrink:0;position:relative}
+.sfu-label{font-size:9px;color:var(--t3);letter-spacing:.3px}
+.m-bar-btn{display:flex;align-items:center;justify-content:center;width:30px;height:30px;
+  border:1px solid transparent;color:var(--t3);transition:all var(--tf);flex-shrink:0;position:relative}
 .m-bar-btn:hover{background:var(--bg2);border-color:var(--b);color:var(--t)}
 .m-bar-btn.active{background:var(--blue-g);border-color:var(--blue-b);color:var(--blue-l)}
-.m-bar-btn.red{color:var(--red)}
-.m-badge{position:absolute;top:3px;right:3px;width:6px;height:6px;background:var(--red);border-radius:50%}
-.host-chip{font-size:9px;letter-spacing:1.5px;padding:2px 8px;background:var(--blue-g);border:1px solid var(--blue-b);color:#60a5fa;font-weight:700}
+.m-badge{position:absolute;top:3px;right:3px;width:5px;height:5px;background:var(--red);border-radius:50%}
+.host-chip{font-size:8px;letter-spacing:1.5px;padding:2px 7px;background:var(--blue-g);border:1px solid var(--blue-b);color:#60a5fa;font-weight:700}
 
 /* Pending bar */
-.pending-bar{flex-shrink:0;display:none;gap:6px;align-items:center;padding:7px 12px;
-  background:rgba(37,99,235,.05);border-bottom:1px solid rgba(37,99,235,.12);overflow-x:auto;white-space:nowrap}
+.pending-bar{flex-shrink:0;display:none;gap:6px;align-items:center;padding:6px 12px;
+  background:rgba(37,99,235,.04);border-bottom:1px solid rgba(37,99,235,.1);overflow-x:auto;white-space:nowrap}
 .pending-bar.show{display:flex}
 .req-card{border:1px solid var(--blue-b);padding:4px 10px;font-size:10px;color:#60a5fa;
-  display:flex;align-items:center;gap:8px;flex-shrink:0;background:var(--blue-g)}
-.btn-req{padding:3px 10px;font-size:10px;font-family:var(--font);border:none;cursor:pointer}
-.btn-req.ok{background:var(--blue);color:#fff}.btn-req.ok:hover{background:var(--blue-d)}
-.btn-req.no{background:none;border:1px solid rgba(239,68,68,.3);color:var(--red)}.btn-req.no:hover{background:var(--red-g)}
+  display:flex;align-items:center;gap:7px;flex-shrink:0;background:var(--blue-g)}
+.btn-req{padding:3px 9px;font-size:10px;font-family:var(--font);cursor:pointer;border:none}
+.btn-req.ok{background:var(--blue);color:#fff}
+.btn-req.ok:hover{background:var(--blue-d)}
+.btn-req.no{background:none;border:1px solid rgba(239,68,68,.25);color:var(--red)}
+.btn-req.no:hover{background:var(--red-g)}
 
 /* Main area */
 .meeting-body{flex:1;min-height:0;display:flex;overflow:hidden}
@@ -235,24 +233,27 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 /* Video grid */
 .video-area{flex:1;min-width:0;min-height:0;display:grid;gap:2px;background:var(--bg2);padding:2px;overflow:hidden}
 
-/* Sidebar (member list / chat) */
-.sidebar{width:280px;flex-shrink:0;background:var(--bg1);border-left:1px solid var(--b);
+/* Sidebar */
+.sidebar{width:272px;flex-shrink:0;background:var(--bg1);border-left:1px solid var(--b);
   display:none;flex-direction:column;overflow:hidden}
 .sidebar.show{display:flex}
-.sidebar-tabs{display:flex;border-bottom:1px solid var(--b)}
-.sidebar-tab{flex:1;padding:10px;font-size:10px;letter-spacing:.5px;color:var(--t3);
-  background:none;border:none;cursor:pointer;transition:all var(--tf);position:relative}
+.sidebar-tabs{display:flex;border-bottom:1px solid var(--b);align-items:stretch}
+.sidebar-tab{flex:1;padding:10px 8px;font-size:10px;letter-spacing:.3px;color:var(--t3);
+  border:none;background:none;cursor:pointer;transition:all var(--tf);position:relative}
 .sidebar-tab.active{color:var(--t);background:var(--bg2)}
 .sidebar-tab.active::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:var(--blue)}
 .sidebar-tab-badge{display:inline-flex;align-items:center;justify-content:center;
-  width:14px;height:14px;background:var(--red);color:#fff;font-size:8px;margin-left:5px}
+  width:13px;height:13px;background:var(--red);color:#fff;font-size:8px;margin-left:4px}
+.sidebar-close-btn{flex:0;padding:0 12px;font-size:13px;border:none;background:none;
+  color:var(--t3);cursor:pointer;transition:color var(--tf);border-left:1px solid var(--b)}
+.sidebar-close-btn:hover{color:var(--t);background:var(--bg2)}
 
 /* ═══ TILE ═══ */
 .video-tile{position:relative;background:var(--bg1);overflow:hidden;min-width:0;min-height:0;
-  animation:tileIn .2s ease;contain:layout style}
-.video-tile.removing{animation:tileOut .22s ease forwards;pointer-events:none}
-.video-tile.speaking{animation:tileIn .2s ease,speak 1.4s ease-in-out infinite}
-.video-tile.removing.speaking{animation:tileOut .22s ease forwards}
+  animation:tileIn .18s ease;contain:layout style}
+.video-tile.removing{animation:tileOut .2s ease forwards;pointer-events:none}
+.video-tile.speaking{box-shadow:inset 0 0 0 2px var(--green)}
+.video-tile.removing.speaking{animation:tileOut .2s ease forwards}
 .video-tile.fullscreen{position:fixed!important;inset:0!important;z-index:800;
   animation:none;width:100%!important;height:100%!important}
 .video-tile.pinned::after{content:'';position:absolute;inset:0;border:2px solid var(--blue);
@@ -263,216 +264,237 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 .tile-camoff{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;
   justify-content:center;gap:8px;background:var(--bg1);z-index:1}
 .tile-camoff.hidden{display:none}
-.tile-avatar{width:56px;height:56px;background:var(--bg3);border:1px solid var(--b2);
-  display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:var(--t2)}
+.tile-avatar{width:52px;height:52px;background:var(--bg3);border:1px solid var(--b2);
+  display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:var(--t2)}
 .tile-avatar-name{font-size:10px;color:var(--t3)}
-
-.tile-name{position:absolute;bottom:0;left:0;right:0;padding:22px 10px 8px;
-  background:linear-gradient(transparent,rgba(0,0,0,.9));font-size:11px;color:#fff;
+.tile-name{position:absolute;bottom:0;left:0;right:0;padding:20px 8px 7px;
+  background:linear-gradient(transparent,rgba(0,0,0,.88));font-size:11px;color:#fff;
   display:flex;align-items:center;gap:5px;z-index:3;pointer-events:none}
 .tile-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
 .tile-icons{display:flex;gap:3px;flex-shrink:0}
-.tile-icon{font-size:10px;background:rgba(0,0,0,.65);padding:2px 4px}
-
-.tile-hand{position:absolute;top:0;left:0;right:0;display:none;align-items:center;gap:6px;
-  padding:5px 10px;background:linear-gradient(135deg,rgba(245,158,11,.94),rgba(180,83,9,.94));
-  color:#000;font-size:11px;font-weight:700;z-index:5;border-bottom:1px solid rgba(245,158,11,.4)}
+.tile-icon{font-size:9px;background:rgba(0,0,0,.7);padding:2px 4px}
+.tile-hand{position:absolute;top:0;left:0;right:0;display:none;align-items:center;gap:5px;
+  padding:5px 10px;background:linear-gradient(135deg,rgba(245,158,11,.95),rgba(180,83,9,.95));
+  color:#000;font-size:11px;font-weight:700;z-index:5;border-bottom:1px solid rgba(245,158,11,.3)}
 .tile-hand.show{display:flex}
-.tile-hand-icon{font-size:14px;animation:handWave .8s ease-in-out infinite;display:inline-block}
-
-.tile-ping{position:absolute;top:6px;left:8px;font-size:9px;color:var(--green);
+.tile-hand-icon{font-size:13px;animation:handWave .8s ease-in-out infinite;display:inline-block}
+.tile-ping{position:absolute;top:5px;left:7px;font-size:9px;color:var(--green);
   background:rgba(0,0,0,.7);padding:1px 5px;z-index:4;display:none}
 .tile-ping.show{display:block}
-
-.tile-pin-btn{position:absolute;bottom:36px;right:8px;z-index:5;background:rgba(0,0,0,.75);
-  border:1px solid rgba(255,255,255,.12);color:var(--t2);padding:3px 7px;font-size:9px;
-  font-family:var(--font);cursor:pointer;letter-spacing:.5px;transition:all var(--tf);
+.tile-pin-btn{position:absolute;bottom:34px;right:7px;z-index:5;background:rgba(0,0,0,.8);
+  border:1px solid rgba(255,255,255,.1);color:var(--t2);padding:3px 7px;font-size:9px;
+  font-family:var(--font);cursor:pointer;letter-spacing:.3px;transition:all var(--tf);
   display:none;backdrop-filter:blur(4px)}
 .video-tile:hover .tile-pin-btn,.video-tile.pinned .tile-pin-btn{display:block}
 .video-tile.pinned .tile-pin-btn{color:var(--blue-l);border-color:var(--blue-b);background:var(--blue-g)}
-
-.tile-pip-btn{position:absolute;bottom:36px;left:8px;z-index:5;background:rgba(0,0,0,.75);
-  border:1px solid rgba(255,255,255,.12);color:var(--t2);padding:3px 7px;font-size:9px;
-  font-family:var(--font);cursor:pointer;letter-spacing:.5px;transition:all var(--tf);display:none}
+.tile-pip-btn{position:absolute;bottom:34px;left:7px;z-index:5;background:rgba(0,0,0,.8);
+  border:1px solid rgba(255,255,255,.1);color:var(--t2);padding:3px 7px;font-size:9px;
+  font-family:var(--font);cursor:pointer;letter-spacing:.3px;transition:all var(--tf);display:none}
 .video-tile:hover .tile-pip-btn{display:block}
-
 .tile-playbtn{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.6);cursor:pointer;z-index:9;font-size:40px;color:#fff}
+  background:rgba(0,0,0,.55);cursor:pointer;z-index:9;font-size:38px;color:#fff}
 .tile-playbtn.show{display:flex}
 
 /* ═══ CONTROL BAR ═══ */
-.ctrl-bar{flex-shrink:0;background:rgba(6,6,6,.96);border-top:1px solid var(--b);
-  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  display:flex;align-items:center;gap:0;height:56px;overflow:hidden}
+.ctrl-bar{flex-shrink:0;background:rgba(4,4,4,.97);border-top:1px solid var(--b);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:center;height:56px;overflow:hidden}
 .ctrl-bar::-webkit-scrollbar{display:none}
-.ctrl-section{display:flex;align-items:center;gap:4px;padding:0 10px;flex-shrink:0}
+.ctrl-section{display:flex;align-items:center;gap:3px;padding:0 8px;flex-shrink:0}
 .ctrl-section.center{flex:1;justify-content:center}
 .ctrl-section.right{margin-left:auto}
-.cb{display:flex;align-items:center;gap:5px;border:1px solid var(--b);background:rgba(18,18,18,.9);
-  color:var(--t2);padding:7px 12px;font-size:11px;letter-spacing:.2px;font-family:var(--font);
-  white-space:nowrap;flex-shrink:0;transition:all var(--tf);position:relative;
-  border-radius:3px}
-.cb:hover{background:rgba(36,36,36,.98);border-color:var(--b3);color:var(--t);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.4)}
-.cb:active{transform:scale(.96) translateY(0)}
-.cb.off{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.4);color:var(--red)}
-.cb.off:hover{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.6)}
-.cb.on{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.4);color:var(--green)}
-.cb.on:hover{background:rgba(34,197,94,.18)}
-.cb.amber{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:var(--amber)}
-.cb.blue{background:var(--blue-g);border-color:var(--blue-b);color:var(--blue-l)}
-.cb.danger{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35);color:var(--red)}
-.cb.danger:hover{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.6);transform:translateY(-1px)}
+/* Control buttons */
+.cb{display:flex;align-items:center;gap:5px;border:1px solid var(--b2);
+  background:var(--bg2);color:var(--t2);padding:7px 11px;font-size:11px;
+  letter-spacing:.2px;font-family:var(--font);white-space:nowrap;flex-shrink:0;
+  transition:background var(--tf),border-color var(--tf),color var(--tf),transform 80ms ease,box-shadow var(--tf);
+  position:relative}
+.cb:hover{background:var(--bg3);border-color:var(--b3);color:var(--t);transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.5)}
+.cb:active{transform:scale(.96) translateY(0);box-shadow:none}
+.cb.off{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35);color:var(--red)}
+.cb.off:hover{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.5)}
+.cb.on{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.35);color:var(--green)}
+.cb.on:hover{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.5)}
+.cb.amber{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.35);color:var(--amber)}
+.cb.active{background:var(--blue-g);border-color:var(--blue-b);color:var(--blue-l)}
+.cb.danger{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:var(--red)}
+.cb.danger:hover{background:rgba(239,68,68,.18);border-color:rgba(239,68,68,.5)}
 .cb svg{flex-shrink:0}
 .cb-txt{font-size:10px}
-.cb-badge{position:absolute;top:3px;right:3px;width:5px;height:5px;background:var(--red)}
-.ctrl-sep{width:1px;height:28px;background:var(--b);flex-shrink:0;margin:0 4px}
+.cb-badge{position:absolute;top:3px;right:3px;width:5px;height:5px;background:var(--red);border-radius:50%}
+.ctrl-sep{width:1px;height:26px;background:var(--b2);flex-shrink:0;margin:0 3px}
 
 /* Share banner */
-.share-banner{flex-shrink:0;display:none;background:rgba(34,197,94,.08);
-  border-bottom:1px solid rgba(34,197,94,.2);color:var(--green);
-  font-size:11px;text-align:center;padding:4px;letter-spacing:.5px}
+.share-banner{flex-shrink:0;display:none;background:rgba(34,197,94,.07);
+  border-bottom:1px solid rgba(34,197,94,.15);color:var(--green);
+  font-size:11px;text-align:center;padding:4px;letter-spacing:.3px}
 .share-banner.show{display:block}
 
 /* Mute warning */
-.mute-warn{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);
-  background:rgba(0,0,0,.95);border:1px solid rgba(239,68,68,.4);color:var(--red);
-  padding:8px 18px;font-size:11px;z-index:700;display:none;pointer-events:none;
-  white-space:nowrap;box-shadow:var(--sh);letter-spacing:.5px}
-.mute-warn.show{display:block;animation:fadeIn .2s ease}
+.mute-warn{position:fixed;bottom:68px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.96);border:1px solid rgba(239,68,68,.35);color:var(--red);
+  padding:7px 16px;font-size:11px;z-index:700;display:none;pointer-events:none;
+  white-space:nowrap;box-shadow:var(--sh);letter-spacing:.3px}
+.mute-warn.show{display:block;animation:fadeIn .15s ease}
 
 /* ═══ TIMER OVERLAY ═══ */
-.timer-overlay{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:600;
-  background:rgba(0,0,0,.92);border:1px solid var(--b2);padding:8px 20px;
-  display:none;align-items:center;gap:10px;font-variant-numeric:tabular-nums}
+.timer-overlay{position:fixed;top:52px;left:50%;transform:translateX(-50%);z-index:600;
+  background:rgba(4,4,4,.95);border:1px solid var(--b2);border-top:none;
+  padding:8px 16px;display:none;align-items:center;gap:10px;
+  font-variant-numeric:tabular-nums;box-shadow:0 8px 24px rgba(0,0,0,.6)}
 .timer-overlay.show{display:flex}
-.timer-display{font-size:20px;font-weight:700;color:#fff;letter-spacing:4px;min-width:70px;text-align:center}
+.timer-display{font-size:19px;font-weight:700;color:#fff;letter-spacing:3px;min-width:64px;text-align:center}
 .timer-display.expired{color:var(--red);animation:pulse .5s ease-in-out infinite}
-.timer-controls{display:flex;gap:6px}
-.timer-ctrl{background:none;border:1px solid var(--b2);color:var(--t2);
-  padding:3px 8px;font-size:10px;font-family:var(--font);cursor:pointer;transition:all var(--tf)}
-.timer-ctrl:hover{background:var(--bg2);color:var(--t)}
+.timer-controls{display:flex;gap:4px}
+.timer-ctrl{background:var(--bg2);border:1px solid var(--b2);color:var(--t2);
+  padding:4px 9px;font-size:10px;font-family:var(--font);cursor:pointer;transition:all var(--tf)}
+.timer-ctrl:hover{background:var(--bg3);border-color:var(--b3);color:var(--t)}
+.timer-ctrl.danger{border-color:rgba(239,68,68,.25);color:var(--red)}
+.timer-ctrl.danger:hover{background:var(--red-g)}
 
-/* ═══ CHAT SIDEBAR ═══ */
-.chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px}
+/* ═══ CHAT ═══ */
+.chat-messages{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px}
 .chat-msg{font-size:11px;line-height:1.5}
 .chat-msg-name{color:var(--blue-l);font-weight:600;font-size:10px;margin-bottom:2px}
 .chat-msg-text{color:var(--t2)}
 .chat-msg-text a{color:var(--cyan);text-decoration:underline}
-.chat-msg.system .chat-msg-text{color:var(--t4);font-style:italic}
-.chat-msg-time{font-size:9px;color:var(--t4);margin-left:6px}
-.chat-input-row{display:flex;gap:0;border-top:1px solid var(--b);flex-shrink:0}
-.chat-inp{flex:1;background:var(--bg2);border:none;color:var(--t);padding:10px 12px;font-size:11px;resize:none;font-family:var(--font);height:40px;line-height:1.5}
-.chat-inp:focus{outline:none}
-.chat-send{background:var(--blue);color:#fff;border:none;padding:0 14px;cursor:pointer;font-family:var(--font);font-size:10px;transition:background var(--tf)}.chat-send:hover{background:var(--blue-d)}
+.chat-msg.system .chat-msg-text{color:var(--t4);font-style:italic;font-size:10px}
+.chat-input-row{display:flex;border-top:1px solid var(--b);flex-shrink:0}
+.chat-inp{flex:1;background:var(--bg2);color:var(--t);padding:10px 12px;font-size:11px;
+  resize:none;font-family:var(--font);height:40px;line-height:1.5;border:none;outline:none}
+.chat-send{background:var(--blue);color:#fff;border:none;padding:0 14px;cursor:pointer;
+  font-family:var(--font);font-size:10px;transition:background var(--tf);flex-shrink:0}
+.chat-send:hover{background:var(--blue-d)}
 
-/* ═══ MEMBERS SIDEBAR ═══ */
+/* ═══ MEMBERS ═══ */
 .members-list{flex:1;overflow-y:auto}
 .member-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b)}
-.member-av{width:28px;height:28px;background:var(--bg3);border:1px solid var(--b2);
-  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--t2);flex-shrink:0}
+.member-av{width:26px;height:26px;background:var(--bg3);border:1px solid var(--b2);
+  display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--t2);flex-shrink:0}
 .member-name{flex:1;font-size:11px;color:var(--t);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .member-role{font-size:9px;color:var(--t3)}
-.member-icons{display:flex;gap:3px;flex-shrink:0}
-.member-icon{font-size:10px}
-.member-ping{font-size:9px;padding:1px 5px;border:1px solid var(--b2)}
-.member-ping.good{color:var(--green);border-color:rgba(34,197,94,.2)}
-.member-ping.ok{color:var(--amber);border-color:rgba(245,158,11,.2)}
-.member-ping.poor{color:var(--red);border-color:rgba(239,68,68,.2)}
-.host-actions{padding:10px 12px;border-top:1px solid var(--b);display:flex;flex-direction:column;gap:6px}
+.member-icons{display:flex;gap:3px;flex-shrink:0;font-size:10px}
+.host-actions{padding:8px 12px;border-top:1px solid var(--b);display:flex;flex-direction:column;gap:5px}
 .host-action-btn{background:none;border:1px solid var(--b);color:var(--t2);padding:6px 10px;
   font-size:10px;font-family:var(--font);cursor:pointer;text-align:left;transition:all var(--tf)}
 .host-action-btn:hover{background:var(--bg2);color:var(--t)}
-.host-action-btn.danger{border-color:rgba(239,68,68,.2);color:var(--red)}.host-action-btn.danger:hover{background:var(--red-g)}
+.host-action-btn.danger{border-color:rgba(239,68,68,.18);color:var(--red)}
+.host-action-btn.danger:hover{background:var(--red-g)}
 
 /* ═══ REACTIONS ═══ */
-.reaction-popup{position:fixed;bottom:68px;left:50%;transform:translateX(-50%);z-index:700;
-  background:rgba(8,8,8,.95);border:1px solid var(--b2);padding:8px;
-  display:none;gap:6px;backdrop-filter:blur(8px)}
+.reaction-popup{position:fixed;bottom:66px;left:50%;transform:translateX(-50%);z-index:700;
+  background:rgba(6,6,6,.97);border:1px solid var(--b2);padding:7px;
+  display:none;gap:4px;backdrop-filter:blur(12px);box-shadow:0 8px 24px rgba(0,0,0,.6)}
 .reaction-popup.show{display:flex}
-.reaction-btn{font-size:22px;padding:4px 8px;background:none;border:1px solid transparent;
-  cursor:pointer;transition:all var(--tf);line-height:1}
+.reaction-btn{font-size:21px;padding:4px 7px;border:1px solid transparent;
+  cursor:pointer;transition:all var(--tf);line-height:1;background:none}
 .reaction-btn:hover{background:var(--bg2);border-color:var(--b2);transform:scale(1.2)}
-.emoji-float{position:fixed;pointer-events:none;z-index:800;font-size:28px;
+.emoji-float{position:fixed;pointer-events:none;z-index:800;font-size:26px;
   animation:emojiFloat 2s ease-out forwards}
 
 /* ═══ AUDIO VISUALIZER ═══ */
-.audio-viz{display:flex;align-items:flex-end;gap:1.5px;height:16px;padding:0 4px}
-.audio-bar{width:2px;background:var(--green);transform-origin:bottom;animation:levelBeat .3s ease-in-out infinite}
+.audio-viz{display:flex;align-items:flex-end;gap:1.5px;height:14px;padding:0 2px}
+.audio-bar{width:2px;background:var(--green);transform-origin:bottom;
+  animation:levelBeat .4s ease-in-out infinite;min-height:2px}
 
-/* ═══ WHITEBOARD PANEL ═══ */
-.wb-panel{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+/* ═══ WHITEBOARD ═══ */
+.wb-panel{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
   display:none;align-items:center;justify-content:center}
 .wb-panel.show{display:flex}
-.wb-card{background:var(--bg1);border:1px solid var(--b2);width:min(960px,calc(100vw - 40px));
-  height:min(640px,calc(100vh - 80px));display:flex;flex-direction:column;animation:slideUp .2s ease}
-.wb-header{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--b);flex-shrink:0}
-.wb-title{font-size:11px;color:var(--t);letter-spacing:.5px;flex:1}
-.wb-tools{display:flex;align-items:center;gap:3px}
+.wb-card{background:var(--bg1);border:1px solid var(--b2);width:min(940px,calc(100vw - 32px));
+  height:min(620px,calc(100vh - 60px));display:flex;flex-direction:column;
+  animation:slideUp .18s ease;box-shadow:0 32px 80px rgba(0,0,0,.8)}
+.wb-header{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--b);flex-shrink:0;flex-wrap:wrap}
+.wb-back{display:flex;align-items:center;gap:4px;color:var(--t3);padding:4px 10px;font-size:10px;
+  border:1px solid var(--b);background:none;font-family:var(--font);cursor:pointer;
+  transition:all var(--tf);flex-shrink:0}
+.wb-back:hover{background:var(--bg2);border-color:var(--b2);color:var(--t)}
+.wb-title{font-size:10px;color:var(--t3);letter-spacing:.3px;flex-shrink:0}
+.wb-tools{display:flex;align-items:center;gap:2px;flex-wrap:wrap;flex:1}
 .wb-tool{background:none;border:1px solid transparent;color:var(--t2);padding:4px 7px;
   font-size:10px;font-family:var(--font);cursor:pointer;transition:all var(--tf)}
 .wb-tool:hover,.wb-tool.active{background:var(--bg2);border-color:var(--b2);color:var(--t)}
 .wb-tool.active{border-color:var(--blue-b);color:var(--blue-l);background:var(--blue-g)}
-.wb-color{width:18px;height:18px;cursor:pointer;border:1px solid var(--b2)}
-.wb-canvas{flex:1;cursor:crosshair;display:block;background:#fff}
-.wb-close{background:none;border:none;color:var(--t3);font-size:18px;cursor:pointer;padding:4px 8px;transition:color var(--tf)}.wb-close:hover{color:var(--t)}
+.wb-color{width:18px;height:18px;cursor:pointer;border:1px solid var(--b2);padding:0}
+.wb-canvas{flex:1;cursor:crosshair;display:block;background:#fff;min-height:0}
 
-/* ═══ COLLAB TEXT PANEL ═══ */
-.collab-panel{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);
+/* ═══ COLLAB TEXT ═══ */
+.collab-panel{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
   display:none;align-items:center;justify-content:center}
 .collab-panel.show{display:flex}
-.collab-card{background:var(--bg1);border:1px solid var(--b2);width:min(720px,calc(100vw - 40px));
-  height:min(500px,calc(100vh - 80px));display:flex;flex-direction:column;animation:slideUp .2s ease}
-.collab-header{display:flex;align-items:center;padding:10px 14px;border-bottom:1px solid var(--b);flex-shrink:0}
-.collab-title{font-size:11px;color:var(--t);letter-spacing:.5px;flex:1}
-.collab-actions{display:flex;gap:6px}
-.collab-act{background:none;border:1px solid var(--b);color:var(--t2);padding:4px 10px;font-size:10px;font-family:var(--font);cursor:pointer;transition:all var(--tf)}.collab-act:hover{background:var(--bg2);color:var(--t)}
-.collab-textarea{flex:1;background:var(--bg2);border:none;color:var(--t);padding:14px;font-family:var(--font);font-size:12px;resize:none;line-height:1.7}
-.collab-textarea:focus{outline:none}
-.collab-close{background:none;border:none;color:var(--t3);font-size:18px;cursor:pointer;padding:4px 8px}.collab-close:hover{color:var(--t)}
+.collab-card{background:var(--bg1);border:1px solid var(--b2);width:min(680px,calc(100vw - 32px));
+  height:min(480px,calc(100vh - 60px));display:flex;flex-direction:column;
+  animation:slideUp .18s ease;box-shadow:0 32px 80px rgba(0,0,0,.8)}
+.collab-header{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b);flex-shrink:0}
+.collab-back{display:flex;align-items:center;gap:4px;color:var(--t3);padding:4px 10px;font-size:10px;
+  border:1px solid var(--b);background:none;font-family:var(--font);cursor:pointer;
+  transition:all var(--tf);flex-shrink:0}
+.collab-back:hover{background:var(--bg2);border-color:var(--b2);color:var(--t)}
+.collab-title{font-size:10px;color:var(--t3);letter-spacing:.3px;flex:1}
+.collab-act{background:var(--bg2);border:1px solid var(--b2);color:var(--t2);padding:4px 10px;
+  font-size:10px;font-family:var(--font);cursor:pointer;transition:all var(--tf)}
+.collab-act:hover{background:var(--bg3);color:var(--t)}
+.collab-textarea{flex:1;background:var(--bg2);border:none;color:var(--t);padding:14px;
+  font-family:var(--font);font-size:12px;resize:none;line-height:1.75;outline:none;min-height:0}
 
-/* ═══ SETTINGS PANEL ═══ */
+/* ═══ SETTINGS ═══ */
 .settings-panel{display:none;position:fixed;inset:0;z-index:7000;
-  background:rgba(0,0,0,.88);backdrop-filter:blur(6px);align-items:flex-end;justify-content:center}
-.settings-panel.show{display:flex;animation:fadeIn .18s ease}
-.settings-card{width:100%;max-width:500px;background:var(--bg1);border:1px solid var(--b2);
-  border-bottom:none;animation:slideUp .2s ease;max-height:88vh;overflow-y:auto}
+  background:rgba(0,0,0,.85);backdrop-filter:blur(8px);align-items:flex-end;justify-content:center}
+.settings-panel.show{display:flex;animation:fadeIn .15s ease}
+.settings-card{width:100%;max-width:480px;background:var(--bg1);border:1px solid var(--b2);
+  border-bottom:none;animation:slideUp .18s ease;max-height:86vh;overflow-y:auto;
+  box-shadow:0 -16px 48px rgba(0,0,0,.7)}
 .settings-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
   border-bottom:1px solid var(--b);position:sticky;top:0;background:var(--bg1);z-index:1}
-.settings-title{font-size:12px;font-weight:600;color:#fff;letter-spacing:1px}
-.settings-close{color:var(--t3);font-size:18px;padding:2px 8px;background:none;border:none;cursor:pointer;transition:color var(--tf)}.settings-close:hover{color:var(--t)}
-.settings-sec{padding:12px 18px;border-bottom:1px solid var(--b)}.settings-sec:last-child{border-bottom:none}
+.settings-title{font-size:11px;font-weight:600;color:#fff;letter-spacing:.8px}
+.settings-close-btn{display:flex;align-items:center;gap:5px;color:var(--t3);padding:5px 12px;font-size:10px;
+  border:1px solid var(--b);background:none;font-family:var(--font);cursor:pointer;
+  letter-spacing:.3px;transition:all var(--tf)}
+.settings-close-btn:hover{background:var(--bg2);border-color:var(--b2);color:var(--t)}
+.settings-sec{padding:12px 18px;border-bottom:1px solid var(--b)}
+.settings-sec:last-child{border-bottom:none}
 .settings-sec-t{font-size:9px;color:var(--t3);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0}
-.settings-lbl{font-size:11px;color:var(--t2)}.settings-desc{font-size:10px;color:var(--t4);margin-top:2px}
-.toggle{position:relative;width:36px;height:20px;flex-shrink:0;cursor:pointer}
+.settings-lbl{font-size:11px;color:var(--t2)}
+.settings-desc{font-size:10px;color:var(--t4);margin-top:2px}
+.toggle{position:relative;width:34px;height:18px;flex-shrink:0;cursor:pointer}
 .toggle input{opacity:0;width:0;height:0;position:absolute}
-.toggle-track{position:absolute;inset:0;background:var(--b2);transition:background var(--tf)}.toggle input:checked+.toggle-track{background:var(--blue)}
-.toggle-thumb{position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;transition:transform var(--tf)}.toggle input:checked~.toggle-thumb{transform:translateX(16px)}
-.settings-sel{background:var(--bg);border:1px solid var(--b);color:var(--t);padding:5px 8px;font-size:11px;font-family:var(--font);cursor:pointer;min-width:130px}.settings-sel:focus{border-color:var(--blue);outline:none}
-.settings-inp{background:var(--bg);border:1px solid var(--b);color:var(--t);padding:5px 8px;font-size:11px;font-family:var(--font);width:100%}.settings-inp:focus{border-color:var(--blue);outline:none}
-.device-btn{border:1px solid var(--b);color:var(--t2);padding:5px 10px;font-size:10px;font-family:var(--font);letter-spacing:.3px;transition:all var(--tf);width:100%;text-align:left;margin-top:4px;background:none;cursor:pointer}
-.device-btn:hover{background:var(--bg2);color:var(--t)}.device-btn.active{border-color:var(--blue-b);color:var(--blue-l);background:var(--blue-g)}
+.toggle-track{position:absolute;inset:0;background:var(--b2);transition:background var(--tf)}
+.toggle input:checked+.toggle-track{background:var(--blue)}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:12px;height:12px;background:#fff;transition:transform var(--tf)}
+.toggle input:checked~.toggle-thumb{transform:translateX(16px)}
+.settings-sel{background:var(--bg2);border:1px solid var(--b2);color:var(--t);padding:5px 8px;
+  font-size:11px;font-family:var(--font);cursor:pointer;min-width:120px}
+.settings-sel:focus{border-color:var(--blue);outline:none}
+.device-btn{border:1px solid var(--b);color:var(--t2);padding:5px 10px;font-size:10px;
+  font-family:var(--font);letter-spacing:.2px;transition:all var(--tf);width:100%;
+  text-align:left;margin-top:3px;background:none;cursor:pointer}
+.device-btn:hover{background:var(--bg2);color:var(--t)}
+.device-btn.active{border-color:var(--blue-b);color:var(--blue-l);background:var(--blue-g)}
 .conn-info{font-size:10px;color:var(--t3);line-height:2}
-.shortcut-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:10px}
-.shortcut-key{color:var(--blue-l);font-family:var(--font)}.shortcut-desc{color:var(--t3)}
+.shortcut-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:10px}
+.shortcut-key{color:var(--blue-l)}
+.shortcut-desc{color:var(--t3)}
 
 /* ═══ DEBUG ═══ */
 #debug-panel{display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;
-  background:rgba(0,0,0,.98);border-top:1px solid #222;padding:8px;
-  font-size:10px;color:#0f0;font-family:monospace;max-height:40vh;overflow-y:auto;line-height:1.6}
-#dbg-hdr{color:#444;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between}
-.dbg-clr{background:#111;border:1px solid #333;color:#0f0;padding:1px 8px;font-size:9px;cursor:pointer}
+  background:rgba(0,0,0,.99);border-top:1px solid #1a1a1a;padding:8px;
+  font-size:10px;color:#0f0;font-family:monospace;max-height:38vh;overflow-y:auto;line-height:1.6}
+#dbg-hdr{color:#333;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+.dbg-clr{background:#0a0a0a;border:1px solid #222;color:#0f0;padding:1px 8px;font-size:9px;cursor:pointer}
 
 /* ═══ RWD ═══ */
 @media(max-width:768px){.sidebar{width:100%;position:fixed;inset:0;z-index:600;border:none}}
 @media(max-width:640px){
-  .ctrl-bar{height:52px;overflow-x:auto}.ctrl-section.center{gap:3px}
-  .cb{padding:6px 9px;font-size:10px}.cb-txt{display:none}
-  .m-bar{height:40px}.m-count,.m-timer{display:none}
-  .share-banner{font-size:10px}
+  .ctrl-bar{height:52px;overflow-x:auto}
+  .ctrl-section.center{gap:2px}
+  .cb{padding:6px 9px;font-size:10px}
+  .cb-txt{display:none}
+  .m-bar{height:38px}
+  .m-count,.m-timer{display:none}
 }
-@media(max-width:400px){.cb{padding:7px 10px}.m-brand{letter-spacing:3px;font-size:11px}.m-code{display:none}}
-@media(orientation:landscape) and (max-height:480px){.m-bar{height:32px}.ctrl-bar{height:42px}}
+@media(max-width:400px){.cb{padding:6px 8px}.m-brand{letter-spacing:3px;font-size:10px}.m-code{display:none}}
+@media(orientation:landscape) and (max-height:480px){.m-bar{height:32px}.ctrl-bar{height:44px}}
 </style>
 </head>
 <body>
@@ -490,14 +512,14 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
     <div class="login-hdr">
       <div class="login-eyebrow">// SMES MEET SYSTEM</div>
       <div class="login-brand">SMES-MEET</div>
-      <div class="login-ver">v6.0 // LiveKit SFU // End-to-End WebRTC</div>
+      <div class="login-ver">v6.1 // LiveKit SFU // WebRTC</div>
       <div class="login-hr"></div>
     </div>
     <div class="domain-badge"><span class="domain-text">@mail2.smes.tyc.edu.tw 限定存取</span></div>
     <div class="https-warn" id="https-warn">⚠ 請使用 HTTPS — HTTP 環境下相機與螢幕分享無法使用</div>
     <div id="login-toast"></div>
     <button class="btn-google" id="btn-google">
-      <svg width="16" height="16" viewBox="0 0 24 24">
+      <svg width="15" height="15" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
         <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
@@ -511,7 +533,7 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
       <input class="dev-inp" id="dev-pw" type="password" placeholder="密碼" autocomplete="current-password"/>
       <button class="btn-dev" id="btn-dev">測試登入</button>
     </div>
-    <div class="ver-text" id="ver-txt">v6.0 // No Recording // E2E WebRTC</div>
+    <div class="ver-text" id="ver-txt">v6.1 // No Recording // E2E WebRTC</div>
   </div>
 </div>
 
@@ -540,10 +562,10 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 </div>
 
 <!-- WAITING -->
-<div id="s-waiting" class="screen" style="align-items:center;justify-content:center;gap:16px">
+<div id="s-waiting" class="screen">
   <div class="wait-badge">PENDING APPROVAL</div>
   <div class="wait-code" id="wait-code">——</div>
-  <div class="wait-sub">正在等待主持人核准加入請求...</div>
+  <div class="wait-sub">正在等待主持人核准...</div>
   <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
   <div class="wait-prog"><div class="wait-bar" id="wait-bar"></div></div>
   <button class="btn-cancel-w" id="btn-cancel">取消請求</button>
@@ -569,22 +591,22 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
     </div>
     <div class="m-bar-r">
       <span class="host-chip" id="tag-host" style="display:none">HOST</span>
-      <span id="tag-role" style="font-size:10px;color:var(--t3)"></span>
+      <span id="tag-role" style="font-size:10px;color:var(--t3);margin-right:4px"></span>
       <button class="m-bar-btn" id="btn-members" title="成員列表">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </button>
       <button class="m-bar-btn" id="btn-chat" title="聊天室">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         <div class="m-badge" id="chat-badge" style="display:none"></div>
       </button>
       <button class="m-bar-btn" id="btn-wb" title="白板">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="14"/><line x1="7" y1="21" x2="17" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="14"/><line x1="7" y1="21" x2="17" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
       </button>
-      <button class="m-bar-btn" id="btn-collab" title="協作文字區">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      <button class="m-bar-btn" id="btn-collab" title="協作文字">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
       </button>
       <button class="m-bar-btn" id="btn-rec" title="錄影" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
       </button>
     </div>
   </div>
@@ -593,13 +615,13 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
   <div class="pending-bar" id="pending-bar"></div>
 
   <!-- SHARE BANNER -->
-  <div class="share-banner" id="share-banner">🖥 螢幕分享進行中 — 按 S 停止</div>
+  <div class="share-banner" id="share-banner">🖥 螢幕分享進行中 — 按 S 停止分享</div>
 
   <!-- MAIN AREA -->
   <div class="meeting-body">
     <!-- VIDEO GRID -->
     <div class="video-area" id="vgrid">
-      <!-- LOCAL TILE -->
+      <!-- LOCAL TILE (always present) -->
       <div class="video-tile" id="tile-local">
         <video id="local-vid" class="tile-video" autoplay muted playsinline webkit-playsinline></video>
         <div class="tile-camoff hidden" id="local-camoff">
@@ -628,13 +650,9 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
         <button class="sidebar-tab" data-tab="chat">
           聊天 <span class="sidebar-tab-badge" id="chat-count" style="display:none">0</span>
         </button>
-        <button class="sidebar-tab sidebar-close-btn" id="sidebar-close" title="關閉側欄" style="flex:0;padding:10px 12px;font-size:14px;color:var(--t3)">✕</button>
+        <button class="sidebar-close-btn" id="sidebar-close" title="關閉">✕</button>
       </div>
-
-      <!-- Members tab -->
       <div id="tab-members" class="members-list"></div>
-
-      <!-- Chat tab -->
       <div id="tab-chat" style="display:none;flex:1;flex-direction:column;overflow:hidden">
         <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-input-row">
@@ -642,8 +660,6 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
           <button class="chat-send" id="chat-send">送出</button>
         </div>
       </div>
-
-      <!-- Host controls -->
       <div class="host-actions" id="host-actions" style="display:none">
         <button class="host-action-btn" id="btn-mute-all">🔇 全體靜音</button>
         <button class="host-action-btn" id="btn-lock-share">🔒 鎖定分享權限</button>
@@ -656,56 +672,57 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
   <div class="ctrl-bar">
     <div class="ctrl-section">
       <button class="cb" id="cb-mic">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
         <span class="cb-txt">麥克風</span>
       </button>
       <button class="cb" id="cb-cam">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
         <span class="cb-txt">相機</span>
       </button>
       <button class="cb" id="cb-share">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         <span class="cb-txt">分享螢幕</span>
       </button>
     </div>
     <div class="ctrl-section center">
       <button class="cb" id="cb-hand">
-        <span style="font-size:13px;line-height:1">✋</span>
+        <span style="font-size:12px;line-height:1">✋</span>
         <span class="cb-txt">舉手</span>
       </button>
       <button class="cb" id="cb-react">
-        <span style="font-size:13px;line-height:1">😊</span>
+        <span style="font-size:12px;line-height:1">😊</span>
         <span class="cb-txt">表情</span>
       </button>
       <button class="cb" id="cb-pip" title="子母畫面">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14"/><rect x="12" y="9" width="8" height="6" fill="currentColor"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14"/><rect x="12" y="9" width="8" height="6" fill="currentColor"/></svg>
         <span class="cb-txt">子母畫面</span>
       </button>
       <div class="ctrl-sep"></div>
       <button class="cb" id="cb-layout" title="排版">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
         <span class="cb-txt" id="layout-label">自動</span>
       </button>
       <button class="cb" id="cb-bw" title="低頻寬模式">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6l6 6 4-4 6 6 4-4"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 6l6 6 4-4 6 6 4-4"/></svg>
         <span class="cb-txt">低頻寬</span>
       </button>
       <button class="cb" id="cb-timer" title="計時器">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         <span class="cb-txt">計時器</span>
       </button>
     </div>
     <div class="ctrl-section right">
       <button class="cb" id="cb-settings" title="設定 (,)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         <span class="cb-txt">設定</span>
       </button>
+      <div class="ctrl-sep"></div>
       <button class="cb danger" id="cb-leave" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         <span class="cb-txt">離開</span>
       </button>
       <button class="cb danger" id="cb-end" style="display:none">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
         <span class="cb-txt">結束</span>
       </button>
     </div>
@@ -718,14 +735,14 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 
 <!-- TIMER OVERLAY -->
 <div class="timer-overlay" id="timer-overlay">
-  <span style="font-size:9px;color:var(--t3);letter-spacing:1px">⏱</span>
+  <span style="font-size:9px;color:var(--t3)">⏱</span>
   <div class="timer-display" id="timer-display">05:00</div>
   <div class="timer-controls">
-    <button class="timer-ctrl" id="timer-start" title="開始">▶ 開始</button>
-    <button class="timer-ctrl" id="timer-pause" title="暫停">⏸ 暫停</button>
-    <button class="timer-ctrl" id="timer-reset" title="重設">↺ 重設</button>
-    <button class="timer-ctrl" id="timer-set" title="設定時間">⚙ 設定</button>
-    <button class="timer-ctrl" id="timer-close" title="關閉計時器" style="border-color:rgba(239,68,68,.3);color:var(--red)">✕</button>
+    <button class="timer-ctrl" id="timer-start">▶ 開始</button>
+    <button class="timer-ctrl" id="timer-pause">⏸ 暫停</button>
+    <button class="timer-ctrl" id="timer-reset">↺ 重設</button>
+    <button class="timer-ctrl" id="timer-set">⚙ 設定</button>
+    <button class="timer-ctrl danger" id="timer-close">✕</button>
   </div>
 </div>
 
@@ -745,17 +762,17 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 <div class="wb-panel" id="wb-panel">
   <div class="wb-card">
     <div class="wb-header">
-      <button class="panel-back" id="wb-close">← 返回會議</button>
+      <button class="wb-back" id="wb-close">← 返回會議</button>
       <span class="wb-title">// 互動白板</span>
       <div class="wb-tools">
-        <button class="wb-tool active" data-tool="pen" id="wbt-pen">✏️ 畫筆</button>
-        <button class="wb-tool" data-tool="rect" id="wbt-rect">▭ 矩形</button>
-        <button class="wb-tool" data-tool="circle" id="wbt-circle">○ 圓形</button>
-        <button class="wb-tool" data-tool="line" id="wbt-line">╱ 線段</button>
-        <button class="wb-tool" data-tool="text" id="wbt-text">T 文字</button>
-        <button class="wb-tool" data-tool="eraser" id="wbt-eraser">◻ 橡皮</button>
+        <button class="wb-tool active" data-tool="pen">✏️ 畫筆</button>
+        <button class="wb-tool" data-tool="rect">▭ 矩形</button>
+        <button class="wb-tool" data-tool="circle">○ 圓形</button>
+        <button class="wb-tool" data-tool="line">╱ 線段</button>
+        <button class="wb-tool" data-tool="text">T 文字</button>
+        <button class="wb-tool" data-tool="eraser">◻ 橡皮</button>
         <input class="wb-color" type="color" id="wb-color" value="#2563eb" title="顏色"/>
-        <input type="range" id="wb-size" min="1" max="20" value="3" style="width:70px;accent-color:var(--blue)"/>
+        <input type="range" id="wb-size" min="1" max="20" value="3" style="width:60px;accent-color:var(--blue)"/>
         <button class="wb-tool" id="wb-clear">清除</button>
         <button class="wb-tool" id="wb-dl">下載</button>
       </div>
@@ -768,12 +785,10 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 <div class="collab-panel" id="collab-panel">
   <div class="collab-card">
     <div class="collab-header">
-      <button class="panel-back" id="collab-close">← 返回會議</button>
+      <button class="collab-back" id="collab-close">← 返回會議</button>
       <span class="collab-title">// 即時協作文字區</span>
-      <div class="collab-actions">
-        <button class="collab-act" id="collab-copy">複製</button>
-        <button class="collab-act" id="collab-dl">下載</button>
-      </div>
+      <button class="collab-act" id="collab-copy">複製</button>
+      <button class="collab-act" id="collab-dl">下載</button>
     </div>
     <textarea class="collab-textarea" id="collab-text" placeholder="在此輸入協作筆記...&#10;&#10;所有參與者均可看到此內容（透過 LiveKit 資料通道同步）"></textarea>
   </div>
@@ -794,13 +809,12 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
   <div class="settings-card">
     <div class="settings-hdr">
       <span class="settings-title">// 會議設定</span>
-      <button class="panel-close" id="settings-close">✕ 關閉</button>
+      <button class="settings-close-btn" id="settings-close">✕ 關閉</button>
     </div>
-
     <div class="settings-sec">
       <div class="settings-sec-t">音訊輸入</div>
       <div id="mic-devices"></div>
-      <div class="settings-row" style="margin-top:10px">
+      <div class="settings-row" style="margin-top:8px">
         <div><div class="settings-lbl">回音消除</div></div>
         <label class="toggle"><input type="checkbox" id="set-echo" checked/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
@@ -809,15 +823,14 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
         <label class="toggle"><input type="checkbox" id="set-noise" checked/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
       <div class="settings-row">
-        <div><div class="settings-lbl">按住 Space 發言</div><div class="settings-desc">放開自動靜音</div></div>
+        <div><div class="settings-lbl">按住 Space 發言 (PTT)</div><div class="settings-desc">放開自動靜音</div></div>
         <label class="toggle"><input type="checkbox" id="set-ptt"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
     </div>
-
     <div class="settings-sec">
       <div class="settings-sec-t">視訊</div>
       <div id="cam-devices"></div>
-      <div class="settings-row" style="margin-top:10px">
+      <div class="settings-row" style="margin-top:8px">
         <div><div class="settings-lbl">解析度</div></div>
         <select class="settings-sel" id="set-quality">
           <option value="fhd">1080p (高清)</option>
@@ -835,7 +848,6 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
         <label class="toggle"><input type="checkbox" id="set-blur"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
     </div>
-
     <div class="settings-sec">
       <div class="settings-sec-t">介面</div>
       <div class="settings-row">
@@ -851,7 +863,6 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
         <label class="toggle"><input type="checkbox" id="set-guard" checked/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
       </div>
     </div>
-
     <div class="settings-sec">
       <div class="settings-sec-t">快捷鍵</div>
       <div class="shortcut-grid">
@@ -861,19 +872,17 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
         <span class="shortcut-key">H</span><span class="shortcut-desc">舉手</span>
         <span class="shortcut-key">C</span><span class="shortcut-desc">聊天室</span>
         <span class="shortcut-key">Space</span><span class="shortcut-desc">長按發言 (PTT)</span>
-        <span class="shortcut-key">Esc</span><span class="shortcut-desc">退出全螢幕</span>
+        <span class="shortcut-key">Esc</span><span class="shortcut-desc">關閉面板</span>
         <span class="shortcut-key">,</span><span class="shortcut-desc">設定</span>
       </div>
     </div>
-
     <div class="settings-sec">
       <div class="settings-sec-t">連線資訊</div>
       <div class="conn-info" id="conn-info"></div>
     </div>
-
     <div class="settings-sec">
       <div class="settings-sec-t">匯出</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
         <button class="host-action-btn" id="btn-export-chat">匯出聊天記錄</button>
         <button class="host-action-btn" id="btn-export-notes">匯出協作筆記</button>
       </div>
@@ -883,27 +892,28 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 
 <!-- DEBUG -->
 <div id="debug-panel">
-  <div id="dbg-hdr"><span style="color:#555">// SMES-MEET DEBUG v6</span><button class="dbg-clr" id="dbg-clr">CLR</button></div>
+  <div id="dbg-hdr"><span style="color:#333">// SMES-MEET DEBUG v6.1</span><button class="dbg-clr" id="dbg-clr">CLR</button></div>
   <div id="debug-log"></div>
-</div><script type="module">
+</div>
+
+<script type="module">
 // ═══════════════════════════════════════════════════════════════
 // IMPORTS
 // ═══════════════════════════════════════════════════════════════
 import {
   Room, RoomEvent, Track, ConnectionState, DisconnectReason,
-  createLocalScreenTracks, LocalVideoTrack,
+  createLocalScreenTracks,
 } from 'https://cdn.jsdelivr.net/npm/livekit-client@2.5.8/+esm';
-
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
   getRedirectResult, signInWithEmailAndPassword, signOut, onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc,
-  deleteDoc, onSnapshot, query, where, orderBy, serverTimestamp, getDocs
+  deleteDoc, onSnapshot, query, where, serverTimestamp, getDocs
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ═══════════════════════════════════════════════════════════════
-// CONFIG — Vercel token endpoint
+// CONFIG
 // ═══════════════════════════════════════════════════════════════
 const TOKEN_API = 'https://smes-meet-vercel.vercel.app/api/get-token';
 const LK_URL    = 'wss://smes-meet-l23tvgv2.livekit.cloud';
@@ -914,9 +924,9 @@ const FIREBASE_CFG = {
   messagingSenderId:'897771756747',
   appId:'1:897771756747:web:4a227140a386cef3860f4e',
 };
-const DOMAIN  = 'mail2.smes.tyc.edu.tw';
-const STU_RE  = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
-const MAX_P   = 16;
+const DOMAIN = 'mail2.smes.tyc.edu.tw';
+const STU_RE = /^(\d{3})0(\d{1,3})@mail2\.smes\.tyc\.edu\.tw$/;
+const MAX_P  = 16;
 
 // ═══════════════════════════════════════════════════════════════
 // FIREBASE
@@ -929,23 +939,26 @@ const db    = getFirestore(fbApp);
 // STATE
 // ═══════════════════════════════════════════════════════════════
 let lkRoom = null;
+// Tracks the local participant's identity so we can guard against self-tiles
+// even before lkRoom is fully set up
+let _localIdentity = null;
+
 const S = {
   user:null, profile:null,
   room:'', isHost:false, inMeeting:false,
   micOn:true, camOn:true, sharing:false, mirrored:true, handRaised:false,
   bwMode:false, laserOn:false, shareLocked:false, pttActive:false,
   wakeLock:null, myReqId:null,
-  unsubReqs:null, waitUnsub:null, roomUnsub:null, chatUnsub:null,
+  unsubReqs:null, waitUnsub:null, roomUnsub:null,
 };
-const HR   = {};   // hand-raise: identity → bool
-const MSGS = [];   // chat messages
-let LAYOUT  = 'auto';   // 'auto'|'speaker'|'spotlight'
-let PINNED  = null;
-let FULLTILE= null;
-const RMT   = {};  // remove timers
+const HR   = {};  // hand-raise map: identity→bool
+const MSGS = [];  // chat messages
+let LAYOUT   = 'auto';
+let PINNED   = null;
+let FULLTILE = null;
+const RMT    = {};  // pending tile-remove timers
 let unreadChat = 0;
 
-// Settings
 const SET = {
   sound:true, speak:true, guard:true, echo:true, noise:true,
   mirror:true, quality:'hd', micId:'', camId:'', ptt:false, blur:false,
@@ -964,6 +977,8 @@ const genCode  = () => { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Arra
 const isSecure = () => window.isSecureContext || location.protocol==='https:' || ['localhost','127.0.0.1'].includes(location.hostname);
 const isSafari = () => /^((?!chrome|android).)*safari/i.test(navigator.userAgent) || /iPad|iPhone|iPod/.test(navigator.userAgent);
 const detectRole = e => { const m=e.match(STU_RE); return (m&&parseInt(m[2],10)<=180)?'student':'teacher'; };
+// Guard: is this identity the local participant?
+const isLocalP = id => !!id && (id === _localIdentity || id === lkRoom?.localParticipant?.identity);
 
 // Debug
 let _dTaps=0, _dTO=null;
@@ -997,14 +1012,14 @@ function notif(msg, ms=4000, type='info'){
   const i=document.createElement('div'); i.className='notif '+type; i.textContent=msg;
   s.appendChild(i);
   while(s.children.length>5) s.removeChild(s.firstChild);
-  setTimeout(()=>{ i.style.transition='opacity .3s'; i.style.opacity='0'; setTimeout(()=>i.remove(),300); }, ms);
+  setTimeout(()=>{ i.style.transition='opacity .28s'; i.style.opacity='0'; setTimeout(()=>i.remove(),300); }, ms);
 }
 
 // Toast
 function toast(elId, msg, type='error'){
   const el=$(elId); if(!el) return;
   el.textContent=msg; el.className='show';
-  const colors={error:['var(--red-g)','rgba(239,68,68,.25)','#fca5a5'],success:['var(--green-g)','rgba(34,197,94,.25)','#86efac'],info:['var(--blue-g)','var(--blue-b)','#60a5fa']};
+  const colors={error:['var(--red-g)','rgba(239,68,68,.2)','#fca5a5'],success:['var(--green-g)','rgba(34,197,94,.2)','#86efac'],info:['var(--blue-g)','var(--blue-b)','#60a5fa']};
   const [bg,bd,c]=colors[type]||colors.error;
   el.style.cssText=`background:${bg};border:1px solid ${bd};color:${c}`;
 }
@@ -1018,12 +1033,12 @@ function modal({title='',body='',input=false,inputPlaceholder='',inputValue='',b
     $('modal-title').textContent=title;
     $('modal-body').textContent=body;
     const inp=$('modal-input');
-    if(input){ inp.style.display='block'; inp.placeholder=inputPlaceholder; inp.value=inputValue; setTimeout(()=>inp.focus(),100); }
+    if(input){ inp.style.display='block'; inp.placeholder=inputPlaceholder; inp.value=inputValue; setTimeout(()=>inp.focus(),80); }
     else inp.style.display='none';
     const act=$('modal-actions'); act.innerHTML='';
     buttons.forEach(b=>{
       const btn=document.createElement('button');
-      btn.className=`modal-btn ${b.type||''}`;
+      btn.className='modal-btn'+(b.type?' '+b.type:'');
       btn.textContent=b.label;
       btn.onclick=()=>{ $('modal-backdrop').classList.remove('show'); res(input?inp.value:b.value); };
       act.appendChild(btn);
@@ -1068,14 +1083,14 @@ function setSFU(state){
   lbl.textContent=state==='connected'?'已連線':state==='connecting'?'連線中':'SFU';
 }
 
-// Ctrl autohide
+// Ctrl autohide (mobile)
 let _ctrlTO=null;
 function resetCtrl(){
   const b=document.querySelector('.ctrl-bar'); if(!b) return;
   b.style.opacity='1'; b.style.pointerEvents='auto'; clearTimeout(_ctrlTO);
   if(window.innerWidth<=640) _ctrlTO=setTimeout(()=>{
     if(!$('s-meeting').classList.contains('active')) return;
-    b.style.opacity='.12'; b.style.pointerEvents='none';
+    b.style.opacity='.1'; b.style.pointerEvents='none';
   },4000);
 }
 document.addEventListener('touchstart',resetCtrl,{passive:true});
@@ -1086,15 +1101,13 @@ document.addEventListener('mousemove',resetCtrl,{passive:true});
 // ═══════════════════════════════════════════════════════════════
 if(!isSecure()) $('https-warn').classList.add('show');
 
-// Loading progress animation
 const loadProg = $('load-prog');
 let _lp=0;
 const _lpIv = setInterval(()=>{ _lp=Math.min(_lp+Math.random()*15, 90); if(loadProg) loadProg.style.width=_lp+'%'; },200);
 
 onAuthStateChanged(auth, async user => {
-  clearInterval(_lpIv); if(loadProg){ loadProg.style.width='100%'; }
-  await new Promise(r=>setTimeout(r,200));
-
+  clearInterval(_lpIv); if(loadProg) loadProg.style.width='100%';
+  await new Promise(r=>setTimeout(r,180));
   if(!user){ showScreen('login'); return; }
   if(!user.email.endsWith('@'+DOMAIN)){ await signOut(auth); showScreen('login'); return; }
   S.user=user;
@@ -1124,7 +1137,7 @@ $('btn-dev').onclick = async () => {
   const e=$('dev-email').value.trim(), p=$('dev-pw').value;
   if(!e.endsWith('@'+DOMAIN)){ toast('login-toast','必須使用 @'+DOMAIN); return; }
   try{ await signInWithEmailAndPassword(auth,e,p); }
-  catch(e){ toast('login-toast',e.code==='auth/invalid-credential'?'帳號或密碼錯誤':e.message); }
+  catch(err){ toast('login-toast',err.code==='auth/invalid-credential'?'帳號或密碼錯誤':err.message); }
 };
 $('btn-logout').onclick = async () => { await cleanup(); await signOut(auth); };
 
@@ -1215,47 +1228,38 @@ $('btn-cancel').onclick = async () => {
 };
 
 // ═══════════════════════════════════════════════════════════════
-// MEETING ENTER — 完整修正的連線邏輯
+// MEETING ENTER
 // ═══════════════════════════════════════════════════════════════
 async function goMeeting(){
   if(S.inMeeting) return;
   S.inMeeting=true;
 
-  // Fully clear all stale tiles, audio, and state from any previous session
+  // ── Step 0: Full reset of any previous session state ──
+  _localIdentity = null;
   nukeTiles();
-  // Also reset local tile appearance
-  const lv=$('local-vid'); if(lv){ try{lv.srcObject=null;}catch(_){} }
+
+  // Reset local tile display
+  const _lv=$('local-vid'); if(_lv){ try{_lv.srcObject=null;}catch(_){} }
   $('local-camoff')?.classList.remove('hidden');
   $('local-hand')?.classList.remove('show');
   const _lhl=$('local-hand-lbl'); if(_lhl) _lhl.textContent='';
   $('local-icons').innerHTML='';
   for(const k of Object.keys(HR)) delete HR[k];
 
-  // Reset layout state
   LAYOUT='auto'; PINNED=null; FULLTILE=null;
-  document.querySelectorAll('.layout-opt').forEach(o=>o.classList.toggle('active',o.dataset.layout==='auto'));
   $('layout-label').textContent='自動';
 
-  // 1. Get token
+  // ── Step 1: Get token ──
   let token;
   try{
-    dbg('[TOKEN] fetching from '+TOKEN_API);
+    dbg('[TOKEN] fetching...');
     const r=await fetch(TOKEN_API, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        roomName: S.room,
-        username: S.profile.full_name,
-        email:    S.profile.email,
-        role:     S.profile.role,
-      }),
+      body:JSON.stringify({roomName:S.room, username:S.profile.full_name, email:S.profile.email, role:S.profile.role}),
     });
     dbg('[TOKEN] status='+r.status);
-    if(!r.ok){
-      let em='HTTP '+r.status;
-      try{ const ej=await r.json(); em=ej.error||ej.message||em; }catch(_){}
-      throw new Error(em);
-    }
+    if(!r.ok){ let em='HTTP '+r.status; try{const ej=await r.json(); em=ej.error||ej.message||em;}catch(_){} throw new Error(em); }
     const d=await r.json();
     if(!d.token) throw new Error('API 未回傳 token');
     token=d.token;
@@ -1266,56 +1270,51 @@ async function goMeeting(){
     showScreen('lobby'); return;
   }
 
-  // 2. Create LiveKit Room
+  // ── Step 2: Create Room ──
   lkRoom=new Room({
-    adaptiveStream: false,  // 手動控制 srcObject 最可靠
-    dynacast: true,
-    audioCaptureDefaults:{
-      echoCancellation: SET.echo,
-      noiseSuppression: SET.noise,
-      autoGainControl:  true,
-    },
-    videoCaptureDefaults:{
-      resolution: getResolution(SET.quality),
-    },
+    adaptiveStream:false, dynacast:true,
+    audioCaptureDefaults:{echoCancellation:SET.echo,noiseSuppression:SET.noise,autoGainControl:true},
+    videoCaptureDefaults:{resolution:getResolution(SET.quality)},
     publishDefaults:{
-      simulcast: true,
+      simulcast:true,
       videoSimulcastLayers:[
-        {width:320, height:180, encoding:{maxBitrate:100_000, maxFramerate:10}},
-        {width:640, height:360, encoding:{maxBitrate:350_000, maxFramerate:20}},
-        {width:1280,height:720, encoding:{maxBitrate:1_200_000,maxFramerate:30}},
+        {width:320,height:180,encoding:{maxBitrate:100_000,maxFramerate:10}},
+        {width:640,height:360,encoding:{maxBitrate:350_000,maxFramerate:20}},
+        {width:1280,height:720,encoding:{maxBitrate:1_200_000,maxFramerate:30}},
       ],
     },
   });
 
-  // 3. Bind events BEFORE connect
+  // ── Step 3: Bind events BEFORE connect ──
   lkRoom
-    .on(RoomEvent.Connected,               () => onLKConnected())
-    .on(RoomEvent.Disconnected,            r  => onLKDisconnected(r))
-    .on(RoomEvent.ConnectionStateChanged,  s  => onLKStateChanged(s))
-    .on(RoomEvent.ParticipantConnected,    p  => onParticipantIn(p))
-    .on(RoomEvent.ParticipantDisconnected, p  => onParticipantOut(p))
+    .on(RoomEvent.Connected,               ()     => onLKConnected())
+    .on(RoomEvent.Disconnected,            r      => onLKDisconnected(r))
+    .on(RoomEvent.ConnectionStateChanged,  st     => onLKStateChanged(st))
+    .on(RoomEvent.ParticipantConnected,    p      => onParticipantIn(p))
+    .on(RoomEvent.ParticipantDisconnected, p      => onParticipantOut(p))
     .on(RoomEvent.TrackSubscribed,         (t,pub,p) => onTrackSub(t,pub,p))
     .on(RoomEvent.TrackUnsubscribed,       (t,pub,p) => onTrackUnsub(t,pub,p))
-    .on(RoomEvent.TrackMuted,              (pub,p)   => { updateTileIcons(p); if(pub.source===Track.Source.Camera){ const tile=getTile(p.identity); if(tile) setCamOff(tile,true); } })
-    .on(RoomEvent.TrackUnmuted,            (pub,p)   => { updateTileIcons(p); if(pub.source===Track.Source.Camera){ const tile=getTile(p.identity); if(tile) setCamOff(tile,false); } })
-    .on(RoomEvent.ActiveSpeakersChanged,   sp => onSpeakers(sp))
-    .on(RoomEvent.DataReceived,            (d,p) => onDataMsg(d,p))
-    .on(RoomEvent.ParticipantMetadataChanged,(m,p) => onMeta(m,p))
-    .on(RoomEvent.LocalTrackPublished,     pub => { dbg('[LTP] '+pub.source); if(pub.source===Track.Source.Camera) attachLocalVid(); });
+    .on(RoomEvent.TrackMuted,              (pub,p)   => onTrackMuted(pub,p))
+    .on(RoomEvent.TrackUnmuted,            (pub,p)   => onTrackUnmuted(pub,p))
+    .on(RoomEvent.ActiveSpeakersChanged,   sp     => onSpeakers(sp))
+    .on(RoomEvent.DataReceived,            (d,p)  => onDataMsg(d,p))
+    .on(RoomEvent.ParticipantMetadataChanged,(m,p)=> onMeta(m,p))
+    .on(RoomEvent.LocalTrackPublished,     pub    => { dbg('[LTP] '+pub.source); if(pub.source===Track.Source.Camera) attachLocalVid(); });
 
-  // 4. Connect
+  // ── Step 4: Connect ──
   setSFU('connecting');
   try{
     await lkRoom.connect(LK_URL, token);
-    dbg('[LK] connected ok');
+    // Store identity IMMEDIATELY after connect so guards work
+    _localIdentity = lkRoom.localParticipant.identity;
+    dbg('[LK] connected ok, identity='+_localIdentity);
   }catch(e){
     notif('連線失敗：'+e.message,8000,'error');
     lkRoom=null; S.inMeeting=false; S.room=''; S.isHost=false;
     showScreen('lobby'); return;
   }
 
-  // 5. Publish local media
+  // ── Step 5: Publish local media ──
   try{
     await lkRoom.localParticipant.enableCameraAndMicrophone();
     S.camOn=true; S.micOn=true;
@@ -1326,18 +1325,18 @@ async function goMeeting(){
     catch(e2){ S.camOn=false; S.micOn=false; }
   }
 
-  // 6. Setup UI
+  // ── Step 6: Setup UI ──
   $('m-code').textContent = S.room;
   $('tag-host').style.display = S.isHost?'inline':'none';
   $('cb-end').style.display   = S.isHost?'inline-flex':'none';
   $('cb-leave').style.display = S.isHost?'none':'inline-flex';
   $('cb-share').style.display = !!navigator.mediaDevices?.getDisplayMedia?'inline-flex':'none';
   $('tag-role').textContent   = S.profile.role==='teacher'?'[T]':'[S]';
-  $('local-lbl').textContent  = lkRoom.localParticipant.identity;
-  $('local-av').textContent   = initials(lkRoom.localParticipant.identity);
-  $('local-av-name').textContent = lkRoom.localParticipant.identity;
+  $('local-lbl').textContent  = _localIdentity;
+  $('local-av').textContent   = initials(_localIdentity);
+  $('local-av-name').textContent = _localIdentity;
   if(S.isHost) $('host-actions').style.display='flex';
-  $('btn-rec').style.display = 'inline-flex'; // recording button
+  $('btn-rec').style.display='inline-flex';
 
   updateCtrlBtns(); updateCamOff(); renderGrid();
   showScreen('meeting');
@@ -1356,9 +1355,9 @@ async function goMeeting(){
 function onLKConnected(){
   setSFU('connected');
   dbg('[LK] onConnected remote='+lkRoom.remoteParticipants.size);
-  // Render participants already in room when we joined (skip local participant)
+  // Render participants already in room — ONLY remote ones
   lkRoom.remoteParticipants.forEach(p => {
-    if(p.identity !== lkRoom.localParticipant?.identity) makeTile(p);
+    if(!isLocalP(p.identity)) makeTile(p);
   });
   updateCount();
   renderMemberList();
@@ -1378,11 +1377,11 @@ function onLKStateChanged(state){
   if(state===ConnectionState.Reconnecting) notif('正在重新連線...',4000,'warning');
   else if(state===ConnectionState.Connected) notif('已重新連線',3000,'success');
   setSFU(state===ConnectionState.Connected?'connected':
-    state===ConnectionState.Reconnecting||state===ConnectionState.Connecting?'connecting':'');
+    (state===ConnectionState.Reconnecting||state===ConnectionState.Connecting)?'connecting':'');
 }
 
 function onParticipantIn(p){
-  if(p.identity === lkRoom?.localParticipant?.identity) return; // never create tile for self
+  if(isLocalP(p.identity)){ dbg('[PC] skip local self: '+p.identity); return; }
   dbg('[PC] '+p.identity+' tracks='+p.trackPublications.size);
   makeTile(p);
   playTone(880,.1,.06);
@@ -1392,6 +1391,7 @@ function onParticipantIn(p){
 }
 
 function onParticipantOut(p){
+  if(isLocalP(p.identity)) return;
   dbg('[PD] '+p.identity);
   killTile(p.identity);
   playTone(440,.1,.04);
@@ -1399,14 +1399,12 @@ function onParticipantOut(p){
   addSystemMsg(`${p.identity} 離開了會議`);
 }
 
-// ── THE CORE: TrackSubscribed — 這是影片顯示的唯一入口 ──────────
 function onTrackSub(track, pub, participant){
   const id = participant.identity;
-  // Local participant tracks are handled via attachLocalVid(), not here
-  if(id === lkRoom?.localParticipant?.identity) return;
-  dbg(`[TS] ${id} src=${pub.source} kind=${track.kind} mst=${!!track.mediaStreamTrack} state=${track.mediaStreamTrack?.readyState}`);
+  // CRITICAL: Never create tiles for local participant — handled by attachLocalVid()
+  if(isLocalP(id)){ dbg('[TS] skip local track: '+id+' src='+pub.source); return; }
+  dbg(`[TS] ${id} src=${pub.source} kind=${track.kind}`);
 
-  // 確保格子存在
   let tile = getTile(id);
   if(!tile){
     dbg('[TS] tile missing, creating for '+id);
@@ -1414,51 +1412,62 @@ function onTrackSub(track, pub, participant){
     if(!tile){ dbg('[TS] tile creation FAILED for '+id); return; }
   }
 
-  // 附加視訊
   if(track.kind===Track.Kind.Video){
     if(pub.source===Track.Source.Camera || pub.source===Track.Source.ScreenShare){
       wireVideo(track, tile, id);
       if(pub.source===Track.Source.Camera) setCamOff(tile, false);
     }
   }
-
-  // 附加音訊
   if(track.kind===Track.Kind.Audio){
     wireAudio(track, id);
   }
-
   updateTileIcons(participant);
 }
 
 function onTrackUnsub(track, pub, participant){
   const id=participant.identity;
+  if(isLocalP(id)) return;
   dbg(`[TU] ${id} src=${pub.source}`);
   track.detach();
   if(track.kind===Track.Kind.Video){
     const tile=getTile(id);
     if(tile){
-      const v=tile.querySelector('.tile-video'); if(v) v.srcObject=null;
+      const v=tile.querySelector('.tile-video'); if(v){ try{v.srcObject=null;}catch(_){} }
       if(pub.source===Track.Source.Camera) setCamOff(tile,true);
     }
   }
   if(track.kind===Track.Kind.Audio){
-    document.querySelectorAll(`audio[data-lk="${CSS.escape(id)}"]`).forEach(a=>a.remove());
+    document.querySelectorAll(`audio[data-lk="${CSS.escape(id)}"]`).forEach(a=>{ try{a.srcObject=null;}catch(_){} a.remove(); });
   }
   updateTileIcons(participant);
+}
+
+function onTrackMuted(pub, p){
+  if(isLocalP(p?.identity)) return;
+  updateTileIcons(p);
+  if(pub.source===Track.Source.Camera){ const tile=getTile(p.identity); if(tile) setCamOff(tile,true); }
+}
+function onTrackUnmuted(pub, p){
+  if(isLocalP(p?.identity)) return;
+  updateTileIcons(p);
+  if(pub.source===Track.Source.Camera){ const tile=getTile(p.identity); if(tile) setCamOff(tile,false); }
 }
 
 function onSpeakers(speakers){
   document.querySelectorAll('.video-tile.speaking').forEach(t=>t.classList.remove('speaking'));
   if(!SET.speak) return;
   speakers.forEach(p=>{
-    const id=p.identity;
-    const tid=id===lkRoom?.localParticipant?.identity?'tile-local':`tile-${CSS.escape(id)}`;
-    $(tid)?.classList.add('speaking');
+    if(isLocalP(p.identity)){
+      $('tile-local')?.classList.add('speaking');
+    } else {
+      getTile(p.identity)?.classList.add('speaking');
+    }
   });
-  updateLocalViz(speakers.some(p=>p.identity===lkRoom?.localParticipant?.identity));
+  updateLocalViz(speakers.some(p=>isLocalP(p.identity)));
 }
 
 function onMeta(metadata, participant){
+  if(isLocalP(participant?.identity)) return;
   try{
     const m=JSON.parse(metadata||'{}');
     if(typeof m.handRaised==='boolean'){ HR[participant.identity]=m.handRaised; setHandIcon(participant.identity,m.handRaised); }
@@ -1469,7 +1478,7 @@ function onDataMsg(payload, participant){
   try{
     const msg=JSON.parse(new TextDecoder().decode(payload));
     const id=participant?.identity||msg.identity;
-    if(msg.type==='hand'){ if(id){ HR[id]=msg.raised; setHandIcon(id,msg.raised); } }
+    if(msg.type==='hand'){ if(id&&!isLocalP(id)){ HR[id]=msg.raised; setHandIcon(id,msg.raised); } }
     else if(msg.type==='chat'){ receiveChatMsg(msg,id); }
     else if(msg.type==='collab'){ receiveCollab(msg); }
     else if(msg.type==='laser'){ receiveLaser(msg); }
@@ -1478,48 +1487,30 @@ function onDataMsg(payload, participant){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// VIDEO WIRING — 最可靠的方式
+// VIDEO WIRING
 // ═══════════════════════════════════════════════════════════════
 function wireVideo(track, tile, identity){
   const vid=tile.querySelector('.tile-video');
   if(!vid){ dbg('[VID] no video el for '+identity); return; }
-
-  dbg(`[VID] wiring ${identity} mst=${!!track.mediaStreamTrack} state=${track.mediaStreamTrack?.readyState}`);
-
-  // 先 detach 避免重複附加
+  dbg(`[VID] wiring ${identity}`);
   try{ track.detach(vid); }catch(_){}
-
   const mst=track.mediaStreamTrack;
   if(mst && mst.readyState!=='ended'){
-    // 方法A：直接用 mediaStreamTrack 建立 MediaStream（最可靠）
     try{
       const ms=new MediaStream(); ms.addTrack(mst);
       vid.srcObject=ms;
-      dbg('[VID] method A (mediaStreamTrack) for '+identity);
-    }catch(e){
-      dbg('[VID] method A failed: '+e.message+', trying B');
-      track.attach(vid);
-    }
+      dbg('[VID] method A for '+identity);
+    }catch(e){ track.attach(vid); dbg('[VID] method B for '+identity); }
   } else {
-    // 方法B：用 LiveKit SDK attach（當 mediaStreamTrack 不可用時）
     track.attach(vid);
-    dbg('[VID] method B (SDK attach) for '+identity);
+    dbg('[VID] method B (fallback) for '+identity);
   }
-
-  // 強制播放
   const pp=vid.play();
-  if(pp) pp.catch(e=>{
-    dbg('[VID] play blocked for '+identity+': '+e.message);
-    showPlayBtn(tile, vid);
-  });
+  if(pp) pp.catch(e=>{ dbg('[VID] play blocked: '+e.message); showPlayBtn(tile,vid); });
 }
 
 function wireAudio(track, identity){
-  // 移除舊的音訊元素
-  document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>{
-    try{ track.detach(a); }catch(_){} a.remove();
-  });
-  // 用 SDK 建立音訊元素
+  document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>{ try{track.detach(a);}catch(_){} try{a.srcObject=null;}catch(_){} a.remove(); });
   const el=track.attach();
   el.dataset.lk=identity;
   el.style.cssText='position:absolute;width:0;height:0;pointer-events:none';
@@ -1536,7 +1527,6 @@ function showPlayBtn(tile, vid){
   tile.appendChild(b);
 }
 
-// 本地攝影機預覽
 function attachLocalVid(){
   if(S.sharing) return;
   const pub=lkRoom?.localParticipant?.getTrackPublication(Track.Source.Camera);
@@ -1548,12 +1538,11 @@ function attachLocalVid(){
     dbg('[LOCAL] cam ok');
   } else {
     vid.srcObject=null;
-    dbg('[LOCAL] no cam track, pub='+!!pub);
+    dbg('[LOCAL] no cam track');
   }
   updateCamOff();
 }
 
-// 解析度對應
 function getResolution(q){
   return {fhd:{width:1920,height:1080,frameRate:30},hd:{width:1280,height:720,frameRate:24},sd:{width:854,height:480,frameRate:20},low:{width:426,height:240,frameRate:15}}[q]||{width:1280,height:720,frameRate:24};
 }
@@ -1561,20 +1550,23 @@ function getResolution(q){
 // ═══════════════════════════════════════════════════════════════
 // TILE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════
-const getTile = id => $(`tile-${CSS.escape(id)}`);
+const getTile = id => document.getElementById(`tile-${CSS.escape(id)}`);
 
 function makeTile(participant){
   const id=participant.identity;
 
-  // Cancel any pending removal timer for this participant
+  // HARD GUARD: never create a tile for the local participant
+  if(isLocalP(id)){ dbg('[TILE] refused to create tile for local: '+id); return $('tile-local'); }
+
+  // Cancel pending removal
   if(RMT[id]){ clearTimeout(RMT[id]); delete RMT[id]; }
 
-  // If tile already exists and is NOT in removing state → reuse it
+  // Reuse existing tile if not removing
   const ex=getTile(id);
   if(ex){
     if(!ex.classList.contains('removing')){
-      dbg('[TILE] reuse existing: '+id);
-      // Still attach any tracks that may have arrived
+      dbg('[TILE] reuse: '+id);
+      // Attach any tracks that arrived before tile was ready
       for(const pub of participant.trackPublications.values()){
         if(!pub.isSubscribed||!pub.track) continue;
         if(pub.kind===Track.Kind.Video && (pub.source===Track.Source.Camera||pub.source===Track.Source.ScreenShare)){
@@ -1586,7 +1578,7 @@ function makeTile(participant){
       updateTileIcons(participant);
       return ex;
     }
-    // Tile is in removing animation — cancel animation and remove immediately
+    // Removing → cancel and remove immediately
     ex.style.animation='none';
     ex.remove();
   }
@@ -1619,7 +1611,7 @@ function makeTile(participant){
   grid.appendChild(tile);
   dbg('[TILE] created: '+id);
 
-  // 附加已訂閱的 tracks（重新加入房間時的情況）
+  // Attach existing tracks
   for(const pub of participant.trackPublications.values()){
     if(!pub.isSubscribed||!pub.track) continue;
     dbg(`[TILE] attaching existing ${pub.source} for ${id}`);
@@ -1630,7 +1622,6 @@ function makeTile(participant){
     if(pub.kind===Track.Kind.Audio) wireAudio(pub.track,id);
   }
 
-  // 從 metadata 讀取舉手狀態
   try{ const m=JSON.parse(participant.metadata||'{}'); if(m.handRaised===true){ HR[id]=true; setHandIcon(id,true); } }catch(_){}
 
   updateTileIcons(participant);
@@ -1639,21 +1630,19 @@ function makeTile(participant){
 }
 
 function killTile(identity){
-  // Remove audio elements for this participant
-  document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>{
-    try{a.srcObject=null;}catch(_){} a.remove();
-  });
+  if(isLocalP(identity)) return; // NEVER kill the local tile
+
+  document.querySelectorAll(`audio[data-lk="${CSS.escape(identity)}"]`).forEach(a=>{ try{a.srcObject=null;}catch(_){} a.remove(); });
   delete HR[identity];
   if(PINNED===identity) PINNED=null;
-  if(FULLTILE===getTile(identity)){ FULLTILE.classList.remove('fullscreen'); FULLTILE=null; }
-
   const tile=getTile(identity);
+  if(FULLTILE && FULLTILE===tile){ tile.classList.remove('fullscreen'); FULLTILE=null; }
+
   if(!tile){ renderGrid(); updateCount(); return; }
 
-  // Clear video immediately to release resources
+  // Immediately clear video to release resources
   tile.querySelectorAll('.tile-video').forEach(v=>{ try{v.srcObject=null; v.load();}catch(_){} });
 
-  // Cancel any existing removal timer
   if(RMT[identity]){ clearTimeout(RMT[identity]); delete RMT[identity]; }
 
   tile.classList.add('removing');
@@ -1662,7 +1651,7 @@ function killTile(identity){
     delete RMT[identity];
     const t=getTile(identity);
     if(t){ t.style.animation='none'; t.remove(); renderGrid(); }
-  },260);
+  },250);
 }
 
 function nukeTiles(){
@@ -1671,15 +1660,11 @@ function nukeTiles(){
   const grid=$('vgrid');
   if(grid){
     [...grid.querySelectorAll('.video-tile')].forEach(t=>{
-      // Clear all video srcObjects to release tracks
       t.querySelectorAll('.tile-video').forEach(v=>{ try{v.srcObject=null; v.load();}catch(_){} });
-      // Remove all remote tiles; keep #tile-local in DOM but clear its state
       if(t.id!=='tile-local') t.remove();
     });
   }
-  // Remove all remote audio elements
   document.querySelectorAll('audio[data-lk]').forEach(a=>{ try{a.srcObject=null;}catch(_){} a.remove(); });
-  // Clear hand-raise state
   for(const k of Object.keys(HR)) delete HR[k];
 }
 
@@ -1688,16 +1673,17 @@ function setCamOff(tile, show){
 }
 
 function updateTileIcons(participant){
+  if(isLocalP(participant?.identity)) return;
   const id=participant.identity;
-  const el=$(`icons-${CSS.escape(id)}`); if(!el) return;
+  const el=document.getElementById(`icons-${CSS.escape(id)}`); if(!el) return;
   const mic=participant.getTrackPublication(Track.Source.Microphone);
   const cam=participant.getTrackPublication(Track.Source.Camera);
-  const micMuted=!mic||mic.isMuted, camMuted=!cam||cam.isMuted;
-  el.innerHTML=(micMuted?'<span class="tile-icon">🔇</span>':'')+(camMuted?'<span class="tile-icon">📷</span>':'');
+  el.innerHTML=((!mic||mic.isMuted)?'<span class="tile-icon">🔇</span>':'')+
+               ((!cam||cam.isMuted)?'<span class="tile-icon">📷</span>':'');
 }
 
 function setHandIcon(identity, raised){
-  const isLocal=identity===lkRoom?.localParticipant?.identity;
+  const isLocal=isLocalP(identity);
   const tile=isLocal?$('tile-local'):getTile(identity); if(!tile) return;
   const h=tile.querySelector('.tile-hand'); if(!h) return;
   h.classList.toggle('show',raised);
@@ -1716,17 +1702,19 @@ function renderGrid(){
   tiles.forEach(t=>{ t.style.gridColumn=''; t.style.gridRow=''; });
 
   if(LAYOUT==='speaker'&&PINNED&&n>1){
-    const pt=getTile(PINNED); if(pt){
+    const pt=getTile(PINNED)||(isLocalP(PINNED)?$('tile-local'):null);
+    if(pt){
       const others=tiles.filter(t=>t!==pt); const sr=Math.max(others.length,1);
-      grid.style.gridTemplateColumns='1fr 200px'; grid.style.gridTemplateRows=`repeat(${sr},1fr)`;
+      grid.style.gridTemplateColumns='1fr 180px'; grid.style.gridTemplateRows=`repeat(${sr},1fr)`;
       pt.style.gridColumn='1'; pt.style.gridRow=`1/${sr+1}`;
       others.forEach((t,i)=>{ t.style.gridColumn='2'; t.style.gridRow=`${i+1}`; }); return;
     }
   }
 
   if(LAYOUT==='spotlight'&&n>1){
-    const pt=PINNED?getTile(PINNED):tiles[0]; const others=tiles.filter(t=>t!==pt); const sr=Math.max(others.length,1);
-    grid.style.gridTemplateColumns='1fr 160px'; grid.style.gridTemplateRows=`repeat(${sr},1fr)`;
+    const pt=PINNED?(getTile(PINNED)||$('tile-local')):tiles[0];
+    const others=tiles.filter(t=>t!==pt); const sr=Math.max(others.length,1);
+    grid.style.gridTemplateColumns='1fr 148px'; grid.style.gridTemplateRows=`repeat(${sr},1fr)`;
     if(pt){ pt.style.gridColumn='1'; pt.style.gridRow=`1/${sr+1}`; }
     others.forEach((t,i)=>{ t.style.gridColumn='2'; t.style.gridRow=`${i+1}`; }); return;
   }
@@ -1735,7 +1723,6 @@ function renderGrid(){
   const cols = n<=1?1 : n<=2?2 : n<=4?2 : n<=6?3 : n<=9?3 : 4;
   grid.style.gridTemplateColumns=`repeat(${cols},1fr)`;
   grid.style.gridTemplateRows=`repeat(${Math.ceil(n/cols)},1fr)`;
-  if(n%cols===1&&cols>1) tiles[n-1].style.gridColumn=`${Math.ceil(cols/2)} / span 1`;
 }
 
 function updateCount(){
@@ -1744,12 +1731,10 @@ function updateCount(){
   $('m-count').textContent=Math.max(n,1)+' 人';
 }
 
-// Layout cycling
 const LAYOUTS=['auto','speaker','spotlight'];
 const LAYOUT_LABELS={auto:'自動',speaker:'主講',spotlight:'聚焦'};
 $('cb-layout').onclick=()=>{
-  const idx=LAYOUTS.indexOf(LAYOUT);
-  LAYOUT=LAYOUTS[(idx+1)%LAYOUTS.length];
+  LAYOUT=LAYOUTS[(LAYOUTS.indexOf(LAYOUT)+1)%LAYOUTS.length];
   $('layout-label').textContent=LAYOUT_LABELS[LAYOUT];
   renderGrid();
   notif({auto:'自動排列',speaker:'主講者優先',spotlight:'聚焦模式'}[LAYOUT],2000,'info');
@@ -1757,9 +1742,10 @@ $('cb-layout').onclick=()=>{
 
 function togglePin(identity){
   document.querySelectorAll('.video-tile.pinned').forEach(t=>{ t.classList.remove('pinned'); const b=t.querySelector('.tile-pin-btn'); if(b) b.textContent='◈ 固定'; });
-  const wasPin=PINNED===identity; PINNED=null;
-  if(!wasPin){
-    const tile=getTile(identity); if(tile){ tile.classList.add('pinned'); const b=tile.querySelector('.tile-pin-btn'); if(b) b.textContent='◈ 取消固定'; PINNED=identity; }
+  const wasPinned=PINNED===identity; PINNED=null;
+  if(!wasPinned){
+    const tile=identity===_localIdentity?$('tile-local'):getTile(identity);
+    if(tile){ tile.classList.add('pinned'); const b=tile.querySelector('.tile-pin-btn'); if(b) b.textContent='◈ 取消固定'; PINNED=identity; }
   }
   renderGrid();
 }
@@ -1769,7 +1755,6 @@ function toggleFull(tile){
   else{ if(FULLTILE) FULLTILE.classList.remove('fullscreen'); tile.classList.add('fullscreen'); FULLTILE=tile; }
 }
 
-// PiP
 async function enterPiP(tile){
   const vid=tile.querySelector('.tile-video');
   if(!vid||!document.pictureInPictureEnabled){ notif('此瀏覽器不支援子母畫面',3000,'warning'); return; }
@@ -1779,8 +1764,10 @@ async function enterPiP(tile){
   }catch(e){ notif('子母畫面失敗：'+e.message,3000,'warning'); }
 }
 
-// PiP button for meeting
-$('cb-pip').onclick=()=>{ const tiles=[...($('vgrid')?.querySelectorAll('.video-tile')||[])]; if(tiles.length>1) enterPiP(tiles[1]); else enterPiP(tiles[0]); };
+$('cb-pip').onclick=()=>{
+  const tiles=[...($('vgrid')?.querySelectorAll('.video-tile')||[])];
+  enterPiP(tiles.length>1?tiles[1]:tiles[0]);
+};
 
 // ═══════════════════════════════════════════════════════════════
 // MEMBER LIST
@@ -1799,13 +1786,13 @@ function renderMemberList(){
     row.innerHTML=`
       <div class="member-av">${esc(initials(id))}</div>
       <div style="flex:1;min-width:0">
-        <div class="member-name">${esc(id)}${id===lkRoom?.localParticipant?.identity?' (我)':''}</div>
-        <div class="member-role">${p===lkRoom?.localParticipant?'本地':'遠端'}</div>
+        <div class="member-name">${esc(id)}${isLocalP(id)?' (我)':''}</div>
+        <div class="member-role">${isLocalP(id)?'本地':'遠端'}</div>
       </div>
       <div class="member-icons">
-        ${!mic||mic.isMuted?'<span class="member-icon">🔇</span>':''}
-        ${!cam||cam.isMuted?'<span class="member-icon">📷</span>':''}
-        ${HR[id]?'<span class="member-icon">✋</span>':''}
+        ${!mic||mic.isMuted?'<span>🔇</span>':''}
+        ${!cam||cam.isMuted?'<span>📷</span>':''}
+        ${HR[id]?'<span>✋</span>':''}
       </div>`;
     el.appendChild(row);
   });
@@ -1814,27 +1801,14 @@ function renderMemberList(){
 // ═══════════════════════════════════════════════════════════════
 // CHAT
 // ═══════════════════════════════════════════════════════════════
-function listenChat(){
-  // Use LiveKit data channel for real-time chat
-  // Messages stored locally in MSGS array
-}
+function listenChat(){ /* LiveKit data channel — messages in MSGS[] */ }
 
 function sendChat(){
   const inp=$('chat-inp'); if(!inp) return;
   const text=inp.value.trim(); if(!text) return;
   inp.value='';
-
-  const msg={
-    type:'chat',
-    text,
-    identity:lkRoom?.localParticipant?.identity,
-    ts:Date.now(),
-  };
-
-  // Add locally
+  const msg={type:'chat',text,identity:_localIdentity||lkRoom?.localParticipant?.identity,ts:Date.now()};
   receiveChatMsg(msg, msg.identity);
-
-  // Broadcast via LiveKit
   try{
     const p=new TextEncoder().encode(JSON.stringify(msg));
     lkRoom?.localParticipant?.publishData(p,{reliable:true});
@@ -1844,8 +1818,6 @@ function sendChat(){
 function receiveChatMsg(msg, sender){
   MSGS.push(msg);
   renderChatMsg(msg);
-
-  // Unread badge
   if(!$('sidebar').classList.contains('show') || activeSidebarTab()!=='chat'){
     unreadChat++;
     $('chat-count').textContent=unreadChat;
@@ -1859,7 +1831,6 @@ function renderChatMsg(msg){
   const div=document.createElement('div');
   div.className='chat-msg'+(msg.type==='system'?' system':'');
   if(msg.type!=='system'){
-    // Linkify URLs
     const linkified=esc(msg.text).replace(/https?:\/\/[^\s<>]+/g, url=>`<a href="${url}" target="_blank" rel="noopener">${url}</a>`);
     div.innerHTML=`<div class="chat-msg-name">${esc(msg.identity||'?')}</div><div class="chat-msg-text">${linkified}</div>`;
   } else {
@@ -1884,66 +1855,52 @@ $('chat-inp').onkeydown=e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(
 // ═══════════════════════════════════════════════════════════════
 // SIDEBAR
 // ═══════════════════════════════════════════════════════════════
+function closeSidebar(){
+  $('sidebar').classList.remove('show');
+  $('btn-members').classList.remove('active');
+  $('btn-chat').classList.remove('active');
+}
 function toggleSidebar(tab){
   const sb=$('sidebar');
   const isOpen=sb.classList.contains('show');
   const curTab=activeSidebarTab();
-
-  if(isOpen&&curTab===tab){
-    sb.classList.remove('show');
-    $('btn-members').classList.remove('active');
-    $('btn-chat').classList.remove('active');
-    return;
-  }
+  if(isOpen&&curTab===tab){ closeSidebar(); return; }
   sb.classList.add('show');
   $('btn-members').classList.toggle('active', tab==='members');
   $('btn-chat').classList.toggle('active', tab==='chat');
   switchSidebarTab(tab);
 }
-
 function switchSidebarTab(tab){
-  document.querySelectorAll('.sidebar-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.sidebar-tab[data-tab]').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
   $('tab-members').style.display=tab==='members'?'flex':'none';
   $('tab-chat').style.display=tab==='chat'?'flex':'none';
   if(tab==='members') renderMemberList();
-  if(tab==='chat'){
-    unreadChat=0;
-    $('chat-count').style.display='none';
-    $('chat-badge').style.display='none';
-  }
+  if(tab==='chat'){ unreadChat=0; $('chat-count').style.display='none'; $('chat-badge').style.display='none'; }
 }
-
 $('btn-members').onclick=()=>toggleSidebar('members');
 $('btn-chat').onclick=()=>toggleSidebar('chat');
-$('sidebar-close').onclick=()=>{ $('sidebar').classList.remove('show'); $('btn-members').classList.remove('active'); $('btn-chat').classList.remove('active'); };
-document.querySelectorAll('.sidebar-tab').forEach(t=>t.addEventListener('click',()=>switchSidebarTab(t.dataset.tab)));
+$('sidebar-close').onclick=closeSidebar;
+document.querySelectorAll('.sidebar-tab[data-tab]').forEach(t=>t.addEventListener('click',()=>switchSidebarTab(t.dataset.tab)));
 
 // ═══════════════════════════════════════════════════════════════
 // REACTIONS
 // ═══════════════════════════════════════════════════════════════
 $('cb-react').onclick=e=>{ e.stopPropagation(); $('reaction-popup').classList.toggle('show'); };
 document.addEventListener('click',e=>{ if(!e.target.closest('#reaction-popup')&&!e.target.closest('#cb-react')) $('reaction-popup').classList.remove('show'); });
-
 document.querySelectorAll('.reaction-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    const emoji=btn.dataset.emoji;
-    sendReaction(emoji);
-    $('reaction-popup').classList.remove('show');
-  });
+  btn.addEventListener('click',()=>{ sendReaction(btn.dataset.emoji); $('reaction-popup').classList.remove('show'); });
 });
-
 function sendReaction(emoji){
   spawnEmoji(emoji);
   try{
-    const p=new TextEncoder().encode(JSON.stringify({type:'chat',text:emoji,identity:lkRoom?.localParticipant?.identity,ts:Date.now(),reaction:true}));
+    const p=new TextEncoder().encode(JSON.stringify({type:'chat',text:emoji,identity:_localIdentity,ts:Date.now(),reaction:true}));
     lkRoom?.localParticipant?.publishData(p,{reliable:false});
   }catch(_){}
 }
-
 function spawnEmoji(emoji){
   const el=document.createElement('div'); el.className='emoji-float';
   el.textContent=emoji;
-  el.style.cssText=`left:${20+Math.random()*60}%;bottom:80px;font-size:${24+Math.random()*16}px;`;
+  el.style.cssText=`left:${20+Math.random()*60}%;bottom:80px;font-size:${22+Math.random()*14}px;`;
   document.body.appendChild(el);
   setTimeout(()=>el.remove(),2100);
 }
@@ -1952,7 +1909,6 @@ function spawnEmoji(emoji){
 // WHITEBOARD
 // ═══════════════════════════════════════════════════════════════
 let WB={ctx:null,tool:'pen',color:'#2563eb',size:3,drawing:false,startX:0,startY:0,snapshot:null};
-
 $('btn-wb').onclick=()=>{ openWB(); $('btn-wb').classList.add('active'); };
 $('wb-close').onclick=()=>{ $('wb-panel').classList.remove('show'); $('btn-wb').classList.remove('active'); };
 $('wb-panel').addEventListener('click',e=>{ if(e.target===$('wb-panel')){ $('wb-panel').classList.remove('show'); $('btn-wb').classList.remove('active'); } });
@@ -1960,7 +1916,10 @@ $('wb-clear').onclick=()=>{ WB.ctx?.clearRect(0,0,$('wb-canvas').width,$('wb-can
 $('wb-dl').onclick=()=>{ const a=document.createElement('a'); a.download='whiteboard.png'; a.href=$('wb-canvas').toDataURL(); a.click(); };
 $('wb-color').oninput=e=>WB.color=e.target.value;
 $('wb-size').oninput=e=>WB.size=+e.target.value;
-document.querySelectorAll('.wb-tool[data-tool]').forEach(b=>b.addEventListener('click',()=>{ document.querySelectorAll('.wb-tool[data-tool]').forEach(t=>t.classList.remove('active')); b.classList.add('active'); WB.tool=b.dataset.tool; }));
+document.querySelectorAll('.wb-tool[data-tool]').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.wb-tool[data-tool]').forEach(t=>t.classList.remove('active'));
+  b.classList.add('active'); WB.tool=b.dataset.tool;
+}));
 
 function openWB(){
   $('wb-panel').classList.add('show');
@@ -1971,17 +1930,15 @@ function openWB(){
     setupWBEvents(canvas);
   }
 }
-
 function setupWBEvents(canvas){
   const getPos=e=>{ const r=canvas.getBoundingClientRect(); const src=e.touches?e.touches[0]:e; return {x:src.clientX-r.left,y:src.clientY-r.top}; };
   canvas.addEventListener('mousedown',e=>{ WB.drawing=true; const p=getPos(e); WB.startX=p.x; WB.startY=p.y; WB.snapshot=WB.ctx.getImageData(0,0,canvas.width,canvas.height); WB.ctx.beginPath(); WB.ctx.moveTo(p.x,p.y); });
-  canvas.addEventListener('mousemove',e=>{ if(!WB.drawing) return; const p=getPos(e); drawWB(p); });
-  canvas.addEventListener('mouseup',e=>{ WB.drawing=false; });
+  canvas.addEventListener('mousemove',e=>{ if(!WB.drawing) return; drawWB(getPos(e)); });
+  canvas.addEventListener('mouseup',()=>{ WB.drawing=false; });
   canvas.addEventListener('touchstart',e=>{ e.preventDefault(); WB.drawing=true; const p=getPos(e); WB.startX=p.x; WB.startY=p.y; WB.snapshot=WB.ctx.getImageData(0,0,canvas.width,canvas.height); },{passive:false});
   canvas.addEventListener('touchmove',e=>{ e.preventDefault(); if(!WB.drawing) return; drawWB(getPos(e)); },{passive:false});
   canvas.addEventListener('touchend',()=>WB.drawing=false);
 }
-
 function drawWB(p){
   const ctx=WB.ctx; if(!ctx) return;
   ctx.strokeStyle=WB.tool==='eraser'?'#ffffff':WB.color;
@@ -2012,7 +1969,7 @@ $('collab-text').oninput=()=>{
   clearTimeout(_collabSendTO);
   _collabSendTO=setTimeout(()=>{
     try{
-      const p=new TextEncoder().encode(JSON.stringify({type:'collab',text:$('collab-text').value,identity:lkRoom?.localParticipant?.identity}));
+      const p=new TextEncoder().encode(JSON.stringify({type:'collab',text:$('collab-text').value,identity:_localIdentity}));
       lkRoom?.localParticipant?.publishData(p,{reliable:true});
     }catch(_){}
   },500);
@@ -2026,7 +1983,7 @@ let laserEl=null, _laserTO=null;
 function receiveLaser(msg){
   if(!laserEl){
     laserEl=document.createElement('div');
-    laserEl.style.cssText='position:fixed;width:14px;height:14px;border-radius:50%;background:red;border:2px solid #fff;pointer-events:none;z-index:1000;transform:translate(-50%,-50%);box-shadow:0 0 8px red;transition:top .05s,left .05s';
+    laserEl.style.cssText='position:fixed;width:12px;height:12px;border-radius:50%;background:red;border:2px solid #fff;pointer-events:none;z-index:1000;transform:translate(-50%,-50%);box-shadow:0 0 8px red;transition:top .05s,left .05s';
     document.body.appendChild(laserEl);
   }
   laserEl.style.display='block';
@@ -2035,7 +1992,6 @@ function receiveLaser(msg){
   clearTimeout(_laserTO);
   _laserTO=setTimeout(()=>{ if(laserEl) laserEl.style.display='none'; },2000);
 }
-
 $('btn-laser').onclick=()=>{
   S.laserOn=!S.laserOn;
   $('btn-laser').textContent=S.laserOn?'🔴 停止雷射筆':'🔴 啟用雷射筆';
@@ -2044,7 +2000,7 @@ $('btn-laser').onclick=()=>{
 document.addEventListener('mousemove',e=>{
   if(!S.laserOn||!lkRoom) return;
   try{
-    const p=new TextEncoder().encode(JSON.stringify({type:'laser',x:e.clientX/window.innerWidth,y:e.clientY/window.innerHeight,identity:lkRoom?.localParticipant?.identity}));
+    const p=new TextEncoder().encode(JSON.stringify({type:'laser',x:e.clientX/window.innerWidth,y:e.clientY/window.innerHeight,identity:_localIdentity}));
     lkRoom?.localParticipant?.publishData(p,{reliable:false});
   }catch(_){}
 });
@@ -2055,23 +2011,18 @@ document.addEventListener('mousemove',e=>{
 let cTimer={secs:300, running:false, iv:null};
 
 $('cb-timer').onclick=()=>{ $('timer-overlay').classList.add('show'); updateTimerDisplay(); };
-$('timer-close').onclick=()=>{
-  clearInterval(cTimer.iv); cTimer.running=false;
-  $('timer-overlay').classList.remove('show');
-};
+$('timer-close').onclick=()=>{ clearInterval(cTimer.iv); cTimer.running=false; $('timer-overlay').classList.remove('show'); };
 $('timer-set').onclick=async()=>{
   const wasRunning=cTimer.running;
   clearInterval(cTimer.iv); cTimer.running=false;
   const v=await modal({title:'設定倒數計時',body:'輸入秒數（例：300 = 5分鐘，60 = 1分鐘）：',input:true,inputPlaceholder:'秒數',inputValue:String(cTimer.secs||300)});
   if(!v){ if(wasRunning){ cTimer.running=true; cTimer.iv=setInterval(timerTick,1000); } return; }
-  cTimer.secs=Math.max(1,parseInt(v)||300);
-  updateTimerDisplay();
+  cTimer.secs=Math.max(1,parseInt(v)||300); updateTimerDisplay();
 };
 $('timer-start').onclick=()=>{
   if(cTimer.running) return;
   if(cTimer.secs<=0){ cTimer.secs=300; updateTimerDisplay(); }
-  cTimer.running=true;
-  cTimer.iv=setInterval(timerTick,1000);
+  cTimer.running=true; cTimer.iv=setInterval(timerTick,1000);
 };
 $('timer-pause').onclick=()=>{ clearInterval(cTimer.iv); cTimer.running=false; };
 $('timer-reset').onclick=()=>{ clearInterval(cTimer.iv); cTimer.running=false; cTimer.secs=300; updateTimerDisplay(); };
@@ -2082,14 +2033,13 @@ function timerTick(){
 }
 function updateTimerDisplay(){
   const el=$('timer-display'); if(!el) return;
-  const s=Math.max(cTimer.secs,0);
-  const m=Math.floor(s/60), sec=s%60;
+  const s=Math.max(cTimer.secs,0), m=Math.floor(s/60), sec=s%60;
   el.textContent=`${pad(m)}:${pad(sec)}`;
   el.classList.toggle('expired', cTimer.secs<=0);
 }
 
 // ═══════════════════════════════════════════════════════════════
-// AUDIO VISUALIZER (local)
+// AUDIO VISUALIZER
 // ═══════════════════════════════════════════════════════════════
 let _vizACtx=null, _vizAnal=null, _vizBuf=null, _vizIv=null;
 function setupLocalViz(){
@@ -2103,24 +2053,21 @@ function setupLocalViz(){
     src.connect(_vizAnal);
     _vizBuf=new Uint8Array(_vizAnal.frequencyBinCount);
     const viz=$('local-viz'); if(!viz) return;
-    viz.innerHTML=Array.from({length:6},(_,i)=>`<div class="audio-bar" style="animation-delay:${i*.08}s"></div>`).join('');
+    viz.innerHTML=Array.from({length:5},(_,i)=>`<div class="audio-bar" style="animation-delay:${i*.1}s"></div>`).join('');
     _vizIv=setInterval(()=>{
-      if(!S.micOn){ viz.querySelectorAll('.audio-bar').forEach(b=>b.style.transform='scaleY(.2)'); return; }
+      if(!S.micOn){ viz.querySelectorAll('.audio-bar').forEach(b=>b.style.transform='scaleY(.15)'); return; }
       _vizAnal.getByteFrequencyData(_vizBuf);
       const bars=viz.querySelectorAll('.audio-bar');
       bars.forEach((b,i)=>{ const v=(_vizBuf[i]||0)/255; b.style.transform=`scaleY(${.1+v*.9})`; b.style.background=v>0.6?'var(--amber)':'var(--green)'; });
     },80);
   }catch(_){}
 }
-
-function updateLocalViz(speaking){
-  // Called from onSpeakers
-}
+function updateLocalViz(speaking){}
 
 // ═══════════════════════════════════════════════════════════════
-// MUTE DETECT (speaking while muted)
+// MUTE DETECT
 // ═══════════════════════════════════════════════════════════════
-let _muteACtx=null,_muteWT=null;
+let _muteACtx=null, _muteWT=null;
 function setupMuteDetect(){
   const pub=lkRoom?.localParticipant?.getTrackPublication(Track.Source.Microphone);
   if(!pub?.track?.mediaStreamTrack||!window.AudioContext) return;
@@ -2139,17 +2086,17 @@ function setupMuteDetect(){
       },500);
     }catch(_){}
     setupLocalViz();
-  },1000);
+  },1200);
 }
 
 // ═══════════════════════════════════════════════════════════════
 // MEDIA CONTROLS
 // ═══════════════════════════════════════════════════════════════
 const SVG={
-  micOn:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
-  micOff:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
-  camOn:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`,
-  camOff:`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>`,
+  micOn:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+  micOff:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>`,
+  camOn:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`,
+  camOff:`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M21 21H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3m3-3h6l2 3h4a2 2 0 0 1 2 2v9.34"/></svg>`,
 };
 
 $('cb-mic').onclick=async()=>{
@@ -2165,21 +2112,19 @@ $('cb-cam').onclick=async()=>{
 $('cb-share').onclick=toggleShare;
 $('cb-hand').onclick=toggleHand;
 
-// Low bandwidth mode
 $('cb-bw').onclick=()=>{
   S.bwMode=!S.bwMode;
   $('cb-bw').classList.toggle('amber',S.bwMode);
-  // Disable remote video tiles in low-bw mode
   document.querySelectorAll('#vgrid .video-tile:not(#tile-local) .tile-video').forEach(v=>{
     v.style.display=S.bwMode?'none':'block';
   });
   notif(S.bwMode?'低頻寬模式：已關閉遠端視訊':'已恢復遠端視訊',3000,'info');
 };
 
-// PTT (push to talk)
+// PTT
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'&&SET.ptt&&$('s-meeting').classList.contains('active')&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){
-    if(!S.pttActive){ S.pttActive=true; if(!S.micOn){ lkRoom?.localParticipant?.setMicrophoneEnabled(true); } }
+    if(!S.pttActive){ S.pttActive=true; if(!S.micOn) lkRoom?.localParticipant?.setMicrophoneEnabled(true); }
   }
 });
 document.addEventListener('keyup',e=>{
@@ -2187,14 +2132,15 @@ document.addEventListener('keyup',e=>{
 });
 
 function updateCtrlBtns(){
-  const mic=$('cb-mic'),cam=$('cb-cam');
+  const mic=$('cb-mic'), cam=$('cb-cam');
   mic.className='cb'+(S.micOn?'':' off');
   mic.innerHTML=(S.micOn?SVG.micOn:SVG.micOff)+`<span class="cb-txt">${S.micOn?'麥克風':'靜音中'}</span>`;
   cam.className='cb'+(S.camOn?'':' off');
   cam.innerHTML=(S.camOn?SVG.camOn:SVG.camOff)+`<span class="cb-txt">${S.camOn?'相機':'相機關閉'}</span>`;
   const sh=$('cb-share');
   sh.className='cb'+(S.sharing?' on':'');
-  sh.querySelector('.cb-txt').textContent=S.sharing?'停止分享':'分享螢幕';
+  const shTxt=sh.querySelector('.cb-txt');
+  if(shTxt) shTxt.textContent=S.sharing?'停止分享':'分享螢幕';
 }
 function updateCamOff(){ const off=$('local-camoff'); if(off) off.classList.toggle('hidden',S.camOn); }
 function updateLocalIcons(){
@@ -2238,12 +2184,12 @@ async function toggleHand(){
   S.handRaised=!S.handRaised;
   $('cb-hand').className='cb'+(S.handRaised?' amber':'');
   $('cb-hand').querySelector('.cb-txt').textContent=S.handRaised?'放下手':'舉手';
-  const tile=$('tile-local'); const h=tile?.querySelector('.tile-hand');
-  if(h){ h.classList.toggle('show',S.handRaised); const lbl=$('local-hand-lbl'); if(lbl) lbl.textContent=S.handRaised?(lkRoom?.localParticipant?.identity||'')+' 舉手':''; }
+  const tile=$('tile-local'), h=tile?.querySelector('.tile-hand');
+  if(h){ h.classList.toggle('show',S.handRaised); const lbl=$('local-hand-lbl'); if(lbl) lbl.textContent=S.handRaised?(_localIdentity||'')+' 舉手':''; }
   const meta=JSON.stringify({role:S.profile.role,handRaised:S.handRaised,ts:Date.now()});
   try{ await lkRoom?.localParticipant?.setMetadata(meta); }catch(_){}
   try{
-    const p=new TextEncoder().encode(JSON.stringify({type:'hand',raised:S.handRaised,identity:lkRoom?.localParticipant?.identity}));
+    const p=new TextEncoder().encode(JSON.stringify({type:'hand',raised:S.handRaised,identity:_localIdentity}));
     await lkRoom?.localParticipant?.publishData(p,{reliable:true});
   }catch(_){}
   if(S.handRaised) notif('✋ 已舉手，等待主持人注意',3000,'info');
@@ -2262,12 +2208,11 @@ $('btn-mute-all').onclick=async()=>{
   const ok=await modal({title:'全體靜音',body:'將所有學生靜音？',buttons:[{label:'取消',value:false},{label:'靜音',type:'danger',value:true}]});
   if(!ok) return;
   try{
-    const p=new TextEncoder().encode(JSON.stringify({type:'mute-all',identity:lkRoom?.localParticipant?.identity}));
+    const p=new TextEncoder().encode(JSON.stringify({type:'mute-all',identity:_localIdentity}));
     await lkRoom?.localParticipant?.publishData(p,{reliable:true});
     notif('已發送全體靜音',2000,'success');
   }catch(_){}
 };
-
 $('btn-lock-share').onclick=()=>{
   S.shareLocked=!S.shareLocked;
   $('btn-lock-share').textContent=S.shareLocked?'🔓 解鎖分享':'🔒 鎖定分享';
@@ -2275,14 +2220,12 @@ $('btn-lock-share').onclick=()=>{
 };
 
 // ═══════════════════════════════════════════════════════════════
-// LOCAL SCREEN RECORDING
+// RECORDING
 // ═══════════════════════════════════════════════════════════════
 let mediaRecorder=null, recordedChunks=[];
 $('btn-rec').onclick=async()=>{
   if(mediaRecorder&&mediaRecorder.state!=='inactive'){
-    mediaRecorder.stop();
-    $('btn-rec').classList.remove('on');
-    return;
+    mediaRecorder.stop(); $('btn-rec').classList.remove('active'); return;
   }
   try{
     const stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});
@@ -2298,7 +2241,7 @@ $('btn-rec').onclick=async()=>{
       notif('錄影已儲存',3000,'success');
     };
     mediaRecorder.start(1000);
-    $('btn-rec').classList.add('on');
+    $('btn-rec').classList.add('active');
     notif('🔴 本地錄影中...',3000,'info');
   }catch(e){ if(e.name!=='NotAllowedError') notif('錄影失敗：'+e.message,5000,'error'); }
 };
@@ -2312,8 +2255,9 @@ document.addEventListener('keydown',e=>{
     if($('settings-panel').classList.contains('show')){ closeSettings(); return; }
     if($('wb-panel').classList.contains('show')){ $('wb-panel').classList.remove('show'); $('btn-wb').classList.remove('active'); return; }
     if($('collab-panel').classList.contains('show')){ $('collab-panel').classList.remove('show'); $('btn-collab').classList.remove('active'); return; }
-    if($('sidebar').classList.contains('show')){ $('sidebar').classList.remove('show'); $('btn-members').classList.remove('active'); $('btn-chat').classList.remove('active'); return; }
+    if($('sidebar').classList.contains('show')){ closeSidebar(); return; }
     $('reaction-popup')?.classList.remove('show');
+    return;
   }
   if(!$('s-meeting').classList.contains('active')) return;
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
@@ -2348,8 +2292,9 @@ async function leaveMeeting(endAll){
 function resetMeetingUI(){
   Object.keys(RMT).forEach(k=>{ clearTimeout(RMT[k]); delete RMT[k]; });
   nukeTiles();
+  _localIdentity = null;
 
-  const lv=$('local-vid'); if(lv){ try{lv.srcObject=null;lv.load();}catch(_){} }
+  const lv=$('local-vid'); if(lv){ try{lv.srcObject=null; lv.load();}catch(_){} }
   $('local-camoff')?.classList.remove('hidden');
   $('local-hand')?.classList.remove('show');
   const lhl=$('local-hand-lbl'); if(lhl) lhl.textContent='';
@@ -2360,11 +2305,10 @@ function resetMeetingUI(){
   $('reaction-popup').classList.remove('show');
   $('timer-overlay').classList.remove('show');
   $('modal-backdrop').classList.remove('show');
-  $('sidebar').classList.remove('show');
-  $('btn-members').classList.remove('active');
-  $('btn-chat').classList.remove('active');
+  closeSidebar();
   $('wb-panel').classList.remove('show'); $('btn-wb').classList.remove('active');
   $('collab-panel').classList.remove('show'); $('btn-collab').classList.remove('active');
+  closeSettings();
   $('host-actions').style.display='none';
 
   const cb=document.querySelector('.ctrl-bar'); if(cb){ cb.style.opacity='1'; cb.style.pointerEvents='auto'; }
@@ -2373,6 +2317,7 @@ function resetMeetingUI(){
   $('layout-label').textContent='自動';
 
   const hb=$('cb-hand'); if(hb){ hb.className='cb'; hb.querySelector('.cb-txt').textContent='舉手'; }
+  const bw=$('cb-bw'); if(bw) bw.classList.remove('amber');
   const mv=$('local-vid'); if(mv) mv.style.transform=SET.mirror?'scaleX(-1)':'scaleX(1)';
   S.mirrored=SET.mirror; S.bwMode=false; S.laserOn=false; S.shareLocked=false;
   document.body.style.cursor='';
@@ -2387,6 +2332,8 @@ function resetMeetingUI(){
   if(_muteACtx){ _muteACtx.close().catch(()=>{}); _muteACtx=null; }
   if(_vizACtx){ _vizACtx.close().catch(()=>{}); _vizACtx=null; }
 
+  clearInterval(cTimer.iv); cTimer.running=false; cTimer.secs=300;
+
   renderGrid();
 }
 
@@ -2396,30 +2343,24 @@ async function cleanup(endAll=false){
   S.unsubReqs?.(); S.unsubReqs=null;
   S.waitUnsub?.(); S.waitUnsub=null;
   clearWaitTO();
-
   Object.keys(RMT).forEach(k=>{ clearTimeout(RMT[k]); delete RMT[k]; });
 
-  // Lower hand
   if(S.handRaised&&lkRoom?.localParticipant){
     try{
       await lkRoom.localParticipant.setMetadata(JSON.stringify({role:S.profile?.role,handRaised:false,ts:Date.now()}));
-      const p=new TextEncoder().encode(JSON.stringify({type:'hand',raised:false,identity:lkRoom.localParticipant.identity}));
+      const p=new TextEncoder().encode(JSON.stringify({type:'hand',raised:false,identity:_localIdentity}));
       await lkRoom.localParticipant.publishData(p,{reliable:true});
     }catch(_){}
     S.handRaised=false;
   }
+  if(mediaRecorder&&mediaRecorder.state!=='inactive') mediaRecorder.stop();
 
-  // Stop recording
-  if(mediaRecorder&&mediaRecorder.state!=='inactive'){ mediaRecorder.stop(); }
-
-  // Disconnect
   if(lkRoom){
     lkRoom.removeAllListeners();
     try{ await lkRoom.disconnect(); }catch(_){}
     lkRoom=null;
   }
 
-  // Firestore
   if(endAll&&S.isHost){
     const q=query(collection(db,'room_requests'),where('room_code','==',S.room),where('status','==','pending'));
     const sn=await getDocs(q).catch(()=>({docs:[]}));
@@ -2505,7 +2446,6 @@ async function applyAudioC(){
     if(pub?.track) await pub.track.restartTrack({deviceId:SET.micId||undefined,echoCancellation:SET.echo,noiseSuppression:SET.noise,autoGainControl:true});
   }catch(e){ dbg('[SET] audio: '+e.message); }
 }
-
 async function applyVideoQ(){
   if(!lkRoom?.localParticipant) return;
   const res=getResolution(SET.quality);
@@ -2514,7 +2454,6 @@ async function applyVideoQ(){
     if(pub?.track){ await pub.track.restartTrack({...res,deviceId:SET.camId||undefined}); attachLocalVid(); }
   }catch(e){ dbg('[SET] video: '+e.message); }
 }
-
 async function loadDevices(){
   try{
     await navigator.mediaDevices.getUserMedia({audio:true,video:true}).catch(()=>{});
@@ -2532,7 +2471,6 @@ async function loadDevices(){
     mk('cam-devices',devs.filter(d=>d.kind==='videoinput'),SET.camId,async id=>{ SET.camId=id; saveSET(); await applyVideoQ(); });
   }catch(e){ dbg('[DEV] '+e.message); }
 }
-
 function updateConnInfo(){
   const el=$('conn-info'); if(!el||!lkRoom) return;
   el.innerHTML=[
@@ -2541,7 +2479,6 @@ function updateConnInfo(){
     `人數：${lkRoom.numParticipants}`,
     `SFU：${LK_URL.replace('wss://','').split('.')[0]}`,
     `品質：${SET.quality}`,
-    `Token API：${TOKEN_API}`,
   ].map(l=>`<div>${esc(l)}</div>`).join('');
 }
 
@@ -2571,11 +2508,8 @@ window.addEventListener('beforeunload',e=>{
 // INIT
 // ═══════════════════════════════════════════════════════════════
 (function init(){
-  // Apply saved settings to local video mirror
   $('local-vid').style.transform = SET.mirror?'scaleX(-1)':'scaleX(1)';
   S.mirrored=SET.mirror;
-
-  // Lobby clock
   setInterval(()=>{
     const el=$('lobby-time'); if(!el) return;
     const n=new Date();
