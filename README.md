@@ -7,6 +7,6 @@
 部署平台： 前端網頁託管於 GitHub Pages。
 開發規範： 字體統一採用 JetBrains Mono。
 3. 多 AI 協作開發流程 (約數千行代碼)
-Claude： 負責生成核心 HTML 結構與基礎 CSS 框架。
-Gemini： 負責代碼除錯（Debug）與邏輯審查，針對 WebRTC 與 Firebase 集成的異步問題提供優化方案。
-DeepSeek： 負責後期核心邏輯重構。在不變動既有 UI 與驗證邏輯的前提下，針對 LiveKit 的連線與傳輸模組進行深度重寫。
+- Claude： 負責生成核心 HTML 結構與基礎 CSS 框架。
+- Gemini： 負責代碼除錯（Debug）與邏輯審查，針對 WebRTC 與 Firebase 集成的異步問題提供優化方案。
+- DeepSeek： 負責後期核心邏輯重構。在不變動既有 UI 與驗證邏輯的前提下，針對 LiveKit 的連線與傳輸模組進行深度重寫。
