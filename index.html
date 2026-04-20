@@ -1032,7 +1032,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
   getRedirectResult, signInWithEmailAndPassword, signOut, onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, updateDoc,
-  deleteDoc, onSnapshot, query, where, serverTimestamp, getDocs
+  deleteDoc, onSnapshot, query, where, serverTimestamp, getDocs,
+  increment, runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // ═══════════════════════════════════════════════════════════════
@@ -1357,9 +1358,24 @@ async function goMeeting(){
   if(S.inMeeting) return;
   S.inMeeting=true;
 
-  // ── Step 0: Full reset of any previous session state ──
+  // ── Step 0: HARD RESET — remove every remote tile from DOM right now ──
+  // This is the definitive guard against stale tiles from a previous session.
   _localIdentity = null;
-  nukeTiles();
+
+  // Force-remove all remote tiles synchronously (no animation)
+  const grid=$('vgrid');
+  if(grid){
+    [...grid.querySelectorAll('.video-tile')].forEach(t=>{
+      if(t.id==='tile-local') return;
+      t.querySelectorAll('video').forEach(v=>{ try{v.pause();v.srcObject=null;v.load();}catch(_){} });
+      t.style.animation='none';
+      t.remove();
+    });
+  }
+  document.querySelectorAll('audio[data-lk]').forEach(a=>{ try{a.pause();a.srcObject=null;}catch(_){} a.remove(); });
+  Object.keys(RMT).forEach(k=>{ clearTimeout(RMT[k]); delete RMT[k]; });
+  for(const k of Object.keys(HR)) delete HR[k];
+  dbg('[INIT] tiles after reset: '+($('vgrid')?.querySelectorAll('.video-tile').length||0));
 
   // Reset local tile display
   const _lv=$('local-vid'); if(_lv){ try{_lv.srcObject=null;}catch(_){} }
@@ -1367,10 +1383,10 @@ async function goMeeting(){
   $('local-hand')?.classList.remove('show');
   const _lhl=$('local-hand-lbl'); if(_lhl) _lhl.textContent='';
   $('local-icons').innerHTML='';
-  for(const k of Object.keys(HR)) delete HR[k];
 
   LAYOUT='auto'; PINNED=null; FULLTILE=null;
   $('layout-label').textContent='自動';
+  renderGrid();
 
   // ── Step 1: Get token ──
   let token;
@@ -1481,6 +1497,8 @@ async function goMeeting(){
   listenChat();
   setupMuteDetect();
   resetCtrl();
+  // Write presence to Firestore so online count is accurate
+  await joinPresence(S.room);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1797,16 +1815,28 @@ function killTile(identity){
 }
 
 function nukeTiles(){
-  // Cancel all pending removal timers
+  // Cancel ALL pending removal timers first
   Object.keys(RMT).forEach(k=>{ clearTimeout(RMT[k]); delete RMT[k]; });
   const grid=$('vgrid');
   if(grid){
+    // Force-remove every remote tile immediately, even ones mid-animation
     [...grid.querySelectorAll('.video-tile')].forEach(t=>{
-      t.querySelectorAll('.tile-video').forEach(v=>{ try{v.srcObject=null; v.load();}catch(_){} });
-      if(t.id!=='tile-local') t.remove();
+      // Clear video srcObject to release camera/media resources
+      t.querySelectorAll('video').forEach(v=>{
+        try{ v.pause(); v.srcObject=null; v.load(); }catch(_){}
+      });
+      // Remove ALL tiles except the local tile
+      if(t.id !== 'tile-local'){
+        t.style.animation = 'none'; // cancel any ongoing animation
+        t.remove();
+      }
     });
   }
-  document.querySelectorAll('audio[data-lk]').forEach(a=>{ try{a.srcObject=null;}catch(_){} a.remove(); });
+  // Remove all remote audio elements
+  document.querySelectorAll('audio[data-lk]').forEach(a=>{
+    try{ a.pause(); a.srcObject=null; }catch(_){} a.remove();
+  });
+  // Clear hand-raise state
   for(const k of Object.keys(HR)) delete HR[k];
 }
 
@@ -1890,9 +1920,11 @@ function renderGrid(){
 }
 
 function updateCount(){
+  // Count visible (non-removing) tiles as the live participant count
   const grid=$('vgrid');
-  const n=grid?grid.querySelectorAll('.video-tile:not(.removing)').length:1;
-  $('m-count').textContent=Math.max(n,1)+' 人';
+  const tileCount = grid ? grid.querySelectorAll('.video-tile:not(.removing)').length : 1;
+  const el=$('m-count');
+  if(el) el.textContent = Math.max(tileCount, 1) + ' 人';
 }
 
 const LAYOUTS=['auto','speaker','spotlight'];
@@ -2466,13 +2498,25 @@ $('cb-end').onclick=async()=>{
 
 async function leaveMeeting(endAll){
   if(!S.inMeeting) return;
+
+  // ── Step 1: Immediately clear all remote tiles from DOM ──
+  // Do this BEFORE disconnecting so users see instant feedback
+  const savedMsgs = [...MSGS]; // preserve chat history
+  nukeTiles();            // remove all remote tile DOM nodes right now
+  renderGrid();           // re-render with only local tile
+  updateCount();
+
+  // ── Step 2: Cleanup LiveKit + Firestore ──
   await cleanup(endAll);
-  resetMeetingUI();
+
+  // ── Step 3: Reset UI state (restore chat history) ──
+  resetMeetingUI(savedMsgs);
   renderLobby();
   showScreen('lobby');
 }
 
-function resetMeetingUI(){
+function resetMeetingUI(savedMsgs){
+  // Tiles should already be cleared by leaveMeeting, but ensure clean state
   Object.keys(RMT).forEach(k=>{ clearTimeout(RMT[k]); delete RMT[k]; });
   nukeTiles();
   _localIdentity = null;
@@ -2506,10 +2550,19 @@ function resetMeetingUI(){
   document.body.style.cursor='';
 
   setSFU(''); $('m-timer').textContent='00:00'; $('m-code').textContent='——';
-  MSGS.length=0; unreadChat=0;
-  $('chat-messages').innerHTML='';
+  unreadChat=0;
   $('chat-count').style.display='none'; $('chat-badge').style.display='none';
-  $('tab-members').innerHTML=''; $('members-count').style.display='none';
+  $('members-count').style.display='none';
+
+  // Keep chat history (聊天紀錄保留) — restore from savedMsgs
+  if(savedMsgs && savedMsgs.length>0){
+    MSGS.length=0; savedMsgs.forEach(m=>MSGS.push(m));
+    // Keep chat DOM as-is (already rendered) — just don't clear it
+  } else {
+    MSGS.length=0;
+    $('chat-messages').innerHTML='';
+  }
+  $('tab-members').innerHTML='';
 
   if(_vizIv){ clearInterval(_vizIv); _vizIv=null; }
   if(_muteACtx){ _muteACtx.close().catch(()=>{}); _muteACtx=null; }
@@ -2527,6 +2580,9 @@ async function cleanup(endAll=false){
   S.waitUnsub?.(); S.waitUnsub=null;
   clearWaitTO();
   Object.keys(RMT).forEach(k=>{ clearTimeout(RMT[k]); delete RMT[k]; });
+
+  // Leave Firebase presence FIRST (before disconnecting LiveKit)
+  await leavePresence();
 
   if(S.handRaised&&lkRoom?.localParticipant){
     try{
@@ -2548,6 +2604,11 @@ async function cleanup(endAll=false){
     const q=query(collection(db,'room_requests'),where('room_code','==',S.room),where('status','==','pending'));
     const sn=await getDocs(q).catch(()=>({docs:[]}));
     sn.docs.forEach(d=>updateDoc(d.ref,{status:'rejected'}).catch(()=>{}));
+    // Mark all presence docs as inactive
+    try{
+      const presSnap=await getDocs(collection(db,'rooms',S.room,'presence'));
+      presSnap.docs.forEach(d=>setDoc(d.ref,{active:false,left:serverTimestamp()},{merge:true}).catch(()=>{}));
+    }catch(_){}
     await deleteDoc(doc(db,'rooms',S.room)).catch(()=>{});
   }
   if(S.myReqId){ deleteDoc(doc(db,'room_requests',S.myReqId)).catch(()=>{}); S.myReqId=null; }
@@ -2591,6 +2652,56 @@ function watchRoomGone(){
   S.roomUnsub=onSnapshot(doc(db,'rooms',S.room),snap=>{
     if(!snap.exists()&&S.inMeeting){ S.roomUnsub?.(); notif('主持人已結束會議',4000,'error'); setTimeout(()=>leaveMeeting(false),2000); }
   });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FIREBASE PRESENCE — 在線人數寫入 Firestore
+// ═══════════════════════════════════════════════════════════════
+let _presenceRef = null;
+let _presenceUnsub = null;
+
+async function joinPresence(roomCode){
+  if(!S.user||!roomCode) return;
+  try{
+    // Write this participant's presence document
+    _presenceRef = doc(db, 'rooms', roomCode, 'presence', S.user.uid);
+    await setDoc(_presenceRef, {
+      uid:     S.user.uid,
+      name:    S.profile.full_name,
+      role:    S.profile.role,
+      joined:  serverTimestamp(),
+      active:  true,
+    });
+    dbg('[PRES] joined presence for '+roomCode);
+
+    // Listen to presence collection to get live count
+    _presenceUnsub = onSnapshot(
+      collection(db, 'rooms', roomCode, 'presence'),
+      snap => {
+        const active = snap.docs.filter(d => d.data().active !== false).length;
+        const el = $('m-count');
+        // Show Firebase count alongside LiveKit count (take the higher as source of truth)
+        const lkCount = (lkRoom?.remoteParticipants?.size ?? 0) + 1;
+        const count = Math.max(active, lkCount);
+        if(el) el.textContent = count + ' 人';
+        dbg('[PRES] count firebase='+active+' lk='+lkCount);
+      },
+      err => dbg('[PRES] listen err: '+err.message)
+    );
+  }catch(e){ dbg('[PRES] joinPresence err: '+e.message); }
+}
+
+async function leavePresence(){
+  // Cancel the listener first
+  _presenceUnsub?.(); _presenceUnsub = null;
+  // Mark presence as inactive (soft delete so history is preserved)
+  if(_presenceRef){
+    try{
+      await setDoc(_presenceRef, {active: false, left: serverTimestamp()}, {merge: true});
+      dbg('[PRES] left presence');
+    }catch(e){ dbg('[PRES] leavePresence err: '+e.message); }
+    _presenceRef = null;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
