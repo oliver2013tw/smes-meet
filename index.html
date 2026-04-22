@@ -51,6 +51,9 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 @keyframes notifIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:none}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes emojiFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-100px) scale(1.3)}}
+.emoji-float{position:fixed;pointer-events:none;z-index:800;
+  animation:emojiFloat 2.2s ease-out forwards;
+  display:flex;flex-direction:column;align-items:center;gap:2px}
 @keyframes waitBar{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 @keyframes levelBeat{0%,100%{transform:scaleY(.15)}50%{transform:scaleY(1)}}
 .blink{animation:blink 1s step-end infinite}
@@ -298,21 +301,16 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 .tile-ping.show{display:block}
 
 /* Pin/PiP buttons */
-.tile-pin-btn,.tile-pip-btn{position:absolute;bottom:34px;z-index:5;
+.tile-pin-btn{position:absolute;bottom:34px;right:8px;z-index:5;
   background:rgba(0,0,0,.82);border:1px solid rgba(255,255,255,.1);
   color:rgba(255,255,255,.7);padding:3px 8px;font-size:9px;
   font-family:var(--font);cursor:pointer;letter-spacing:.3px;
   transition:all var(--tf);display:none;backdrop-filter:blur(6px)}
-.tile-pin-btn{right:8px}
-.tile-pip-btn{left:8px}
-.video-tile:hover .tile-pin-btn,.video-tile:hover .tile-pip-btn{display:block}
-.tile-pin-btn:hover,.tile-pip-btn:hover{background:rgba(0,0,0,.95);color:#fff;border-color:rgba(255,255,255,.3)}
+.video-tile:hover .tile-pin-btn{display:block}
+.tile-pin-btn:hover{background:rgba(0,0,0,.95);color:#fff;border-color:rgba(255,255,255,.3)}
 .video-tile.pinned .tile-pin-btn{display:block;color:var(--blue-l);border-color:var(--blue-b);background:var(--blue-g)}
 
-/* Play button overlay */
-.tile-playbtn{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.5);cursor:pointer;z-index:9;font-size:36px;color:rgba(255,255,255,.9)}
-.tile-playbtn.show{display:flex}
+
 
 /* ═══ CONTROL BAR ═══ */
 .ctrl-bar{flex-shrink:0;background:rgba(3,3,3,.98);border-top:1px solid var(--b2);
@@ -415,8 +413,7 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
 .emoji-float{position:fixed;pointer-events:none;z-index:800;font-size:26px;
   animation:emojiFloat 2s ease-out forwards}
 
-/* ═══ AUDIO VISUALIZER ═══ */
-.audio-viz{display:flex;align-items:flex-end;gap:1.5px;height:14px;padding:0 2px}
+/* ═══ AUDIO VISUALIZER ═══ */.audio-viz{display:flex;align-items:flex-end;gap:1.5px;height:14px;padding:0 2px}
 .audio-bar{width:2px;background:var(--green);transform-origin:bottom;
   animation:levelBeat .4s ease-in-out infinite;min-height:2px}
 
@@ -816,10 +813,7 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
         <span style="font-size:12px;line-height:1">😊</span>
         <span class="cb-txt">表情</span>
       </button>
-      <button class="cb" id="cb-pip" title="子母畫面">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14"/><rect x="12" y="9" width="8" height="6" fill="currentColor"/></svg>
-        <span class="cb-txt">子母畫面</span>
-      </button>
+
       <div class="ctrl-sep"></div>
       <button class="cb" id="cb-layout" title="排版">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
@@ -1013,7 +1007,55 @@ input,select,textarea{font-family:var(--font);font-size:inherit;border:none;outl
   </div>
 </div>
 
-<!-- DEBUG -->
+<!-- ADMIN PANEL -->
+<div id="s-admin" class="screen">
+  <div class="m-bar">
+    <div class="m-bar-l">
+      <span class="m-brand">SMES-MEET</span>
+      <span class="m-sep"></span>
+      <span style="font-size:10px;color:var(--amber);letter-spacing:2px">ADMIN CONSOLE</span>
+    </div>
+    <div class="m-bar-r">
+      <span style="font-size:10px;color:var(--t3);margin-right:8px" id="admin-user-label"></span>
+      <button class="m-bar-btn" id="admin-logout" title="登出" style="color:var(--red)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:20px;background:var(--bg)">
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px" id="admin-stats"></div>
+    <!-- Rooms table -->
+    <div style="background:var(--bg2);border:1px solid var(--b2);margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--b2)">
+        <span style="font-size:11px;font-weight:600;color:#fff;letter-spacing:.5px">// 進行中的會議室</span>
+        <button class="cb" id="admin-refresh" style="padding:4px 10px;font-size:10px">↺ 重新整理</button>
+      </div>
+      <div id="admin-rooms-list" style="min-height:60px"></div>
+    </div>
+    <!-- All profiles -->
+    <div style="background:var(--bg2);border:1px solid var(--b2)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--b2)">
+        <span style="font-size:11px;font-weight:600;color:#fff;letter-spacing:.5px">// 使用者清單</span>
+        <input id="admin-search" placeholder="搜尋姓名/Email..." style="background:var(--bg3);border:1px solid var(--b2);color:var(--t);padding:4px 10px;font-size:10px;width:200px"/>
+      </div>
+      <div id="admin-users-list" style="min-height:60px"></div>
+    </div>
+  </div>
+  <!-- Room detail modal -->
+  <div id="admin-room-detail" style="display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.9);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+    <div style="background:var(--bg2);border:1px solid var(--b3);width:min(520px,calc(100vw-32px));max-height:80vh;display:flex;flex-direction:column;animation:slideUp .16s ease">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--b2)">
+        <span style="font-size:11px;font-weight:600;color:#fff" id="detail-title">// 會議室詳情</span>
+        <button id="detail-close" style="color:var(--t3);font-size:13px;padding:2px 8px;border:1px solid var(--b2);background:var(--bg3)">✕</button>
+      </div>
+      <div id="detail-body" style="flex:1;overflow-y:auto;padding:16px;font-size:11px;color:var(--t2);line-height:2"></div>
+      <div style="padding:12px 18px;border-top:1px solid var(--b2);display:flex;gap:8px">
+        <button id="detail-delete" class="cb danger" style="font-size:11px">🗑 刪除會議室</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="debug-panel">
   <div id="dbg-hdr"><span style="color:#333">// SMES-MEET DEBUG v6.1</span><button class="dbg-clr" id="dbg-clr">CLR</button></div>
   <div id="debug-log"></div>
@@ -1100,7 +1142,6 @@ const initials = n => (n||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toU
 const genCode  = () => { const c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:6},()=>c[Math.floor(Math.random()*c.length)]).join(''); };
 const isSecure = () => window.isSecureContext || location.protocol==='https:' || ['localhost','127.0.0.1'].includes(location.hostname);
 const isSafari = () => /^((?!chrome|android).)*safari/i.test(navigator.userAgent) || /iPad|iPhone|iPod/.test(navigator.userAgent);
-const detectRole = e => { const m=e.match(STU_RE); return (m&&parseInt(m[2],10)<=180)?'student':'teacher'; };
 // Guard: is this identity the local participant?
 const isLocalP = id => !!id && (id === _localIdentity || id === lkRoom?.localParticipant?.identity);
 
@@ -1229,13 +1270,23 @@ const loadProg = $('load-prog');
 let _lp=0;
 const _lpIv = setInterval(()=>{ _lp=Math.min(_lp+Math.random()*15, 90); if(loadProg) loadProg.style.width=_lp+'%'; },200);
 
+const ADMIN_EMAIL = 'admin@smes-meet.com';
+const isAdminEmail = e => e === ADMIN_EMAIL;
+
 onAuthStateChanged(auth, async user => {
   clearInterval(_lpIv); if(loadProg) loadProg.style.width='100%';
   await new Promise(r=>setTimeout(r,180));
   if(!user){ showScreen('login'); return; }
-  if(!user.email.endsWith('@'+DOMAIN)){ await signOut(auth); showScreen('login'); return; }
+  // Allow domain users AND admin
+  if(!user.email.endsWith('@'+DOMAIN) && !isAdminEmail(user.email)){
+    await signOut(auth); showScreen('login'); return;
+  }
   S.user=user;
   S.profile=await ensureProfile(user);
+  if(S.profile.role==='admin'){
+    // Admin goes to admin panel, not lobby
+    showAdminPanel(); return;
+  }
   renderLobby();
   if(isSafari()) try{ await getRedirectResult(auth); }catch(_){}
   showScreen('lobby');
@@ -1258,18 +1309,47 @@ $('ver-txt').addEventListener('click',()=>{
   if(n>=5) $('dev-panel').classList.add('open');
 });
 $('btn-dev').onclick = async () => {
-  const e=$('dev-email').value.trim(), p=$('dev-pw').value;
-  if(!e.endsWith('@'+DOMAIN)){ toast('login-toast','必須使用 @'+DOMAIN); return; }
-  try{ await signInWithEmailAndPassword(auth,e,p); }
+  let raw = $('dev-email').value.trim();
+  const pw  = $('dev-pw').value;
+  if(!raw){ toast('login-toast','請輸入帳號'); return; }
+
+  // Build full email:
+  // - "admin" → admin@smes-meet.com
+  // - already has @  → use as-is (must end with allowed domain)
+  // - no @ → append @mail2.smes.tyc.edu.tw
+  let email;
+  if(raw.toLowerCase()==='admin'){
+    email='admin@smes-meet.com';
+  } else if(raw.includes('@')){
+    email=raw;
+    if(!email.endsWith('@'+DOMAIN)&&email!=='admin@smes-meet.com'){
+      toast('login-toast','帳號必須為 @'+DOMAIN+' 或 admin'); return;
+    }
+  } else {
+    email=raw+'@'+DOMAIN;
+  }
+
+  try{ await signInWithEmailAndPassword(auth,email,pw); }
   catch(err){ toast('login-toast',err.code==='auth/invalid-credential'?'帳號或密碼錯誤':err.message); }
 };
+
+// Update onAuthStateChanged to allow admin@smes-meet.com
+
 $('btn-logout').onclick = async () => { await cleanup(); await signOut(auth); };
+
+const detectRole = e => {
+  if(isAdminEmail(e)) return 'admin';
+  const m=e.match(STU_RE);
+  return (m&&parseInt(m[2],10)<=180)?'student':'teacher';
+};
 
 async function ensureProfile(user){
   const ref=doc(db,'profiles',user.uid), snap=await getDoc(ref);
   if(snap.exists()) return snap.data();
-  const safe=(user.displayName||user.email.split('@')[0]).replace(/[<>&"]/g,'').slice(0,30)||'User';
-  const p={uid:user.uid,email:user.email,full_name:safe,role:detectRole(user.email)};
+  const role=detectRole(user.email);
+  const safeName = role==='admin' ? 'Admin'
+    : (user.displayName||user.email.split('@')[0]).replace(/[<>&"]/g,'').slice(0,30)||'User';
+  const p={uid:user.uid,email:user.email,full_name:safeName,role};
   await setDoc(ref,p); return p;
 }
 
@@ -1424,7 +1504,20 @@ async function goMeeting(){
     },
   });
 
-  // ── Step 3: Bind events BEFORE connect ──
+  // ── Step 3: Connect FIRST, then set _localIdentity, then bind events ──
+  setSFU('connecting');
+  try{
+    await lkRoom.connect(LK_URL, token);
+    // Set identity immediately so all event guards work correctly
+    _localIdentity = lkRoom.localParticipant.identity;
+    dbg('[LK] connected ok, identity='+_localIdentity);
+  }catch(e){
+    notif('連線失敗：'+e.message,8000,'error');
+    lkRoom=null; S.inMeeting=false; S.room=''; S.isHost=false;
+    showScreen('lobby'); return;
+  }
+
+  // ── Step 4: Bind events AFTER connect so _localIdentity is always set ──
   lkRoom
     .on(RoomEvent.Connected,               ()     => onLKConnected())
     .on(RoomEvent.Disconnected,            r      => onLKDisconnected(r))
@@ -1450,19 +1543,6 @@ async function goMeeting(){
       dbg('[LTUP] '+pub.source);
       if(pub.source===Track.Source.Camera && !S.sharing) attachLocalVid();
     });
-
-  // ── Step 4: Connect ──
-  setSFU('connecting');
-  try{
-    await lkRoom.connect(LK_URL, token);
-    // Store identity IMMEDIATELY after connect so guards work
-    _localIdentity = lkRoom.localParticipant.identity;
-    dbg('[LK] connected ok, identity='+_localIdentity);
-  }catch(e){
-    notif('連線失敗：'+e.message,8000,'error');
-    lkRoom=null; S.inMeeting=false; S.room=''; S.isHost=false;
-    showScreen('lobby'); return;
-  }
 
   // ── Step 5: Publish local media ──
   try{
@@ -1630,7 +1710,18 @@ function onDataMsg(payload, participant){
   try{
     const msg=JSON.parse(new TextDecoder().decode(payload));
     const id=participant?.identity||msg.identity;
-    if(msg.type==='hand'){ if(id&&!isLocalP(id)){ HR[id]=msg.raised; setHandIcon(id,msg.raised); } }
+    if(msg.type==='reaction'){
+      // Show floating emoji with sender name on all clients
+      spawnEmoji(msg.emoji, msg.identity||id);
+    }
+    else if(msg.type==='hand'){
+      if(id&&!isLocalP(id)){
+        HR[id]=msg.raised;
+        setHandIcon(id,msg.raised);
+        renderMemberList();
+        if(msg.raised) notif(`✋ ${id} 舉手`,4000,'warning');
+      }
+    }
     else if(msg.type==='chat'){ receiveChatMsg(msg,id); }
     else if(msg.type==='collab'){ receiveCollab(msg); }
     else if(msg.type==='laser'){ receiveLaser(msg); }
@@ -1658,7 +1749,7 @@ function wireVideo(track, tile, identity){
     dbg('[VID] method B (fallback) for '+identity);
   }
   const pp=vid.play();
-  if(pp) pp.catch(e=>{ dbg('[VID] play blocked: '+e.message); showPlayBtn(tile,vid); });
+  if(pp) pp.catch(e=>{ dbg('[VID] play blocked: '+e.message); /* autoplay blocked but no UI needed */ });
 }
 
 function wireAudio(track, identity){
@@ -1669,14 +1760,6 @@ function wireAudio(track, identity){
   document.body.appendChild(el);
   el.play().catch(()=>document.addEventListener('click',()=>el.play().catch(()=>{}),{once:true}));
   dbg('[AUD] wired for '+identity);
-}
-
-function showPlayBtn(tile, vid){
-  if(tile.querySelector('.tile-playbtn')) return;
-  const b=document.createElement('div'); b.className='tile-playbtn show';
-  b.textContent='▶'; b.title='點擊播放';
-  b.onclick=()=>{ vid.play().catch(()=>{}); b.remove(); };
-  tile.appendChild(b);
 }
 
 function attachLocalVid(){
@@ -1759,15 +1842,13 @@ function makeTile(participant){
     </div>
     <div class="tile-ping" id="ping-${CSS.escape(id)}"></div>
     <button class="tile-pin-btn">◈ 固定</button>
-    <button class="tile-pip-btn">⧉ PiP</button>
     <div class="tile-name">
       <span class="tile-name-text">${esc(id)}</span>
       <span class="tile-icons" id="icons-${CSS.escape(id)}"></span>
     </div>`;
 
   tile.querySelector('.tile-pin-btn').onclick=e=>{ e.stopPropagation(); togglePin(id); };
-  tile.querySelector('.tile-pip-btn').onclick=e=>{ e.stopPropagation(); enterPiP(tile); };
-  tile.addEventListener('dblclick',e=>{ if(!e.target.closest('.tile-pin-btn')&&!e.target.closest('.tile-pip-btn')) toggleFull(tile); });
+  tile.addEventListener('dblclick',e=>{ if(!e.target.closest('.tile-pin-btn')) toggleFull(tile); });
   grid.appendChild(tile);
   dbg('[TILE] created: '+id);
 
@@ -1951,20 +2032,6 @@ function toggleFull(tile){
   else{ if(FULLTILE) FULLTILE.classList.remove('fullscreen'); tile.classList.add('fullscreen'); FULLTILE=tile; }
 }
 
-async function enterPiP(tile){
-  const vid=tile.querySelector('.tile-video');
-  if(!vid||!document.pictureInPictureEnabled){ notif('此瀏覽器不支援子母畫面',3000,'warning'); return; }
-  try{
-    if(document.pictureInPictureElement===vid) await document.exitPictureInPicture();
-    else await vid.requestPictureInPicture();
-  }catch(e){ notif('子母畫面失敗：'+e.message,3000,'warning'); }
-}
-
-$('cb-pip').onclick=()=>{
-  const tiles=[...($('vgrid')?.querySelectorAll('.video-tile')||[])];
-  enterPiP(tiles.length>1?tiles[1]:tiles[0]);
-};
-
 // ═══════════════════════════════════════════════════════════════
 // MEMBER LIST
 // ═══════════════════════════════════════════════════════════════
@@ -2087,18 +2154,30 @@ document.querySelectorAll('.reaction-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{ sendReaction(btn.dataset.emoji); $('reaction-popup').classList.remove('show'); });
 });
 function sendReaction(emoji){
-  spawnEmoji(emoji);
+  // Spawn locally
+  spawnEmoji(emoji, _localIdentity);
+  // Broadcast to all peers via data channel with dedicated 'reaction' type
   try{
-    const p=new TextEncoder().encode(JSON.stringify({type:'chat',text:emoji,identity:_localIdentity,ts:Date.now(),reaction:true}));
+    const p=new TextEncoder().encode(JSON.stringify({
+      type:'reaction', emoji, identity:_localIdentity, ts:Date.now()
+    }));
     lkRoom?.localParticipant?.publishData(p,{reliable:false});
   }catch(_){}
 }
-function spawnEmoji(emoji){
-  const el=document.createElement('div'); el.className='emoji-float';
-  el.textContent=emoji;
-  el.style.cssText=`left:${20+Math.random()*60}%;bottom:80px;font-size:${22+Math.random()*14}px;`;
-  document.body.appendChild(el);
-  setTimeout(()=>el.remove(),2100);
+function spawnEmoji(emoji, sender){
+  const wrap=document.createElement('div');
+  wrap.className='emoji-float';
+  wrap.style.cssText=`left:${15+Math.random()*70}%;bottom:72px;font-size:${24+Math.random()*12}px;`;
+  // Show sender name above emoji
+  const nameEl=document.createElement('div');
+  nameEl.style.cssText='font-size:9px;color:rgba(255,255,255,.85);text-align:center;margin-bottom:2px;font-family:var(--font);letter-spacing:.3px;white-space:nowrap;text-shadow:0 1px 4px rgba(0,0,0,.8)';
+  nameEl.textContent=sender||'';
+  const emojiEl=document.createElement('div');
+  emojiEl.textContent=emoji;
+  wrap.appendChild(nameEl);
+  wrap.appendChild(emojiEl);
+  document.body.appendChild(wrap);
+  setTimeout(()=>wrap.remove(), 2200);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2399,14 +2478,30 @@ async function toggleHand(){
   S.handRaised=!S.handRaised;
   $('cb-hand').className='cb'+(S.handRaised?' amber':'');
   $('cb-hand').querySelector('.cb-txt').textContent=S.handRaised?'放下手':'舉手';
+
+  // Update local tile
   const tile=$('tile-local'), h=tile?.querySelector('.tile-hand');
-  if(h){ h.classList.toggle('show',S.handRaised); const lbl=$('local-hand-lbl'); if(lbl) lbl.textContent=S.handRaised?(_localIdentity||'')+' 舉手':''; }
-  const meta=JSON.stringify({role:S.profile.role,handRaised:S.handRaised,ts:Date.now()});
-  try{ await lkRoom?.localParticipant?.setMetadata(meta); }catch(_){}
+  if(h){
+    h.classList.toggle('show',S.handRaised);
+    const lbl=$('local-hand-lbl');
+    if(lbl) lbl.textContent=S.handRaised?(_localIdentity||'')+' 舉手':'';
+  }
+
+  // Broadcast hand state via reliable data channel to ALL peers
+  const msg={type:'hand', raised:S.handRaised, identity:_localIdentity};
   try{
-    const p=new TextEncoder().encode(JSON.stringify({type:'hand',raised:S.handRaised,identity:_localIdentity}));
+    const p=new TextEncoder().encode(JSON.stringify(msg));
     await lkRoom?.localParticipant?.publishData(p,{reliable:true});
+    dbg('[HAND] published raised='+S.handRaised);
+  }catch(e){ dbg('[HAND] publish err: '+e.message); }
+
+  // Also set metadata as backup (in case peer joins late)
+  try{
+    await lkRoom?.localParticipant?.setMetadata(JSON.stringify({
+      role:S.profile.role, handRaised:S.handRaised, ts:Date.now()
+    }));
   }catch(_){}
+
   if(S.handRaised) notif('✋ 已舉手，等待主持人注意',3000,'info');
 }
 
@@ -2795,6 +2890,215 @@ $('btn-export-chat').onclick=()=>{
 $('btn-export-notes').onclick=()=>{
   const txt=$('collab-text').value;
   const a=document.createElement('a'); a.download='notes-export.txt'; a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt); a.click();
+};
+
+// ═══════════════════════════════════════════════════════════════
+// ADMIN PANEL
+// ═══════════════════════════════════════════════════════════════
+let _adminRoomsUnsub = null;
+let _adminCurrentRoom = null; // room code being viewed in detail
+
+function showAdminPanel(){
+  $('admin-user-label').textContent = S.profile?.email || 'admin';
+  showScreen('admin');
+  loadAdminRooms();
+  loadAdminUsers();
+}
+
+$('admin-logout').onclick = async () => {
+  _adminRoomsUnsub?.(); _adminRoomsUnsub = null;
+  await signOut(auth);
+};
+
+$('admin-refresh').onclick = () => { loadAdminRooms(); loadAdminUsers(); };
+
+// ── Rooms ──
+function loadAdminRooms(){
+  _adminRoomsUnsub?.(); _adminRoomsUnsub = null;
+  const list = $('admin-rooms-list');
+  list.innerHTML = '<div style="padding:14px 16px;font-size:11px;color:var(--t3)">載入中...</div>';
+
+  _adminRoomsUnsub = onSnapshot(collection(db,'rooms'), async snap => {
+    // Update stats
+    renderAdminStats(snap.docs.length);
+
+    if(snap.empty){
+      list.innerHTML='<div style="padding:14px 16px;font-size:11px;color:var(--t3)">目前沒有進行中的會議室</div>';
+      return;
+    }
+    list.innerHTML='';
+    for(const d of snap.docs){
+      const r = d.data();
+      const code = r.code || d.id;
+      // Get presence count
+      let presCount = 0;
+      try{
+        const presSnap = await getDocs(collection(db,'rooms',code,'presence'));
+        presCount = presSnap.docs.filter(p=>p.data().active!==false).length;
+      }catch(_){}
+
+      const row = document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--b);cursor:pointer;transition:background var(--tf)';
+      row.onmouseenter=()=>row.style.background='var(--bg3)';
+      row.onmouseleave=()=>row.style.background='';
+      row.innerHTML=`
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;color:#fff;font-weight:500;letter-spacing:1px">${esc(code)}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:2px">
+            主持人 UID: ${esc((r.host_id||'').slice(0,12))}…
+            &nbsp;·&nbsp; ${presCount} 人在線
+            &nbsp;·&nbsp; ${r.created_at?.toDate?.()?.toLocaleString('zh-TW')||'—'}
+          </div>
+        </div>
+        <button class="cb" data-code="${esc(code)}" style="font-size:10px;padding:4px 10px">詳情</button>
+        <button class="cb danger" data-del="${esc(code)}" style="font-size:10px;padding:4px 10px">刪除</button>`;
+      row.querySelector('[data-code]').onclick = e => { e.stopPropagation(); openRoomDetail(code); };
+      row.querySelector('[data-del]').onclick = e => { e.stopPropagation(); adminDeleteRoom(code); };
+      list.appendChild(row);
+    }
+  }, err => {
+    list.innerHTML=`<div style="padding:14px 16px;font-size:11px;color:var(--red)">讀取失敗：${esc(err.message)}</div>`;
+  });
+}
+
+async function openRoomDetail(code){
+  _adminCurrentRoom = code;
+  $('detail-title').textContent = `// 會議室：${code}`;
+  const body = $('detail-body');
+  body.innerHTML = '<div style="color:var(--t3)">載入中...</div>';
+  $('admin-room-detail').style.display='flex';
+
+  try{
+    const [roomSnap, presSnap, reqSnap] = await Promise.all([
+      getDoc(doc(db,'rooms',code)),
+      getDocs(collection(db,'rooms',code,'presence')),
+      getDocs(query(collection(db,'room_requests'),where('room_code','==',code))),
+    ]);
+
+    const r = roomSnap.exists() ? roomSnap.data() : {};
+    const presRows = presSnap.docs.map(d=>{
+      const p=d.data();
+      const roleLabel = p.role==='teacher'?'[T]':p.role==='student'?'[S]':'[?]';
+      const status = p.active!==false ? '<span style="color:var(--green)">● 在線</span>' : '<span style="color:var(--t3)">● 已離線</span>';
+      return `<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid var(--b)">
+        <span style="color:var(--blue-l)">${esc(roleLabel)}</span>
+        <span style="flex:1">${esc(p.name||p.uid)}</span>
+        ${status}
+        <span style="color:var(--t3)">${p.joined?.toDate?.()?.toLocaleTimeString('zh-TW')||'—'}</span>
+      </div>`;
+    }).join('');
+
+    const reqRows = reqSnap.docs.map(d=>{
+      const q=d.data();
+      const statusColor = q.status==='approved'?'var(--green)':q.status==='rejected'?'var(--red)':'var(--amber)';
+      return `<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid var(--b)">
+        <span style="flex:1">${esc(q.user_name||q.user_email)}</span>
+        <span style="color:${statusColor}">${esc(q.status)}</span>
+      </div>`;
+    }).join('');
+
+    body.innerHTML = `
+      <div style="margin-bottom:12px">
+        <div style="color:var(--t3);font-size:9px;letter-spacing:2px;margin-bottom:6px">基本資訊</div>
+        <div>代碼：<span style="color:#fff">${esc(code)}</span></div>
+        <div>建立時間：<span style="color:#fff">${r.created_at?.toDate?.()?.toLocaleString('zh-TW')||'—'}</span></div>
+        <div>主持人 UID：<span style="color:#fff">${esc(r.host_id||'—')}</span></div>
+        <div>鎖定分享：<span style="color:#fff">${r.locked?'是':'否'}</span></div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="color:var(--t3);font-size:9px;letter-spacing:2px;margin-bottom:6px">參加人員（${presSnap.docs.length} 筆）</div>
+        ${presRows||'<div style="color:var(--t3)">無紀錄</div>'}
+      </div>
+      <div>
+        <div style="color:var(--t3);font-size:9px;letter-spacing:2px;margin-bottom:6px">加入請求（${reqSnap.docs.length} 筆）</div>
+        ${reqRows||'<div style="color:var(--t3)">無紀錄</div>'}
+      </div>`;
+  }catch(e){
+    body.innerHTML=`<div style="color:var(--red)">讀取失敗：${esc(e.message)}</div>`;
+  }
+}
+
+$('detail-close').onclick = () => { $('admin-room-detail').style.display='none'; _adminCurrentRoom=null; };
+$('detail-delete').onclick = () => { if(_adminCurrentRoom) adminDeleteRoom(_adminCurrentRoom); };
+$('admin-room-detail').addEventListener('click', e=>{
+  if(e.target===$('admin-room-detail')){ $('admin-room-detail').style.display='none'; _adminCurrentRoom=null; }
+});
+
+async function adminDeleteRoom(code){
+  const ok = await modal({
+    title:'刪除會議室',
+    body:`確定要刪除會議室「${code}」嗎？\n此操作無法還原，在線使用者將被斷線。`,
+    buttons:[{label:'取消',value:false},{label:'刪除',type:'danger',value:true}]
+  });
+  if(!ok) return;
+  try{
+    // Reject all pending requests
+    const reqSnap=await getDocs(query(collection(db,'room_requests'),where('room_code','==',code),where('status','==','pending')));
+    reqSnap.docs.forEach(d=>updateDoc(d.ref,{status:'rejected'}).catch(()=>{}));
+    // Mark all presence inactive
+    const presSnap=await getDocs(collection(db,'rooms',code,'presence'));
+    presSnap.docs.forEach(d=>setDoc(d.ref,{active:false,left:serverTimestamp()},{merge:true}).catch(()=>{}));
+    // Delete room doc
+    await deleteDoc(doc(db,'rooms',code));
+    notif(`✓ 已刪除會議室 ${code}`,3000,'success');
+    $('admin-room-detail').style.display='none';
+    _adminCurrentRoom=null;
+  }catch(e){ notif('刪除失敗：'+e.message,5000,'error'); }
+}
+
+// ── Stats ──
+function renderAdminStats(roomCount){
+  const el=$('admin-stats'); if(!el) return;
+  const cards=[
+    {label:'進行中會議室',value:roomCount,color:'var(--blue-l)'},
+    {label:'系統狀態',value:'正常',color:'var(--green)'},
+    {label:'管理員',value:'admin@smes-meet.com',color:'var(--amber)'},
+  ];
+  el.innerHTML=cards.map(c=>`
+    <div style="background:var(--bg2);border:1px solid var(--b2);padding:14px 16px">
+      <div style="font-size:9px;color:var(--t3);letter-spacing:1.5px;margin-bottom:6px">${c.label}</div>
+      <div style="font-size:16px;font-weight:700;color:${c.color}">${c.value}</div>
+    </div>`).join('');
+}
+
+// ── Users ──
+let _allUsers = [];
+async function loadAdminUsers(){
+  const list=$('admin-users-list');
+  list.innerHTML='<div style="padding:14px 16px;font-size:11px;color:var(--t3)">載入中...</div>';
+  try{
+    const snap=await getDocs(collection(db,'profiles'));
+    _allUsers=snap.docs.map(d=>d.data());
+    renderUserList(_allUsers);
+  }catch(e){
+    list.innerHTML=`<div style="padding:14px 16px;font-size:11px;color:var(--red)">讀取失敗：${esc(e.message)}</div>`;
+  }
+}
+
+function renderUserList(users){
+  const list=$('admin-users-list'); if(!list) return;
+  if(!users.length){ list.innerHTML='<div style="padding:14px 16px;font-size:11px;color:var(--t3)">無使用者</div>'; return; }
+  list.innerHTML='';
+  users.forEach(u=>{
+    const roleLabel = u.role==='teacher'?'教師':u.role==='student'?'學生':'管理員';
+    const roleColor = u.role==='teacher'?'var(--blue-l)':u.role==='student'?'var(--t2)':'var(--amber)';
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid var(--b)';
+    row.innerHTML=`
+      <div style="width:28px;height:28px;background:var(--bg4);border:1px solid var(--b3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--t2);border-radius:4px;flex-shrink:0">${esc(initials(u.full_name||u.email))}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:11px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.full_name||'—')}</div>
+        <div style="font-size:10px;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u.email)}</div>
+      </div>
+      <span style="font-size:9px;padding:2px 8px;border:1px solid ${roleColor};color:${roleColor}">${roleLabel}</span>`;
+    list.appendChild(row);
+  });
+}
+
+$('admin-search').oninput = function(){
+  const q=this.value.toLowerCase();
+  const filtered=_allUsers.filter(u=>(u.full_name||'').toLowerCase().includes(q)||(u.email||'').toLowerCase().includes(q));
+  renderUserList(filtered);
 };
 
 // ═══════════════════════════════════════════════════════════════
