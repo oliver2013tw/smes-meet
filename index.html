@@ -1454,6 +1454,7 @@ async function goMeeting(){
   }
   document.querySelectorAll('audio[data-lk]').forEach(a=>{ try{a.pause();a.srcObject=null;}catch(_){} a.remove(); });
   Object.keys(RMT).forEach(k=>{ clearTimeout(RMT[k]); delete RMT[k]; });
+  _tileCreating.clear();
   for(const k of Object.keys(HR)) delete HR[k];
   dbg('[INIT] tiles after reset: '+($('vgrid')?.querySelectorAll('.video-tile').length||0));
 
@@ -1593,15 +1594,25 @@ async function goMeeting(){
 // ═══════════════════════════════════════════════════════════════
 // LIVEKIT EVENTS
 // ═══════════════════════════════════════════════════════════════
+// Tracks which identities are currently being processed by makeTile
+// to prevent concurrent/duplicate calls from creating multiple tiles
+const _tileCreating = new Set();
+
 function onLKConnected(){
   setSFU('connected');
   dbg('[LK] onConnected remote='+lkRoom.remoteParticipants.size+' localId='+_localIdentity);
 
-  // Render all remote participants already in the room.
-  // Their TrackSubscribed events may have already fired during connect(),
-  // so makeTile's reuse logic will handle duplicates safely.
+  // Only create tiles for participants who have NO subscribed tracks yet.
+  // Participants WITH tracks already have tiles created by onTrackSub
+  // (which fires before Connected during connect()).
   lkRoom.remoteParticipants.forEach(p => {
     if(isLocalP(p.identity)) return;
+    // Check if tile already exists (created by TrackSubscribed)
+    if(getTile(p.identity)){
+      dbg('[LKC] tile already exists for '+p.identity+', skip');
+      return;
+    }
+    // No tracks yet → create placeholder tile
     makeTile(p);
   });
 
@@ -1807,19 +1818,30 @@ function getResolution(q){
 // ═══════════════════════════════════════════════════════════════
 // TILE MANAGEMENT
 // ═══════════════════════════════════════════════════════════════
-const getTile = id => document.getElementById(`tile-${CSS.escape(id)}`);
+// getElementById takes a literal string — no CSS escaping needed.
+// tile IDs are set as `tile-${id}` so we look up the same way.
+const getTile = id => document.getElementById('tile-' + id);
 
 function makeTile(participant){
-  const id=participant.identity;
+  const id = participant.identity;
 
   // HARD GUARD: never create a tile for the local participant
-  if(isLocalP(id)){ dbg('[TILE] refused to create tile for local: '+id); return $('tile-local'); }
+  if(isLocalP(id)){
+    dbg('[TILE] refused local: '+id);
+    return $('tile-local');
+  }
+
+  // LOCK: if another call is already creating this tile, skip
+  if(_tileCreating.has(id)){
+    dbg('[TILE] creation in progress for '+id+', skip');
+    return getTile(id);
+  }
 
   // Cancel pending removal
   if(RMT[id]){ clearTimeout(RMT[id]); delete RMT[id]; }
 
   // Reuse existing tile if not removing
-  const ex=getTile(id);
+  const ex = getTile(id);
   if(ex){
     if(!ex.classList.contains('removing')){
       dbg('[TILE] reuse: '+id);
@@ -1835,12 +1857,15 @@ function makeTile(participant){
       updateTileIcons(participant);
       return ex;
     }
-    // Removing → cancel and remove immediately
+    // Removing → cancel animation and remove immediately
     ex.style.animation='none';
     ex.remove();
   }
 
-  const grid=$('vgrid'); if(!grid) return null;
+  const grid=$('vgrid'); if(!grid){ _tileCreating.delete(id); return null; }
+
+  // Acquire lock
+  _tileCreating.add(id);
 
   const tile=document.createElement('div');
   tile.className='video-tile'; tile.id=`tile-${id}`;
@@ -1854,16 +1879,18 @@ function makeTile(participant){
       <span class="tile-hand-icon">✋</span>
       <span class="tile-hand-lbl">${esc(id)} 舉手</span>
     </div>
-    <div class="tile-ping" id="ping-${CSS.escape(id)}"></div>
+    <div class="tile-ping" id="ping-${id}"></div>
     <button class="tile-pin-btn">◈ 固定</button>
     <div class="tile-name">
       <span class="tile-name-text">${esc(id)}</span>
-      <span class="tile-icons" id="icons-${CSS.escape(id)}"></span>
+      <span class="tile-icons" id="icons-${id}"></span>
     </div>`;
 
   tile.querySelector('.tile-pin-btn').onclick=e=>{ e.stopPropagation(); togglePin(id); };
   tile.addEventListener('dblclick',e=>{ if(!e.target.closest('.tile-pin-btn')) toggleFull(tile); });
   grid.appendChild(tile);
+  // Release lock immediately after DOM append — tile is now findable by getTile()
+  _tileCreating.delete(id);
   dbg('[TILE] created: '+id);
 
   // Attach existing tracks
@@ -1910,8 +1937,9 @@ function killTile(identity){
 }
 
 function nukeTiles(){
-  // Cancel ALL pending removal timers first
+  // Cancel ALL pending removal timers and creation locks
   Object.keys(RMT).forEach(k=>{ clearTimeout(RMT[k]); delete RMT[k]; });
+  _tileCreating.clear();
   const grid=$('vgrid');
   if(grid){
     // Force-remove every remote tile immediately, even ones mid-animation
@@ -1942,7 +1970,7 @@ function setCamOff(tile, show){
 function updateTileIcons(participant){
   if(isLocalP(participant?.identity)) return;
   const id=participant.identity;
-  const el=document.getElementById(`icons-${CSS.escape(id)}`); if(!el) return;
+  const el=document.getElementById('icons-'+id); if(!el) return;
   const mic=participant.getTrackPublication(Track.Source.Microphone);
   const cam=participant.getTrackPublication(Track.Source.Camera);
   el.innerHTML=((!mic||mic.isMuted)?'<span class="tile-icon">🔇</span>':'')+
