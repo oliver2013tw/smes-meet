@@ -1482,7 +1482,11 @@ async function goMeeting(){
     const d=await r.json();
     if(!d.token) throw new Error('API 未回傳 token');
     token=d.token;
-    dbg('[TOKEN] ok identity='+d.identity);
+    // Set identity NOW from the API response — before connecting —
+    // so that isLocalP() guards work correctly in ALL events including
+    // TrackSubscribed and Connected which fire DURING lkRoom.connect()
+    _localIdentity = d.identity || S.profile.full_name;
+    dbg('[TOKEN] ok identity='+_localIdentity);
   }catch(e){
     notif('無法取得會議憑證：'+e.message,10000,'error');
     S.inMeeting=false; S.room=''; S.isHost=false;
@@ -1504,20 +1508,10 @@ async function goMeeting(){
     },
   });
 
-  // ── Step 3: Connect FIRST, then set _localIdentity, then bind events ──
-  setSFU('connecting');
-  try{
-    await lkRoom.connect(LK_URL, token);
-    // Set identity immediately so all event guards work correctly
-    _localIdentity = lkRoom.localParticipant.identity;
-    dbg('[LK] connected ok, identity='+_localIdentity);
-  }catch(e){
-    notif('連線失敗：'+e.message,8000,'error');
-    lkRoom=null; S.inMeeting=false; S.room=''; S.isHost=false;
-    showScreen('lobby'); return;
-  }
-
-  // ── Step 4: Bind events AFTER connect so _localIdentity is always set ──
+  // ── Step 3: Bind events BEFORE connect ──
+  // CRITICAL: LiveKit fires Connected and TrackSubscribed DURING lkRoom.connect(),
+  // so listeners must be attached before calling connect().
+  // _localIdentity is already set from the token response above.
   lkRoom
     .on(RoomEvent.Connected,               ()     => onLKConnected())
     .on(RoomEvent.Disconnected,            r      => onLKDisconnected(r))
@@ -1533,9 +1527,7 @@ async function goMeeting(){
     .on(RoomEvent.ParticipantMetadataChanged,(m,p)=> onMeta(m,p))
     .on(RoomEvent.LocalTrackPublished,     pub    => {
       dbg('[LTP] '+pub.source+' kind='+pub.kind);
-      // Only re-attach local video for camera (not screen share)
       if(pub.source===Track.Source.Camera && pub.kind===Track.Kind.Video){
-        // Small delay to let the track settle
         setTimeout(()=>attachLocalVid(), 100);
       }
     })
@@ -1543,6 +1535,23 @@ async function goMeeting(){
       dbg('[LTUP] '+pub.source);
       if(pub.source===Track.Source.Camera && !S.sharing) attachLocalVid();
     });
+
+  // ── Step 4: Connect ──
+  setSFU('connecting');
+  try{
+    await lkRoom.connect(LK_URL, token);
+    // Verify identity matches (token may generate a different identity server-side)
+    const actualIdentity = lkRoom.localParticipant.identity;
+    if(actualIdentity !== _localIdentity){
+      dbg('[LK] identity updated: '+_localIdentity+' → '+actualIdentity);
+      _localIdentity = actualIdentity;
+    }
+    dbg('[LK] connected ok, identity='+_localIdentity+' remotes='+lkRoom.remoteParticipants.size);
+  }catch(e){
+    notif('連線失敗：'+e.message,8000,'error');
+    lkRoom=null; _localIdentity=null; S.inMeeting=false; S.room=''; S.isHost=false;
+    showScreen('lobby'); return;
+  }
 
   // ── Step 5: Publish local media ──
   try{
@@ -1586,11 +1595,16 @@ async function goMeeting(){
 // ═══════════════════════════════════════════════════════════════
 function onLKConnected(){
   setSFU('connected');
-  dbg('[LK] onConnected remote='+lkRoom.remoteParticipants.size);
-  // Render participants already in room — ONLY remote ones
+  dbg('[LK] onConnected remote='+lkRoom.remoteParticipants.size+' localId='+_localIdentity);
+
+  // Render all remote participants already in the room.
+  // Their TrackSubscribed events may have already fired during connect(),
+  // so makeTile's reuse logic will handle duplicates safely.
   lkRoom.remoteParticipants.forEach(p => {
-    if(!isLocalP(p.identity)) makeTile(p);
+    if(isLocalP(p.identity)) return;
+    makeTile(p);
   });
+
   updateCount();
   renderMemberList();
 }
